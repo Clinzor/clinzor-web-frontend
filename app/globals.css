@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background-start: #e6f2ff; /* very soft light bluish */
+  --background-end: #f8fbff;   /* slightly deeper but still very light */
   --foreground: #171717;
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-background-start: var(--background-start);
+  --color-background-end: var(--background-end);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* No color change in dark mode anymore */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background-start: #e6f2ff; 
+    --background-end: #ffffff;
+    --foreground: #ededed; /* only text color changes */
   }
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(to bottom right, var(--background-start), var(--background-end));
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
