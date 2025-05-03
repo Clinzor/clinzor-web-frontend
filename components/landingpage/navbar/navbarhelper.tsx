@@ -2,10 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 
+// Props Interfaces
 interface NavbarProps {
   children: React.ReactNode;
   className?: string;
@@ -41,11 +42,12 @@ interface MobileNavMenuProps {
   onClose: () => void;
 }
 
+// Main Navbar wrapper
 export const Navbar = ({ children, className }: NavbarProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const [visible, setVisible] = useState<boolean>(false);
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [visible, setVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setVisible(latest > 50);
@@ -63,15 +65,23 @@ export const Navbar = ({ children, className }: NavbarProps) => {
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<{ visible?: boolean; scrollProgress?: number }>, 
-            { visible, scrollProgress })
+          ? React.cloneElement(child as React.ReactElement<any>, {
+              visible,
+              scrollProgress,
+            })
           : child
       )}
     </motion.div>
   );
 };
 
-export const NavBody = ({ children, className, visible, scrollProgress = 0 }: NavBodyProps & { scrollProgress?: number }) => (
+// Main Nav for desktop
+export const NavBody = ({
+  children,
+  className,
+  visible,
+  scrollProgress = 0,
+}: NavBodyProps & { scrollProgress?: number }) => (
   <motion.div
     initial={{
       width: "100%",
@@ -87,8 +97,8 @@ export const NavBody = ({ children, className, visible, scrollProgress = 0 }: Na
       height: visible ? "60px" : "80px",
       backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
       backdropFilter: visible ? "blur(12px)" : "blur(0px)",
-      boxShadow: visible 
-        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
+      boxShadow: visible
+        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)"
         : "none",
       y: visible ? 10 : 0,
       borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
@@ -102,13 +112,14 @@ export const NavBody = ({ children, className, visible, scrollProgress = 0 }: Na
       borderWidth: "1px",
       backgroundImage: visible
         ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
-        : undefined
+        : undefined,
     }}
   >
     {children}
   </motion.div>
 );
 
+// Desktop navigation links
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -149,7 +160,13 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   );
 };
 
-export const MobileNav = ({ children, className, visible, scrollProgress = 0 }: MobileNavProps & { scrollProgress?: number }) => (
+// Mobile Nav
+export const MobileNav = ({
+  children,
+  className,
+  visible,
+  scrollProgress = 0,
+}: MobileNavProps & { scrollProgress?: number }) => (
   <motion.div
     initial={{
       width: "70%",
@@ -167,8 +184,8 @@ export const MobileNav = ({ children, className, visible, scrollProgress = 0 }: 
       backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
       borderRadius: visible ? "1rem" : "1.5rem",
       backdropFilter: visible ? "blur(12px)" : "blur(0px)",
-      boxShadow: visible 
-        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
+      boxShadow: visible
+        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)"
         : "none",
       y: visible ? 10 : 0,
       borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
@@ -182,7 +199,7 @@ export const MobileNav = ({ children, className, visible, scrollProgress = 0 }: 
       borderWidth: "1px",
       backgroundImage: visible
         ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
-        : undefined
+        : undefined,
     }}
   >
     {children}
@@ -223,7 +240,13 @@ export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNa
   </AnimatePresence>
 );
 
-export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) => (
+export const MobileNavToggle = ({
+  isOpen,
+  onClick,
+}: {
+  isOpen: boolean;
+  onClick: () => void;
+}) => (
   <motion.div
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.95 }}
@@ -266,9 +289,12 @@ export const NavbarButton = ({
     "px-4 py-2 rounded-xl text-sm font-medium relative cursor-pointer transition duration-300 inline-block text-center overflow-hidden z-50";
 
   const variantStyles = {
-    primary: "bg-white/80 text-slate-800 shadow-lg shadow-slate-200/50 backdrop-blur-md border border-slate-200 hover:border-slate-300",
-    secondary: "bg-transparent border border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50/50",
-    gradient: "bg-gradient-to-r from-slate-800 to-slate-600 text-white shadow-lg shadow-slate-300/30 hover:shadow-slate-300/40 hover:from-slate-700 hover:to-slate-500",
+    primary:
+      "bg-white/80 text-slate-800 shadow-lg shadow-slate-200/50 backdrop-blur-md border border-slate-200 hover:border-slate-300",
+    secondary:
+      "bg-transparent border border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50/50",
+    gradient:
+      "bg-gradient-to-r from-slate-800 to-slate-600 text-white shadow-lg shadow-slate-300/30 hover:shadow-slate-300/40 hover:from-slate-700 hover:to-slate-500",
   };
 
   return (
@@ -283,4 +309,3 @@ export const NavbarButton = ({
     </motion.div>
   );
 };
- 
