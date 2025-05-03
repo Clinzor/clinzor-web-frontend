@@ -15,10 +15,10 @@ import { useState } from "react";
 
 export function NavbarDemo() {
   const navItems = [
-    { name: "Home", link: "#features" },
+    { name: "Home", link: "/" },
     { name: "Service", link: "#pricing" },
-    { name: "Blog", link: "#contact" },
-    { name: "About us", link: "#contact" },
+    { name: "Blog", link: "/blog" },
+    { name: "About us", link: "/aboutus" },
   ];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -38,6 +38,7 @@ export function NavbarDemo() {
           <NavbarLogo />
           <MobileNavToggle
             isOpen={isMobileMenuOpen}
+            
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           />
         </MobileNavHeader>
@@ -51,7 +52,7 @@ export function NavbarDemo() {
               key={idx}
               href={item.link}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="relative text-neutral-600 dark:text-neutral-300"
+              className="relative text-black text-lg font-bold px-4 py-2"
             >
               <span className="block">{item.name}</span>
             </a>

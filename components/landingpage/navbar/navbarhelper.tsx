@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { IconMenu2, IconX, IconSparkles } from "@tabler/icons-react";
+import { IconMenu2, IconX } from "@tabler/icons-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
+import Image from "next/image";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -47,13 +48,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
   const [scrollProgress, setScrollProgress] = useState<number>(0);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 50) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-    
-    // Calculate scroll progress for additional effects
+    setVisible(latest > 50);
     const maxScroll = document.body.scrollHeight - window.innerHeight;
     setScrollProgress(Math.min(latest / (maxScroll || 1), 1));
   });
@@ -61,7 +56,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
   return (
     <motion.div
       ref={ref}
-      className={cn("fixed inset-x-0 top-0 z-40 w-full", className)}
+      className={cn("fixed inset-x-0 top-5 z-50 w-full", className)}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -69,96 +64,50 @@ export const Navbar = ({ children, className }: NavbarProps) => {
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
           ? React.cloneElement(child as React.ReactElement<{ visible?: boolean; scrollProgress?: number }>, 
-              { visible, scrollProgress })
+            { visible, scrollProgress })
           : child
       )}
     </motion.div>
   );
 };
 
-export const NavBody = ({ children, className, visible, scrollProgress = 0 }: NavBodyProps & { scrollProgress?: number }) => {
-  return (
-    <motion.div
-      initial={{
-        width: "70%",
-        height: "60px",
-        backgroundColor: "rgba(255,255,255,0)",
-        backdropFilter: "none",
-        boxShadow: "none",
-        y: 0,
-        borderColor: "rgba(0,0,0,0.05)",
-      }}
-      animate={{
-        width: visible ? "65%" : "70%",
-        height: visible ? "60px" : "80px",
-        backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
-        backdropFilter: visible ? "blur(12px)" : "blur(0px)",
-        boxShadow: visible 
-          ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
-          : "none",
-        y: visible ? 10 : 0,
-        borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 200,
-        damping: 30,
-      }}
-      className={cn(
-        "relative z-[60] mx-auto hidden flex-row items-center justify-between rounded-2xl border px-6 lg:flex",
-        className
-      )}
-      style={{
-        borderWidth: "1px",
-        backgroundImage: visible 
-          ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
-          : undefined
-      }}
-    >
-      {children}
-      <div className="absolute inset-0 rounded-2xl overflow-hidden">
-        <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-50"></div>
-        <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-30"></div>
-      </div>
-    </motion.div>
-  );
-};
-
-interface MotionNavItemProps {
-  item: { name: string; link: string };
-  index: number;
-  isHovered: boolean;
-  onHover: () => void;
-  onClick?: () => void;
-}
-
-const MotionNavItem = ({ item, index, isHovered, onHover, onClick }: MotionNavItemProps) => {
-  return (
-    <motion.a
-      key={index}
-      href={item.link}
-      onClick={onClick}
-      onMouseEnter={onHover}
-      className="relative px-4 py-2"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
-      whileHover={{ scale: 1.05 }}
-    >
-      {isHovered && (
-        <motion.div 
-          layoutId="hovered" 
-          className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-100 to-slate-200"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        />
-      )}
-      <span className="relative z-10 font-medium text-slate-800">{item.name}</span>
-    </motion.a>
-  );
-};
+export const NavBody = ({ children, className, visible, scrollProgress = 0 }: NavBodyProps & { scrollProgress?: number }) => (
+  <motion.div
+    initial={{
+      width: "100%",
+      height: "80px",
+      backgroundColor: "rgba(255,255,255,0)",
+      backdropFilter: "none",
+      boxShadow: "none",
+      y: 0,
+      borderColor: "rgba(0,0,0,0.05)",
+    }}
+    animate={{
+      width: visible ? "65%" : "70%",
+      height: visible ? "60px" : "80px",
+      backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
+      backdropFilter: visible ? "blur(12px)" : "blur(0px)",
+      boxShadow: visible 
+        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
+        : "none",
+      y: visible ? 10 : 0,
+      borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
+    }}
+    transition={{ type: "spring", stiffness: 200, damping: 30 }}
+    className={cn(
+      "relative z-50 mx-auto hidden flex-row items-center justify-between rounded-2xl border px-6 lg:flex",
+      className
+    )}
+    style={{
+      borderWidth: "1px",
+      backgroundImage: visible
+        ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
+        : undefined
+    }}
+  >
+    {children}
+  </motion.div>
+);
 
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
@@ -167,76 +116,81 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-semibold text-slate-800 lg:flex",
+        "absolute inset-0 z-50 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-bold  lg:flex",
         className
       )}
     >
       {items.map((item, idx) => (
-        <MotionNavItem
+        <motion.a
           key={idx}
-          item={item}
-          index={idx}
-          isHovered={hovered === idx}
-          onHover={() => setHovered(idx)}
+          href={item.link}
           onClick={onItemClick}
-        />
+          onMouseEnter={() => setHovered(idx)}
+          className="relative px-4 py-2"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: idx * 0.05, duration: 0.3 }}
+          whileHover={{ scale: 1.05 }}
+        >
+          {hovered === idx && (
+            <motion.div
+              layoutId="hovered"
+              className="absolute inset-0 rounded-full bg-gradient-to-r from-slate-100 to-slate-200"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+          <span className="relative z-10 font-medium text-slate-800">{item.name}</span>
+        </motion.a>
       ))}
     </motion.div>
   );
 };
 
-export const MobileNav = ({ children, className, visible, scrollProgress = 0 }: MobileNavProps & { scrollProgress?: number }) => {
-  return (
-    <motion.div
-      initial={{
-        width: "100%",
-        height: "70px",
-        backgroundColor: "rgba(255,255,255,0)",
-        borderRadius: "1.5rem",
-        backdropFilter: "none",
-        boxShadow: "none",
-        y: 0,
-        borderColor: "rgba(0,0,0,0.05)",
-      }}
-      animate={{
-        width: visible ? "90%" : "100%",
-        height: visible ? "55px" : "70px",
-        backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
-        borderRadius: visible ? "1rem" : "1.5rem",
-        backdropFilter: visible ? "blur(12px)" : "blur(0px)",
-        boxShadow: visible 
-          ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
-          : "none",
-        y: visible ? 10 : 0,
-        borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 200,
-        damping: 30,
-      }}
-      className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between border px-4 py-2 lg:hidden",
-        className
-      )}
-      style={{
-        borderWidth: "1px",
-        backgroundImage: visible 
-          ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
-          : undefined
-      }}
-    >
-      {children}
-      <div className="absolute inset-0 rounded-2xl overflow-hidden">
-        <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-50"></div>
-        <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-30"></div>
-      </div>
-    </motion.div>
-  );
-};
+export const MobileNav = ({ children, className, visible, scrollProgress = 0 }: MobileNavProps & { scrollProgress?: number }) => (
+  <motion.div
+    initial={{
+      width: "70%",
+      height: "70px",
+      backgroundColor: "rgba(255,255,255,0)",
+      borderRadius: "1.5rem",
+      backdropFilter: "none",
+      boxShadow: "none",
+      y: 0,
+      borderColor: "rgba(0,0,0,0.05)",
+    }}
+    animate={{
+      width: visible ? "70%" : "100%",
+      height: visible ? "55px" : "70px",
+      backgroundColor: visible ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0)",
+      borderRadius: visible ? "1rem" : "1.5rem",
+      backdropFilter: visible ? "blur(12px)" : "blur(0px)",
+      boxShadow: visible 
+        ? "0 10px 30px -10px rgba(0,0,0,0.06), 0 0 10px rgba(0,0,0,0.03)" 
+        : "none",
+      y: visible ? 10 : 0,
+      borderColor: visible ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
+    }}
+    transition={{ type: "spring", stiffness: 200, damping: 30 }}
+    className={cn(
+      "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between border px-4 py-2 lg:hidden",
+      className
+    )}
+    style={{
+      borderWidth: "1px",
+      backgroundImage: visible
+        ? `linear-gradient(135deg, rgba(255,255,255,${0.6 + scrollProgress * 0.3}) ${scrollProgress * 100}%, rgba(240,242,245,${0.6 + scrollProgress * 0.3}) 100%)`
+        : undefined
+    }}
+  >
+    {children}
+  </motion.div>
+);
 
 export const MobileNavHeader = ({ children, className }: MobileNavHeaderProps) => (
-  <div className={cn("flex w-full flex-row items-center justify-between", className)}>
+  <div className={cn("flex w-full flex-row items-center justify-between z-50", className)}>
     {children}
   </div>
 );
@@ -249,7 +203,7 @@ export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNa
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.3 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-slate-900"
+          className="fixed inset-0 z-50 bg-slate-900"
           onClick={onClose}
         />
         <motion.div
@@ -258,14 +212,10 @@ export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNa
           exit={{ opacity: 0, y: -20 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className={cn(
-            "absolute inset-x-0 top-20 z-50 mx-4 flex flex-col items-start gap-4 rounded-xl border border-slate-200 bg-white/90 p-8 backdrop-blur-md shadow-xl",
+            "absolute inset-x-0 top-20 z-50 mx-4 flex flex-col text-black items-start gap-4 rounded-xl border border-slate-200 bg-white/90 p-8 backdrop-blur-md shadow-xl",
             className
           )}
         >
-          <div className="absolute inset-0 rounded-xl overflow-hidden">
-            <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-50"></div>
-            <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-30"></div>
-          </div>
           {children}
         </motion.div>
       </>
@@ -273,26 +223,20 @@ export const MobileNavMenu = ({ children, className, isOpen, onClose }: MobileNa
   </AnimatePresence>
 );
 
-export const MobileNavToggle = ({
-  isOpen,
-  onClick,
-}: { isOpen: boolean; onClick: () => void }) => {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      className="cursor-pointer rounded-full border border-slate-200 bg-white/80 p-2 backdrop-blur-sm"
-    >
-      {isOpen ? (
-        <IconX className="h-5 w-5 text-slate-800" onClick={onClick} />
-      ) : (
-        <IconMenu2 className="h-5 w-5 text-slate-800" onClick={onClick} />
-      )}
-    </motion.div>
-  );
-};
-
-import Image from "next/image";
+export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) => (
+  <motion.div
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.95 }}
+    className="z-50 cursor-pointer rounded-full border border-slate-200 bg-white/80 p-2 backdrop-blur-sm"
+    onClick={onClick}
+  >
+    {isOpen ? (
+      <IconX className="h-5 w-5 text-slate-800" />
+    ) : (
+      <IconMenu2 className="h-5 w-5 text-slate-800" />
+    )}
+  </motion.div>
+);
 
 export const NavbarLogo = () => (
   <Image
@@ -300,9 +244,10 @@ export const NavbarLogo = () => (
     alt="Logo"
     width={50}
     height={50}
-    className="rounded-full"
+    className="rounded-full z-50"
   />
 );
+
 export const NavbarButton = ({
   href,
   as: Tag = "a",
@@ -318,7 +263,7 @@ export const NavbarButton = ({
   variant?: "primary" | "secondary" | "gradient";
 } & (React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">)) => {
   const baseStyles =
-    "px-4 py-2 rounded-xl text-sm font-medium relative cursor-pointer transition duration-300 inline-block text-center overflow-hidden";
+    "px-4 py-2 rounded-xl text-sm font-medium relative cursor-pointer transition duration-300 inline-block text-center overflow-hidden z-50";
 
   const variantStyles = {
     primary: "bg-white/80 text-slate-800 shadow-lg shadow-slate-200/50 backdrop-blur-md border border-slate-200 hover:border-slate-300",
@@ -327,24 +272,15 @@ export const NavbarButton = ({
   };
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.03, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.98 }}>
       <Tag
         href={href || undefined}
         className={cn(baseStyles, variantStyles[variant], className)}
         {...props}
       >
         <span className="relative z-10">{children}</span>
-        {variant === "gradient" && (
-          <motion.div 
-            className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-700/10 to-slate-500/10 opacity-0"
-            initial={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
-          />
-        )}
       </Tag>
     </motion.div>
   );
 };
+ 
