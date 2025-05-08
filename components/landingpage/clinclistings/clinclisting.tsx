@@ -169,7 +169,7 @@ export default function TopClinics() {
   const springHeaderY = useSpring(headerY, { stiffness: 200, damping: 20 });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       <motion.div
         className="pt-24 px-4 md:px-8 max-w-6xl mx-auto"
         style={{

@@ -2,27 +2,54 @@
 
 import ClinicSearch from "@/components/landingpage/clinclistings/clinclisting";
 import { NavbarDemo } from "@/components/landingpage/navbar/navbar";
-import SearchHero from "@/components/landingpage/searchbar/searchbar";
 import ServicesWeOffer from "@/components/landingpage/Ourservice/ServicesWeOffer";
 import FooterSection from "@/components/landingpage/footer/footer";
+import HeroSection from "@/components/landingpage/hero/Hero";
+import SearchBar from "@/components/landingpage/searchbar/searchbar";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white overflow-hidden">
-      {/* Background SVG Elements */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <svg className="absolute top-1/4 -right-56 w-[600px] h-[600px] text-blue-100" viewBox="0 0 200 200">
+      {/* Background Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-50">
+        <svg
+          className="absolute top-1/4 -right-32 sm:-right-40 w-[400px] h-[400px] md:w-[500px] md:h-[500px] text-blue-100"
+          viewBox="0 0 200 200"
+          aria-hidden
+        >
           <circle cx="100" cy="100" r="100" fill="currentColor" />
         </svg>
-        <svg className="absolute -left-32 top-1/3 w-64 h-64 text-indigo-100 opacity-70" viewBox="0 0 100 100">
-          <path d="M0,50 C20,30 40,70 60,50 C80,30 100,70 120,50" stroke="currentColor" strokeWidth="12" fill="none" />
+        <svg
+          className="absolute -left-20 top-1/3 w-56 h-56 text-indigo-100 opacity-70"
+          viewBox="0 0 100 100"
+          aria-hidden
+        >
+          <path
+            d="M0,50 C20,30 40,70 60,50 C80,30 100,70 120,50"
+            stroke="currentColor"
+            strokeWidth="12"
+            fill="none"
+          />
         </svg>
-        <div className="absolute inset-0">
-          <svg width="100%" height="100%">
-            <pattern id="dots-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+        <div className="absolute inset-0 hidden md:block">
+          <svg width="100%" height="100%" aria-hidden>
+            <pattern
+              id="dots-pattern"
+              x="0"
+              y="0"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
               <circle cx="2" cy="2" r="1" fill="#BFDBFE" />
             </pattern>
-            <rect x="0" y="0" width="100%" height="100%" fill="url(#dots-pattern)" />
+            <rect
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              fill="url(#dots-pattern)"
+            />
           </svg>
         </div>
       </div>
@@ -30,27 +57,29 @@ export default function Home() {
       {/* Navigation */}
       <NavbarDemo />
 
-      <main className="relative z-10">
+      <main className="z-10">
         {/* Hero Section */}
-        <section className="w-full min-h-[90vh] flex flex-col justify-center items-center text-center px-4 relative">
-          {/* Decorative Hero Icons */}
-          <svg className="absolute top-24 left-16 w-16 h-16 text-blue-200 hidden md:block" viewBox="0 0 100 100">
-            <path d="M50 0L65 35H100L70 60L80 95L50 75L20 95L30 60L0 35H35L50 0Z" fill="currentColor" />
-          </svg>
-          <svg className="absolute bottom-24 right-16 w-12 h-12 text-indigo-200 hidden md:block" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="10" />
-          </svg>
-
-          <SearchHero />
+        <section className="min-h-[70vh] sm:min-h-[80vh] flex flex-col justify-center items-center px-4 pt-16 sm:pt-24 relative overflow-hidden">
+          <div className="mx-auto">
+            <HeroSection />
+          </div>
+          <SearchBar />
         </section>
 
-        {/* Clinic Listings */}
-        <section className="w-full min-h-[90vh] flex flex-col justify-center items-center text-center px-4 relative bg-gradient-to-br from-white to-blue-50">
-          <ClinicSearch />
+        {/* Clinic Listing Section */}
+        <section className="w-full bg-gradient-to-br from-white to-blue-50 px-4 sm:px-6 pt-12 pb-20">
+          <div className="max-w-screen-xl mx-auto">
+            <ClinicSearch />
+          </div>
 
           {/* Wave Divider */}
-          <div className="mtabsolute bottom-0 left-0 w-full h-16 overflow-hidden">
-            <svg className="absolute bottom-0 w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <div className="absolute bottom-0 left-0 w-full h-10 overflow-hidden">
+            <svg
+              className="absolute bottom-0 w-full h-10 sm:h-12"
+              viewBox="0 0 1200 120"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
               <path
                 d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86
                  c82.39-16.72,168.19-17.73,250.45-.39
@@ -65,25 +94,24 @@ export default function Home() {
         </section>
 
         {/* Services Section */}
-        <section className="relative z-10 bg-white">
-          <ServicesWeOffer />
-          {/* Decorative Triangles */}
-          <svg className="absolute top-0 left-4 w-20 h-20 text-blue-100 hidden md:block" viewBox="0 0 100 100">
-            <polygon points="50,0 100,100 0,100" fill="currentColor" />
-          </svg>
-          <svg className="absolute bottom-0 right-4 w-24 h-24 text-indigo-100 hidden md:block" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" />
-          </svg>
+        <section className="bg-white py-12 sm:py-16 px-4 sm:px-6">
+          <div className="max-w-screen-xl mx-auto relative">
+            <ServicesWeOffer />
+            <svg
+              className="absolute top-0 left-4 w-12 h-12 sm:w-16 sm:h-16 text-blue-100 hidden md:block"
+              viewBox="0 0 100 100"
+              aria-hidden
+            >
+              <polygon points="50,0 100,100 0,100" fill="currentColor" />
+            </svg>
+          </div>
         </section>
-        <section className="relative z-10 bg-white">
-          <FooterSection />
-          {/* Decorative Triangles */}
-          <svg className="absolute top-0 left-4 w-20 h-20 text-blue-100 hidden md:block" viewBox="0 0 100 100">
-            <polygon points="50,0 100,100 0,100" fill="currentColor" />
-          </svg>
-          <svg className="absolute bottom-0 right-4 w-24 h-24 text-indigo-100 hidden md:block" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="8" fill="none" />
-          </svg>
+
+        {/* Footer Section */}
+        <section className="bg-white px-4 sm:px-6 pt-6 pb-12">
+          <div className="max-w-screen-xl mx-auto">
+            <FooterSection />
+          </div>
         </section>
       </main>
     </div>
