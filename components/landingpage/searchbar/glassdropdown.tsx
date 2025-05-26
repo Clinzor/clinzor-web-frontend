@@ -1,95 +1,106 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  ReactElement,
-} from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface DropdownPortalProps {
-  children: ReactElement<any>;
+  children: React.ReactNode;
 }
 
 const DropdownPortal: React.FC<DropdownPortalProps> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
-  const childRef = useRef<HTMLDivElement>(null);
-  const portalRef = useRef<HTMLDivElement | null>(null);
-
+  
   useEffect(() => {
     setMounted(true);
-
-    if (!portalRef.current) {
-      const div = document.createElement("div");
-      div.style.position = "absolute";
-      div.style.top = "0";
-      div.style.left = "0";
-      div.style.zIndex = "9999";
-      div.style.width = "100%";
-      div.style.pointerEvents = "none";
-      document.body.appendChild(div);
-      portalRef.current = div;
-    }
-
-    return () => {
-      if (portalRef.current) {
-        document.body.removeChild(portalRef.current);
-        portalRef.current = null;
+    
+    // Handle positioning after rendering
+    setTimeout(() => {
+      const dropdownContent = document.querySelector('.dropdown-content');
+      if (!dropdownContent) return;
+      
+      const parentId = dropdownContent.getAttribute('data-parent-id');
+      if (!parentId) return;
+      
+      const triggerElement = document.getElementById(parentId);
+      if (!triggerElement) return;
+      
+      const rect = triggerElement.getBoundingClientRect();
+      const dropdownRect = dropdownContent.getBoundingClientRect();
+      
+      // Calculate position
+      const top = rect.bottom + window.scrollY;
+      let left = rect.left;
+      
+      // Adjust horizontal position based on available space
+      const viewportWidth = window.innerWidth;
+      if (left + dropdownRect.width > viewportWidth - 16) {
+        // If dropdown would go off right edge, align to right side of trigger
+        left = rect.right - dropdownRect.width;
+        if (left < 16) left = 16; // Keep minimum padding from left edge
       }
+      
+      // Apply position
+      (dropdownContent as HTMLElement).style.top = `${top}px`;
+      (dropdownContent as HTMLElement).style.left = `${left}px`;
+      
+      // Add event listener to close dropdown on scroll/resize
+      const handleScrollResize = () => {
+        const event = new CustomEvent('dropdownRepositionNeeded', {
+          detail: { parentId }
+        });
+        document.dispatchEvent(event);
+      };
+      
+      window.addEventListener('scroll', handleScrollResize);
+      window.addEventListener('resize', handleScrollResize);
+      
+      return () => {
+        window.removeEventListener('scroll', handleScrollResize);
+        window.removeEventListener('resize', handleScrollResize);
+      };
+    }, 0);
+    
+    // Add global event listener for repositioning
+    const handleRepositionEvent = (e: CustomEvent) => {
+      const { parentId } = e.detail;
+      const dropdownContent = document.querySelector(`.dropdown-content[data-parent-id="${parentId}"]`);
+      const triggerElement = document.getElementById(parentId);
+      
+      if (!dropdownContent || !triggerElement) return;
+      
+      const rect = triggerElement.getBoundingClientRect();
+      const dropdownRect = dropdownContent.getBoundingClientRect();
+      
+      // Calculate and apply new position
+      const top = rect.bottom + window.scrollY;
+      let left = rect.left;
+      
+      // Adjust horizontal position
+      const viewportWidth = window.innerWidth;
+      if (left + dropdownRect.width > viewportWidth - 16) {
+        left = rect.right - dropdownRect.width;
+        if (left < 16) left = 16;
+      }
+      
+      (dropdownContent as HTMLElement).style.top = `${top}px`;
+      (dropdownContent as HTMLElement).style.left = `${left}px`;
+    };
+    
+    document.addEventListener('dropdownRepositionNeeded', handleRepositionEvent as EventListener);
+    
+    return () => {
+      document.removeEventListener('dropdownRepositionNeeded', handleRepositionEvent as EventListener);
     };
   }, []);
-
-  useEffect(() => {
-    if (!childRef.current || !portalRef.current) return;
-
-    const updatePosition = () => {
-      const dropdowns = portalRef.current!.querySelectorAll(".dropdown-content");
-      dropdowns.forEach((dropdown) => {
-        const parentId = dropdown.getAttribute("data-parent-id");
-        const parentEl = document.getElementById(parentId || "");
-        if (parentEl) {
-          const rect = parentEl.getBoundingClientRect();
-          const el = dropdown as HTMLElement;
-          el.style.position = "fixed";
-          el.style.top = `${rect.bottom}px`;
-          el.style.left = `${rect.left}px`;
-          el.style.width = `${rect.width}px`;
-          el.style.pointerEvents = "auto";
-        }
-      });
-    };
-
-    updatePosition();
-
-    window.addEventListener("scroll", updatePosition, true);
-    window.addEventListener("resize", updatePosition);
-    return () => {
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("resize", updatePosition);
-    };
-  }, [mounted]);
-
-  if (!mounted || !portalRef.current) {
-    return <div ref={childRef}>{children}</div>;
-  }
-
-  const uniqueId = `dropdown-${Math.random().toString(36).substring(2, 9)}`;
-  const originalProps = children.props as Record<string, any>;
-  const existingClass = originalProps.className || "";
-
-  const childrenWithProps = React.cloneElement(children, {
-    ...originalProps,
-    className: `${existingClass} dropdown-content`,
-    ["data-parent-id"]: uniqueId,
-  });
-
-  return (
-    <>
-      <div id={uniqueId} ref={childRef} />
-      {createPortal(childrenWithProps, portalRef.current)}
-    </>
-  );
+  
+  return mounted ? createPortal(
+    <div className="glassdropdown-portal fixed top-0 left-0 w-full h-0 overflow-visible pointer-events-none z-50">
+      <div className="pointer-events-auto absolute">
+        {children}
+      </div>
+    </div>,
+    document.body
+  ) : null;
 };
 
 export default DropdownPortal;

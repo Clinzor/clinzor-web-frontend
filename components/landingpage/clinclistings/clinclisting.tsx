@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
 import Image from "next/image";
 import {
   IconMapPin,
@@ -61,6 +61,17 @@ const TOP_CLINICS: Clinic[] = [
   },
   {
     id: "4",
+    name: "Central Pediatrics",
+    imageUrl: DEFAULT_IMAGE,
+    rating: 4.9,
+    location: "Northside, 1.8 miles away",
+    specialty: "Pediatrics",
+    distance: "1.8 miles",
+    openHours: "8:30 AM - 6:00 PM",
+    isOpen: false,
+  },
+  {
+    id: "5",
     name: "City Heart Specialists",
     imageUrl: DEFAULT_IMAGE,
     rating: 4.7,
@@ -71,7 +82,7 @@ const TOP_CLINICS: Clinic[] = [
     isOpen: true,
   },
   {
-    id: "5",
+    id: "6",
     name: "Family Health Partners",
     imageUrl: DEFAULT_IMAGE,
     rating: 4.5,
@@ -84,16 +95,20 @@ const TOP_CLINICS: Clinic[] = [
 ];
 
 const ClinicCard = ({ clinic, index }: { clinic: Clinic; index: number }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "0px 0px -80px 0px" });
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{
-        delay: index * 0.08,
-        duration: 0.5,
+        delay: index * 0.1,
+        duration: 0.6,
         type: "spring",
         stiffness: 100,
-        damping: 15,
+        damping: 18,
       }}
       whileHover={{ y: -4 }}
       className="flex flex-col rounded-xl overflow-hidden bg-white border border-black/10 shadow-sm hover:shadow-lg transition-all duration-300"
@@ -195,18 +210,12 @@ export default function TopClinics() {
           Explore the best-rated health providers in your area.
         </motion.p>
 
-        <motion.div
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pb-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, staggerChildren: 0.1 }}
-        >
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pb-12">
           {TOP_CLINICS.map((clinic, index) => (
             <ClinicCard key={clinic.id} clinic={clinic} index={index} />
           ))}
-        </motion.div>
+        </div>
 
-        {/* View More Button */}
         <motion.div
           className="flex justify-center"
           initial={{ opacity: 0, y: 20 }}
@@ -216,9 +225,8 @@ export default function TopClinics() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              console.log("View More Clicked"); // Replace with routing or modal
-            }}
+            onClick={() => console.log("View More Clicked")}
+            
             className="px-6 py-3 bg-black text-white rounded-xl shadow-md hover:shadow-lg text-sm font-medium flex items-center gap-2 transition-all"
           >
             View More Clinics

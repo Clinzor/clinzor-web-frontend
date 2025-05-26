@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -16,9 +16,12 @@ import {
   IconShield,
   IconSearch,
   IconAward,
-  IconCheck
+  IconCheck,
+  IconChevronRight,
+  IconChevronDown
 } from '@tabler/icons-react';
 import FooterSection from '../landingpage/footer/footer';
+import { ChevronDown } from 'lucide-react';
 
 interface Doctor {
   id: string;
@@ -47,6 +50,10 @@ interface Clinic {
   services: string[];
   insurance: string[];
   doctors: Doctor[];
+  gallery: {
+    imageUrl: string;
+    caption: string;
+  }[];
 }
 
 interface Props {
@@ -60,6 +67,15 @@ export default function ClinicDetailClient({ clinicId }: Props) {
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  
+const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+
+  
+  // Improved carousel state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   
   // — DUMMY DATA —
   const clinic: Clinic = {
@@ -76,6 +92,14 @@ export default function ClinicDetailClient({ clinicId }: Props) {
     specialty: ['Primary Care', 'Family Medicine', 'Dermatology', 'Cardiology'],
     services: ['Consultation', 'Health Screenings', 'Preventive Care', 'Diagnostic Services', 'Specialized Treatment', 'Telemedicine'],
     insurance: ['Apple Health', 'Medicare', 'Blue Cross', 'Aetna', 'UnitedHealth', 'Cigna'],
+    gallery: [
+      { imageUrl: '/image.jpg', caption: 'Modern Reception Area' },
+      { imageUrl: '/image.jpg', caption: 'State-of-the-Art Examination Room' },
+      { imageUrl: '/image.jpg', caption: 'Comfortable Waiting Lounge' },
+      { imageUrl: '/image.jpg', caption: 'Advanced Medical Equipment' },
+      { imageUrl: '/image.jpg', caption: 'Child-Friendly Play Area' },
+      { imageUrl: '/image.jpg', caption: 'Consultation Room' }
+    ],
     doctors: [
       {
         id: 'd1',
@@ -156,6 +180,69 @@ export default function ClinicDetailClient({ clinicId }: Props) {
     }
   }, [selectedDoctor, selectedDate]);
 
+  // Improved carousel auto-play functionality with pause on hover
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isAutoPlaying) {
+      interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev === clinic.gallery.length - 1 ? 0 : prev + 1));
+      }, 5000); // Change slide every 5 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAutoPlaying, clinic.gallery.length]);
+
+  // Enhanced carousel navigation functions
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev === clinic.gallery.length - 1 ? 0 : prev + 1));
+    setIsAutoPlaying(false); // Pause autoplay when user navigates manually
+  }, [clinic.gallery.length]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev === 0 ? clinic.gallery.length - 1 : prev - 1));
+    setIsAutoPlaying(false); // Pause autoplay when user navigates manually
+  }, [clinic.gallery.length]);
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentSlide(index);
+    setIsAutoPlaying(false); // Pause autoplay when user navigates manually
+  }, []);
+
+  // Add touch controls for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const handleTouchEnd = () => {
+    if (touchStart - touchEnd > 150) {
+      // Swipe left (next)
+      nextSlide();
+    }
+    
+    if (touchStart - touchEnd < -150) {
+      // Swipe right (prev)
+      prevSlide();
+    }
+  };
+  
+  // Resume autoplay after 10 seconds of inactivity
+  useEffect(() => {
+    if (!isAutoPlaying) {
+      const timeout = setTimeout(() => {
+        setIsAutoPlaying(true);
+      }, 10000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isAutoPlaying, currentSlide]);
+
   // Get available dates for selected doctor
   const getAvailableDates = () => {
     if (!selectedDoctor) return [];
@@ -191,17 +278,73 @@ export default function ClinicDetailClient({ clinicId }: Props) {
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {/* — Hero Section — */}
+      {/* — Enhanced Hero Section with Carousel — */}
       <header className="relative h-[70vh] w-full overflow-hidden">
-        <Image
-          src={clinic.imageUrl}
-          alt={clinic.name}
-          fill
-          className="object-cover"
-          unoptimized
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        {/* Improved Carousel container with touch controls */}
+        <div 
+          className="absolute inset-0 flex h-full w-full transition-all duration-700 ease-in-out"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseEnter={() => setIsAutoPlaying(false)}
+          onMouseLeave={() => setIsAutoPlaying(true)}
+        >
+          {clinic.gallery.map((image, index) => (
+            <div 
+              key={index} 
+              className="relative h-full min-w-full" 
+            >
+              <Image
+                src={image.imageUrl}
+                alt={image.caption}
+                fill
+                className="object-cover"
+                unoptimized
+                priority={index === 0}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              
+              {/* Caption for each slide */}
+              <div className="absolute bottom-8 left-8 max-w-xs text-white bg-black/30 backdrop-blur-sm p-4 rounded-xl shadow-lg">
+                <h3 className="text-xl font-medium mb-1">{image.caption}</h3>
+                <p className="text-sm text-white/80">{`${index + 1}/${clinic.gallery.length}`}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Improved Carousel Navigation */}
+        <div className="absolute bottom-24 right-8 flex items-center gap-2 z-10">
+          <button 
+            onClick={prevSlide}
+            className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition"
+            aria-label="Previous image"
+          >
+            <IconChevronLeft size={20} />
+          </button>
+          
+          {clinic.gallery.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                currentSlide === index 
+                  ? 'bg-white w-6' 
+                  : 'bg-white/50 hover:bg-white/80'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+          
+          <button 
+            onClick={nextSlide}
+            className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition"
+            aria-label="Next image"
+          >
+            <IconChevronRight size={20} />
+          </button>
+        </div>
         
         {/* Updated Navigation with Logo */}
         <nav className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-10">
@@ -268,7 +411,7 @@ export default function ClinicDetailClient({ clinicId }: Props) {
       </header>
 
       <main className="max-w-5xl mx-auto px-8 py-16 space-y-16">
-        {/* — Booking Section — (Moved to top for better UX) */}
+        {/* — Booking Section — */}
         <motion.section 
           initial="hidden"
           whileInView="visible"
@@ -280,134 +423,206 @@ export default function ClinicDetailClient({ clinicId }: Props) {
             <IconCalendarEvent size={28} className="text-black" />
             <h2 className="text-3xl font-semibold">Book an Appointment</h2>
           </div>
-          
           <form onSubmit={handleBookAppointment} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Doctor Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Select Doctor</label>
-                <select
-                  value={selectedDoctor}
-                  onChange={(e) => setSelectedDoctor(e.target.value)}
-                  className="w-full p-4 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
-                  required
-                >
-                  <option value="">Choose a specialist</option>
-                  {clinic.doctors.map(doctor => (
-                    <option key={doctor.id} value={doctor.id}>{doctor.name} - {doctor.specialty}</option>
-                  ))}
-                </select>
-              </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* Doctor Selection (Custom Dropdown) */}
+    <div className="space-y-2 relative">
+      <label className="text-sm font-medium text-gray-500">Select Doctor</label>
 
-              {/* Date Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Select Date</label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full p-4 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
-                  disabled={!selectedDoctor}
-                  required
-                >
-                  <option value="">Choose available date</option>
-                  {getAvailableDates().map(date => {
-                    // Format date for display (YYYY-MM-DD to Month Day, Year)
-                    const displayDate = new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    });
-                    return (
-                      <option key={date} value={date}>{displayDate}</option>
-                    );
-                  })}
-                </select>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowDoctorDropdown(!showDoctorDropdown)}
+          className="w-full p-4 bg-white border-none rounded-2xl shadow-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-gray-200"
+        >
+          {selectedDoctor ? (
+            <div className="flex items-center gap-3 text-left">
+              <img
+                src={
+                  clinic.doctors.find((doc) => doc.id === selectedDoctor)?.imageUrl ||
+                  "/fallback.jpg"
+                }
+                alt="Doctor"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-800">
+                  {clinic.doctors.find((doc) => doc.id === selectedDoctor)?.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {clinic.doctors.find((doc) => doc.id === selectedDoctor)?.specialty}
+                </p>
               </div>
             </div>
-            
-            {/* Time Slots Grid */}
-            {selectedDate && selectedDoctor && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-500">Select Available Time</label>
-                <div className="grid grid-cols-4 gap-3">
-                  {availableTimeSlots.length > 0 ? (
-                    availableTimeSlots.map(time => (
-                      <motion.button
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        key={time}
-                        type="button"
-                        onClick={() => setSelectedTime(time)}
-                        className={`p-3 rounded-xl flex justify-center items-center transition-all ${
-                          selectedTime === time 
-                            ? 'bg-black text-white shadow-md' 
-                            : 'bg-white text-black border border-gray-100 hover:border-gray-300'
-                        }`}
-                      >
-                        {formatTimeSlot(time)}
-                        {selectedTime === time && (
-                          <IconCheck size={16} className="ml-2" />
-                        )}
-                      </motion.button>
-                    ))
-                  ) : (
-                    <p className="col-span-4 text-gray-500 text-center py-3">No available time slots for this date</p>
-                  )}
+          ) : (
+            <span className="text-sm text-gray-500">Choose a specialist</span>
+          )}
+          <ChevronDown className="w-5 h-5 text-gray-400" />
+        </button>
+
+        {/* Dropdown */}
+        {showDoctorDropdown && (
+          <div className="absolute z-50 mt-2 w-full rounded-2xl border border-gray-200 bg-white shadow-lg max-h-64 overflow-auto">
+            {clinic.doctors.map((doctor) => (
+              <button
+                type="button"
+                key={doctor.id}
+                onClick={() => {
+                  setSelectedDoctor(doctor.id);
+                  setShowDoctorDropdown(false);
+                }}
+                className="w-full text-left px-4 py-2 flex items-center gap-3 hover:bg-gray-100 transition"
+              >
+                <img
+                  src={doctor.imageUrl || "/fallback.jpg"}
+                  alt={doctor.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+                <div className="text-sm text-gray-800">
+                  <p className="font-medium">{doctor.name}</p>
+                  <p className="text-xs text-gray-500">{doctor.specialty}</p>
                 </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Full Name</label>
-                <div className="relative">
-                  <IconUser size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input 
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full p-4 pl-12 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                <div className="relative">
-                  <IconPhone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input 
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full p-4 pl-12 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <button 
-              type="submit" 
-              disabled={!selectedDoctor || !selectedDate || !selectedTime || !fullName || !phoneNumber}
-              className={`w-full py-4 rounded-2xl font-medium flex justify-center items-center gap-2 transition-all ${
-                selectedDoctor && selectedDate && selectedTime && fullName && phoneNumber
-                  ? 'bg-black text-white hover:opacity-90' 
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Date Selection */}
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-500">Select Date</label>
+      <select
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="w-full p-4 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none"
+        disabled={!selectedDoctor}
+        required
+      >
+        <option value="">Choose available date</option>
+        {getAvailableDates().map((date) => {
+          const displayDate = new Date(date).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          });
+          return (
+            <option key={date} value={date}>
+              {displayDate}
+            </option>
+          );
+        })}
+      </select>
+    </div>
+  </div>
+
+  {/* Time Slots Grid */}
+  {selectedDate && selectedDoctor && (
+    <div className="space-y-3">
+      <label className="text-sm font-medium text-gray-500">
+        Select Available Time
+      </label>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {availableTimeSlots.length > 0 ? (
+          availableTimeSlots.map((time) => (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              key={time}
+              type="button"
+              onClick={() => setSelectedTime(time)}
+              className={`p-3 rounded-xl flex justify-center items-center transition-all ${
+                selectedTime === time
+                  ? "bg-black text-white shadow-md"
+                  : "bg-white text-black border border-gray-100 hover:border-gray-300"
               }`}
             >
-              <IconCalendarEvent size={20} />
-              Book Appointment Now
-            </button>
-            
-            <p className="text-center text-sm text-gray-500 mt-2 font-light">
-              {selectedDoctor && selectedDate && selectedTime 
-                ? `You're booking with ${clinic.doctors.find(doc => doc.id === selectedDoctor)?.name} on ${new Date(selectedDate).toLocaleDateString('en-US', {weekday: 'long', month: 'long', day: 'numeric'})} at ${formatTimeSlot(selectedTime)}`
-                : 'Select a doctor, date and time to book your appointment'}
-            </p>
-          </form>
+              {formatTimeSlot(time)}
+              {selectedTime === time && (
+                <IconCheck size={16} className="ml-2" />
+              )}
+            </motion.button>
+          ))
+        ) : (
+          <p className="col-span-4 text-gray-500 text-center py-3">
+            No available time slots for this date
+          </p>
+        )}
+      </div>
+    </div>
+  )}
+
+  {/* Patient Info */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-500">Full Name</label>
+      <div className="relative">
+        <IconUser
+          size={20}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          type="text"
+          placeholder="Enter your full name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="w-full p-4 pl-12 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200"
+          required
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-500">Phone Number</label>
+      <div className="relative">
+        <IconPhone
+          size={20}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          type="tel"
+          placeholder="Enter your phone number"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
+          className="w-full p-4 pl-12 bg-white border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-200"
+          required
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Submit Button */}
+  <button
+    type="submit"
+    disabled={
+      !selectedDoctor || !selectedDate || !selectedTime || !fullName || !phoneNumber
+    }
+    className={`w-full py-4 rounded-2xl font-medium flex justify-center items-center gap-2 transition-all ${
+      selectedDoctor && selectedDate && selectedTime && fullName && phoneNumber
+        ? "bg-black text-white hover:opacity-90"
+        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+    }`}
+  >
+    <IconCalendarEvent size={20} />
+    Book Appointment Now
+  </button>
+
+  {/* Confirmation */}
+  <p className="text-center text-sm text-gray-500 mt-2 font-light">
+    {selectedDoctor && selectedDate && selectedTime
+      ? `You're booking with ${
+          clinic.doctors.find((doc) => doc.id === selectedDoctor)?.name
+        } on ${new Date(selectedDate).toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })} at ${formatTimeSlot(selectedTime)}`
+      : "Select a doctor, date and time to book your appointment"}
+  </p>
+</form>
+
+
+
         </motion.section>
 
         {/* — Quick Contact Info — */}
@@ -542,32 +757,6 @@ export default function ClinicDetailClient({ clinicId }: Props) {
             ))}
           </div>
         </motion.section>
-
-        {/* — Services Section — */}
-        <motion.section
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          transition={{ staggerChildren: 0.1 }}
-        >
-          <h2 className="text-3xl font-semibold mb-8">Services</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {clinic.services.map((service) => (
-              <motion.div
-                key={service}
-                variants={fadeIn}
-                whileHover={{ scale: 1.02 }}
-                className="bg-gray-50 p-6 rounded-3xl hover:shadow-md transition duration-300"
-              >
-                <div className="p-3 bg-white rounded-2xl inline-flex mb-4">
-                  <IconStethoscope size={24} className="text-black" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">{service}</h3>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
-
         {/* — Insurance Section — */}
         <motion.section
           initial="hidden"

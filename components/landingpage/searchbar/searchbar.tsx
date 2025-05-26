@@ -73,6 +73,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
   const [filtersCount, setFiltersCount] = useState(0);
   
   // Use our custom hooks for dropdowns
+  // Use our custom dropdown hooks with unique IDs for coordination
   const serviceDropdown = useDropdown(false, 'service-dropdown');
   const specialtyDropdown = useDropdown(false, 'specialty-dropdown');
   
@@ -197,6 +198,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
             serviceType === option.value ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
           )}
           whileHover={{ backgroundColor: "rgba(219, 234, 254, 0.7)" }}
+          whileTap={{ backgroundColor: "rgba(219, 234, 254, 0.9)" }}
         >
           <span>{option.label}</span>
           {serviceType === option.value && <IconCheck size={16} className="text-blue-600" />}
@@ -220,6 +222,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
             specialty === option.value ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-700"
           )}
           whileHover={{ backgroundColor: "rgba(219, 234, 254, 0.7)" }}
+          whileTap={{ backgroundColor: "rgba(219, 234, 254, 0.9)" }}
         >
           <span>{option.label}</span>
           {specialty === option.value && <IconCheck size={16} className="text-blue-600" />}
@@ -370,7 +373,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
                           type="button"
                           onClick={serviceDropdown.toggle}
                           className={cn(
-                            "flex items-center justify-between min-w-32 h-8 px-3 py-1.5 text-sm rounded-full border transition-all",
+                            "flex items-center justify-between min-w-32 h-8 px-3 py-1.5 text-sm transition-all",
+                            isMobileView ? "rounded-md" : "rounded-full", 
                             serviceType 
                               ? "border-blue-300 bg-blue-50/50 text-blue-600 font-medium" 
                               : "border-gray-200 hover:border-blue-300 bg-white text-gray-700"
@@ -429,7 +433,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
                           type="button"
                           onClick={specialtyDropdown.toggle}
                           className={cn(
-                            "flex items-center justify-between min-w-32 h-8 px-3 py-1.5 text-sm rounded-full border transition-all",
+                            "flex items-center justify-between min-w-32 h-8 px-3 py-1.5 text-sm border transition-all",
+                            isMobileView ? "rounded-md" : "rounded-full",
                             specialty 
                               ? "border-blue-300 bg-blue-50/50 text-blue-600 font-medium" 
                               : "border-gray-200 hover:border-blue-300 bg-white text-gray-700"
@@ -703,4 +708,5 @@ const SearchBar: React.FC<SearchBarProps> = ({ className, onSearch }) => {
     </div>
   );
 }
+
 export default SearchBar;

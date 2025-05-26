@@ -41,9 +41,29 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
     setMounted(true);
   }, []);
 
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isOpen && 
+        !isMobileView && 
+        triggerRef.current && 
+        !triggerRef.current.contains(event.target as Node) &&
+        !document.querySelector(`[data-parent-id="${uniqueId}"]`)?.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose, uniqueId, isMobileView]);
+
   // SSR safety
   if (!mounted) {
-    return <div>{trigger}</div>;
+    return <div className="inline-block">{trigger}</div>;
   }
 
   // On mobile, use a bottom sheet
@@ -74,9 +94,14 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
       {isOpen && (
         <DropdownPortal>
           <div
-            className={`dropdown-content bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] ${className}`}
+            className={`dropdown-content bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] absolute ${className}`}
             data-parent-id={uniqueId}
-            style={{ maxHeight: maxHeight, width: width, overflowY: 'auto' }}
+            style={{ 
+              maxHeight: maxHeight, 
+              width: width === 'auto' ? 'auto' : width,
+              minWidth: triggerRef.current ? `${triggerRef.current.offsetWidth}px` : 'auto',
+              overflowY: 'auto' 
+            }}
           >
             {children}
           </div>

@@ -1,38 +1,118 @@
 "use client";
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-export interface UseDropdownResult {
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-  toggle: () => void;
-  triggerRef: React.RefObject<HTMLElement | null>;
-  dropdownId: string;
+// Extend the Window interface to include dropdownRegistry
+declare global {
+  interface Window {
+    dropdownRegistry?: { current: Record<string, boolean> };
+  }
 }
 
-/**
- * Hook to manage dropdown state
- * @param initialState - Initial open state
- * @param id - Optional unique identifier for the dropdown
- * @returns Object containing dropdown state and handlers
- */
-export default function useDropdown(initialState = false, id?: string): UseDropdownResult {
+// Improved dropdown hook with better management and safety checks
+const useDropdown = (initialState = false, id = 'dropdown') => {
   const [isOpen, setIsOpen] = useState(initialState);
-  const triggerRef = useRef<HTMLElement>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   
-  // Generate a unique ID if none provided
-  const dropdownId = id || `dropdown-${Math.random().toString(36).substring(2, 11)}`;
+  // Static registry to track all active dropdown instances
+  // This helps coordinate dropdowns so only one is open at a time
+  const dropdownRegistry = useCallback(() => {
+    if (typeof window === 'undefined') return { current: {} };
+    
+    if (!window.dropdownRegistry) {
+      window.dropdownRegistry = { current: {} };
+    }
+    
+    return window.dropdownRegistry;
+  }, []);
   
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+  const open = useCallback(() => {
+    setIsOpen(true);
+    const registry = dropdownRegistry();
+    registry.current[id] = true;
+    setActiveDropdownId(id);
+    
+    // Close other dropdowns when opening this one
+    Object.keys(registry.current).forEach(key => {
+      if (key !== id && registry.current[key]) {
+        const closeEvent = new CustomEvent('closeDropdown', { detail: { id: key } });
+        document.dispatchEvent(closeEvent);
+      }
+    });
+  }, [id, dropdownRegistry]);
+  
+  const close = useCallback(() => {
+    setIsOpen(false);
+    const registry = dropdownRegistry();
+    registry.current[id] = false;
+    if (activeDropdownId === id) {
+      setActiveDropdownId(null);
+    }
+  }, [id, activeDropdownId, dropdownRegistry]);
+  
+  const toggle = useCallback(() => {
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  }, [isOpen, open, close]);
+  
+  // Listen for custom close events from other dropdowns
+  useEffect(() => {
+    const handleCloseDropdown = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.id === id) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('closeDropdown', handleCloseDropdown);
+    
+    // Cleanup on unmount
+    return () => {
+      document.removeEventListener('closeDropdown', handleCloseDropdown);
+      
+      // Also remove from registry when unmounted
+      const registry = dropdownRegistry();
+      if (registry.current && registry.current[id]) {
+        delete registry.current[id];
+      }
+    };
+  }, [id, dropdownRegistry]);
+  
+  // Handle document-wide click events to close active dropdowns
+  useEffect(() => {
+    // Only add this effect if this dropdown is open
+    if (!isOpen) return;
+    
+    // We're handling clicks via the ResponsiveDropdown component,
+    // but this serves as a safety net for unexpected situations
+    const handleGlobalClick = () => {
+      const registry = dropdownRegistry();
+      if (registry.current && Object.values(registry.current).some(Boolean)) {
+        setTimeout(() => {
+          const anyDropdownOpen = Object.values(registry.current).some(Boolean);
+          if (!anyDropdownOpen) {
+            setActiveDropdownId(null);
+          }
+        }, 100);
+      }
+    };
+    
+    document.addEventListener('click', handleGlobalClick);
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, [isOpen, dropdownRegistry]);
   
   return {
     isOpen,
     open,
     close,
     toggle,
-    triggerRef,
-    dropdownId
+    activeDropdownId
   };
-}
+};
+
+export default useDropdown;

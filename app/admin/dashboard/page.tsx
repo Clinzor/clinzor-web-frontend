@@ -1,10 +1,10 @@
-import ClinicDashboard from '@/components/dashboard /dashboard'
+import OrderList from '@/components/admin/dashboard/OrderList'
 import React from 'react'
 
 const page = () => {
   return (
     <div>
-        <ClinicDashboard/>
+        Page
     </div>
   )
 }
