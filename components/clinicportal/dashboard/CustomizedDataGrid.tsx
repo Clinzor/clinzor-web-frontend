@@ -15,7 +15,6 @@ export default function CustomizedDataGrid() {
         pagination: { paginationModel: { pageSize: 20 } },
       }}
       pageSizeOptions={[10, 20, 50]}
-      disableColumnResize
       density="compact"
       slotProps={{
         filterPanel: {
