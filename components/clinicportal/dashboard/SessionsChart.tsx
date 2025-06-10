@@ -122,7 +122,6 @@ export default function SessionsChart() {
           ]}
           height={250}
           margin={{ left: 50, right: 20, top: 20, bottom: 20 }}
-          grid={{ horizontal: true }}
           sx={{
             '& .MuiAreaElement-series-organic': {
               fill: "url('#organic')",

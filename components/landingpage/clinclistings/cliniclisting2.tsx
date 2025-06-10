@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, AnimatePresence, useSpring } from "motion/react";
+import { motion, useScroll, useTransform, AnimatePresence, useSpring } from "framer-motion";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";

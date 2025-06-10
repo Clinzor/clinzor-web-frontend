@@ -418,7 +418,7 @@ const ClinicScheduler = () => {
                       : 'bg-gray-100 text-gray-400'
                   }`}
                 >
-                  <div className="font-medium">{dayData.date.getDate()}</div>
+                  <div className="font-medium">{dayData.date?.getDate()?.toString()}</div>
                   {dayData.isCurrentMonth && typeof dayData.totalSlots === 'number' && dayData.totalSlots > 0 && (
                     <div className="text-xs mt-1">{dayData.totalSlots} slots</div>
                   )}

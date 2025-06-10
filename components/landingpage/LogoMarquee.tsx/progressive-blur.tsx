@@ -1,6 +1,7 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { type HTMLMotionProps, motion } from "motion/react"
+import type React from "react"
+import { motion, type MotionProps } from "framer-motion"
 
 export const GRADIENT_ANGLES = {
   top: 0,
@@ -9,19 +10,21 @@ export const GRADIENT_ANGLES = {
   left: 270,
 }
 
-export type ProgressiveBlurProps = {
+type ProgressiveBlurBaseProps = {
   direction?: keyof typeof GRADIENT_ANGLES
   blurLayers?: number
   className?: string
   blurIntensity?: number
-} & HTMLMotionProps<"div">
+}
+
+export type ProgressiveBlurProps = ProgressiveBlurBaseProps & MotionProps
 
 export function ProgressiveBlur({
   direction = "bottom",
   blurLayers = 8,
   className,
   blurIntensity = 0.25,
-  ...props
+  ...motionProps
 }: ProgressiveBlurProps) {
   const layers = Math.max(blurLayers, 2)
   const segmentSize = 1 / (blurLayers + 1)
@@ -48,7 +51,7 @@ export function ProgressiveBlur({
               WebkitMaskImage: gradient,
               backdropFilter: `blur(${index * blurIntensity}px)`,
             }}
-            {...props}
+            {...motionProps}
           />
         )
       })}

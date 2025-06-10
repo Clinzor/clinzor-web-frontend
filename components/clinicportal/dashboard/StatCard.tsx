@@ -104,18 +104,15 @@ export default function StatCard({
           </Stack>
           <Box sx={{ width: '100%', height: 50 }}>
             <SparkLineChart
-              color={chartColor}
+              colors={[chartColor]}
               data={data}
               area
               showHighlight
               showTooltip
-              xAxis={{
-                scaleType: 'band',
-                data: daysInWeek, // Use the correct property 'data' for xAxis
-              }}
+              xAxis={{ scaleType: 'band', data: Array.from({ length: data.length }, (_, i) => i.toString()) }}
               sx={{
-                [`& .${areaElementClasses.root}`]: {
-                  fill: `url(#area-gradient-${value})`,
+                [`& .MuiAreaElement-series-0`]: {
+                  fill: `url(#area-gradient-${chartColor})`,
                 },
               }}
             >

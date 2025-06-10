@@ -79,7 +79,7 @@ export default function Dashboard() {
         {data.map((card, index) => (
           <Grid 
             key={index} 
-            size={{ xs: 12, sm: 6, md: 6, lg: 3 }}
+            xs={12} sm={6} md={6} lg={3}
             sx={{ display: 'flex' }}
           >
             <Box sx={{ width: '100%', minHeight: '120px' }}>
@@ -90,7 +90,7 @@ export default function Dashboard() {
         
         {/* Highlighted Card */}
         <Grid 
-          size={{ xs: 12, sm: 6, md: 6, lg: 3 }}
+          xs={12} sm={6} md={6} lg={3}
           sx={{ display: 'flex' }}
         >
           <Box sx={{ width: '100%', minHeight: '120px' }}>
@@ -100,7 +100,7 @@ export default function Dashboard() {
         
         {/* Charts Row */}
         <Grid 
-          size={{ xs: 12, md: 6 }}
+          xs={12} md={6}
           sx={{ display: 'flex' }}
         >
           <Box sx={{ 
@@ -114,7 +114,7 @@ export default function Dashboard() {
         </Grid>
         
         <Grid 
-          size={{ xs: 12, md: 6 }}
+          xs={12} md={6}
           sx={{ display: 'flex' }}
         >
           <Box sx={{ 
@@ -148,7 +148,7 @@ export default function Dashboard() {
         sx={{ width: '100%' }}
       >
         <Grid 
-          size={{ xs: 12, lg: 9 }}
+          xs={12} lg={9}
           sx={{ display: 'flex' }}
         >
           <Box sx={{ 
@@ -163,7 +163,7 @@ export default function Dashboard() {
         
         {/* Optional: Add a sidebar for the remaining 3 columns on large screens */}
         <Grid 
-          size={{ xs: 12, lg: 3 }}
+          xs={12} lg={3}
           sx={{ 
             display: { xs: 'none', lg: 'flex' },
             flexDirection: 'column'

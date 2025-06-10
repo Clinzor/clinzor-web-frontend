@@ -1,10 +1,9 @@
 "use client"
+
 import { cn } from "@/lib/utils"
 import type React from "react"
-
-import { useMotionValue, animate, motion } from "motion/react"
-import { useState, useEffect } from "react"
-import useMeasure from "react-use-measure"
+import { useMotionValue, animate, motion } from "framer-motion"
+import { useState, useEffect, useRef } from "react"
 
 export type InfiniteSliderProps = {
   children: React.ReactNode
@@ -26,13 +25,35 @@ export function InfiniteSlider({
   className,
 }: InfiniteSliderProps) {
   const [currentSpeed, setCurrentSpeed] = useState(speed)
-  const [ref, { width, height }] = useMeasure()
+  const [bounds, setBounds] = useState({ width: 0, height: 0 })
+  const ref = useRef(null)
   const translation = useMotionValue(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [key, setKey] = useState(0)
 
   useEffect(() => {
+    let mounted = true
+
+    async function loadMeasure() {
+      const mod = await import("react-use-measure")
+      if (!mounted) return
+
+      const [measureRef, { width, height }] = mod.default()
+      setBounds({ width, height })
+
+      // @ts-ignore - manually assign ref since we're inside dynamic import
+      if (ref.current) measureRef(ref.current)
+    }
+
+    loadMeasure()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
     let controls
+    const { width, height } = bounds
     const size = direction === "horizontal" ? width : height
     const contentSize = size + gap
     const from = reverse ? -contentSize / 2 : 0
@@ -56,8 +77,8 @@ export function InfiniteSlider({
     } else {
       controls = animate(translation, [from, to], {
         ease: "linear",
-        duration: duration,
-        repeat: Number.POSITIVE_INFINITY,
+        duration,
+        repeat: Infinity,
         repeatType: "loop",
         repeatDelay: 0,
         onRepeat: () => {
@@ -67,7 +88,7 @@ export function InfiniteSlider({
     }
 
     return controls?.stop
-  }, [key, translation, currentSpeed, width, height, gap, isTransitioning, direction, reverse])
+  }, [key, translation, currentSpeed, bounds, gap, isTransitioning, direction, reverse])
 
   const hoverProps = speedOnHover
     ? {
