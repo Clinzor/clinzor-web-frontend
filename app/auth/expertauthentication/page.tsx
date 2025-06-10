@@ -1,12 +1,11 @@
-
 "use client"
-import ClinicPortalLogin from '@/components/clinicportal/authentication/Auth'
+import ClinicExpertLogin from '@/components/expert/auth/ExpertAuthentication'
 import React from 'react'
 
 const page = () => {
   return (
     <div>
-        <ClinicPortalLogin/>
+        <ClinicExpertLogin/>
     </div>
   )
 }

@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Mail, Lock, Stethoscope, Shield, ArrowRight, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 
-const ClinicExpertLogin = () => {
+interface FormState {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+interface ValidationState {
+  email: boolean | null;
+  password: boolean | null;
+}
+
+const ExpertAuthentication: React.FC = () => {
   const [mounted, setMounted] = useState(false);
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<FormState>({
     email: '',
     password: '',
     rememberMe: false,
@@ -11,7 +22,7 @@ const ClinicExpertLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState('');
-  const [validationState, setValidationState] = useState({
+  const [validationState, setValidationState] = useState<ValidationState>({
     email: null,
     password: null,
   });
@@ -20,7 +31,7 @@ const ClinicExpertLogin = () => {
     setMounted(true);
   }, []);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
     setFormState(prev => ({
       ...prev,
@@ -44,7 +55,7 @@ const ClinicExpertLogin = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -82,7 +93,7 @@ const ClinicExpertLogin = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-white flex">
       {/* Left Panel - Expert Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
         
         <div className="relative z-10 p-12 flex flex-col justify-center text-white">
           <div className="mb-8">
@@ -142,7 +153,7 @@ const ClinicExpertLogin = () => {
           </div>
 
           {/* Login Form */}
-          <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -299,4 +310,4 @@ const ClinicExpertLogin = () => {
   );
 };
 
-export default ClinicExpertLogin;
+export default ExpertAuthentication;

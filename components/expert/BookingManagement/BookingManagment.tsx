@@ -229,7 +229,6 @@ type BookingFilters = {
 
 export default function BookingManagement() {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editData, setEditData] = useState<Partial<Booking> | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'edit'>('list');

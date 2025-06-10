@@ -1,639 +1,341 @@
 "use client"
-import * as React from 'react';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import CssBaseline from '@mui/joy/CssBaseline';
-import { CssVarsProvider, extendTheme } from '@mui/joy/styles';
-import GlobalStyles from '@mui/joy/GlobalStyles';
-import Box from '@mui/joy/Box';
-import Button from '@mui/joy/Button';
-import FormControl from '@mui/joy/FormControl';
-import Input from '@mui/joy/Input';
-import Typography from '@mui/joy/Typography';
-import Stack from '@mui/joy/Stack';
-import Link from '@mui/joy/Link';
-import Checkbox from '@mui/joy/Checkbox';
-import { MedicalServices, Mail, Lock } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, Heart, Users, ArrowRight, Eye, EyeOff, CheckCircle, AlertCircle, Activity } from 'lucide-react';
 
-// Interface for form elements
-interface FormElements extends HTMLFormControlsCollection {
-  email: HTMLInputElement;
-  password: HTMLInputElement;
-  persistent: HTMLInputElement;
+interface FormState {
+  email: string;
+  password: string;
+  rememberMe: boolean;
 }
 
-interface SignInFormElement extends HTMLFormElement {
-  readonly elements: FormElements;
+interface ValidationState {
+  email: boolean | null;
+  password: boolean | null;
 }
 
-// Create a refined Apple-inspired theme with subtle improvements
-const clinzorTheme = extendTheme({
-  colorSchemes: {
-    light: {
-      palette: {
-        primary: {
-          50: '#F2F9FF',
-          100: '#E6F3FF',
-          200: '#C2E0FF',
-          300: '#99CCFF',
-          400: '#66B2FF',
-          500: '#0A84FF', // Apple blue
-          600: '#007AFF', // iOS blue
-          700: '#0066CC',
-          800: '#0055AA',
-          900: '#003D7A',
-        },
-        neutral: {
-          50: '#F9FAFB',
-          100: '#F3F4F6',
-          200: '#E5E7EB',
-          300: '#D1D5DB',
-          400: '#9CA3AF',
-          500: '#6B7280',
-          600: '#4B5563',
-          700: '#374151',
-          800: '#1F2937',
-          900: '#111827',
-        },
-      },
-    },
-  },
-  fontFamily: {
-    body: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-    display: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-  },
-  typography: {
-    h1: {
-      fontWeight: 700,
-      letterSpacing: '-0.025em',
-    },
-    h2: {
-      fontWeight: 600,
-      letterSpacing: '-0.02em',
-    },
-    'body-lg': {
-      fontWeight: 400,
-      letterSpacing: '-0.01em',
-    },
-    'body-md': {
-      fontWeight: 400,
-      letterSpacing: '-0.005em',
-    },
-    'body-sm': {
-      fontWeight: 400,
-      letterSpacing: '0em',
-    },
-  },
-  components: {
-    JoyButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          fontWeight: '600',
-          textTransform: 'none',
-          boxShadow: 'none',
-          transition: 'all 0.3s cubic-bezier(0.23, 1, 0.32, 1)',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-          },
-          '&:active': {
-            transform: 'translateY(0)',
-          },
-        },
-      },
-    },
-    JoyInput: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          '--Icon-fontSize': '1.25rem',
-          transition: 'all 0.2s ease',
-          '&:focus-within': {
-            boxShadow: '0 0 0 4px rgba(10, 132, 255, 0.15)',
-          },
-        },
-      },
-    },
-    JoyCheckbox: {
-      styleOverrides: {
-        checkbox: {
-          borderRadius: '6px',
-          transition: 'background-color 0.2s ease, border-color 0.2s ease',
-          '&:hover': {
-            borderColor: 'primary.500',
-          },
-        },
-      },
-    },
-  },
-});
-
-// Glossy logo component
-const LogoMark = () => (
-  <motion.div
-    initial={{ scale: 0.95, opacity: 0 }}
-    animate={{ scale: 1, opacity: 1 }}
-    transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-  >
-    <Box
-      sx={{
-        width: 54,
-        height: 54,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '14px',
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%)',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.15)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '50%',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%)',
-          borderRadius: '14px 14px 0 0',
-        }}
-      />
-      <MedicalServices
-        sx={{
-          color: 'primary.600',
-          fontSize: 28,
-          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
-        }}
-      />
-    </Box>
-  </motion.div>
-);
-
-export default function ClinzorLogin() {
-  const [isLoading, setIsLoading] = useState(false);
+const ClinicPortalLogin = () => {
   const [mounted, setMounted] = useState(false);
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<FormState>({
     email: '',
     password: '',
-    persistent: false,
+    rememberMe: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState('');
+  const [validationState, setValidationState] = useState<ValidationState>({
+    email: null,
+    password: null,
   });
 
-  // Handle form input changes
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
     setFormState(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+
+    // Real-time validation
+    if (name === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      setValidationState(prev => ({
+        ...prev,
+        email: value ? emailRegex.test(value) : null,
+      }));
+    }
+    
+    if (name === 'password') {
+      setValidationState(prev => ({
+        ...prev,
+        password: value ? value.length >= 6 : null,
+      }));
+    }
   };
 
-  // Handle form submission
-  const handleSubmit = (event: React.FormEvent<SignInFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     
-    // Simulating API call
     setTimeout(() => {
-      alert(JSON.stringify(formState, null, 2));
+      alert(`Welcome to Clinzor Portal!\n\nLogin Details:\n${JSON.stringify(formState, null, 2)}`);
       setIsLoading(false);
-    }, 1000);
+    }, 1500);
   };
 
-  // Ensure client-side rendering for animations
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const ClinicBadge = () => (
+    <div className="relative">
+      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center relative overflow-hidden shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-white/30 rounded-2xl"></div>
+        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-2xl"></div>
+        <Heart className="w-8 h-8 text-white relative z-10" />
+        <Activity className="w-4 h-4 text-blue-200 absolute top-1 right-1 z-10" />
+      </div>
+      <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+        <Users className="w-3 h-3 text-white" />
+      </div>
+    </div>
+  );
 
-  if (!mounted) {
-    return null;
-  }
+  const FloatingElements = () => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-20 left-10 w-32 h-32 bg-blue-500/5 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-600/5 rounded-full blur-xl animate-pulse delay-1000"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-400/5 rounded-full blur-xl animate-pulse delay-500"></div>
+      <div className="absolute top-1/3 right-1/3 w-20 h-20 bg-blue-300/5 rounded-full blur-xl animate-pulse delay-700"></div>
+    </div>
+  );
+
+  if (!mounted) return null;
 
   return (
-    <CssVarsProvider theme={clinzorTheme} defaultMode="light" disableTransitionOnChange>
-      <CssBaseline />
-      <GlobalStyles
-        styles={{
-          ':root': {
-            '--Transition-duration': '0.3s',
-          },
-          body: {
-            backgroundColor: '#FFFFFF',
-          },
-          '::selection': {
-            backgroundColor: 'rgba(10, 132, 255, 0.2)',
-          },
-        }}
-      />
-      <Box
-        component={motion.div}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-        sx={{
-          width: '100%',
-          display: 'flex',
-          minHeight: '100dvh',
-        }}
-      >
-        {/* Left side - Background image with brand overlay */}
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'flex' },
-            width: '50%',
-            position: 'relative',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            backgroundColor: '#000',
-          }}
-        >
-          <Box
-            component={motion.div}
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1] }}
-            sx={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              backgroundImage: 'url(/admin.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              filter: 'brightness(0.7)',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'linear-gradient(45deg, rgba(0,122,255,0.7) 0%, rgba(0,0,0,0.5) 100%)',
-                zIndex: 1,
-              },
-            }}
-          />
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            sx={{
-              position: 'relative',
-              zIndex: 2,
-              p: { md: 5, lg: 6 },
-              textAlign: 'center',
-              color: 'white',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              maxWidth: '90%',
-            }}
-          >
-            <Box sx={{ mb: 4 }}>
-<img
-  src="/assets/logo/logo.png"
-  alt="Clinzor Logo"
-  style={{
-    filter: 'brightness(0) invert(1)',
-  }}
-/>
-
-            </Box>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            >
-
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <Typography
-                level="body-lg"
-                sx={{
-                  fontSize: { md: '1.1rem', lg: '1.25rem' },
-                  fontWeight: 400,
-                  opacity: 0.9,
-                  maxWidth: '32ch',
-                  mx: 'auto',
-                  color:'white',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                }}
-              >
-                Reimagining healthcare management for the modern era
-              </Typography>
-            </motion.div>
-          </Box>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-white flex">
+      {/* Left Panel - Clinic Branding */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        
+        <div className="relative z-10 p-12 flex flex-col justify-center text-white">
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <ClinicBadge />
+              <div>
+                <h2 className="text-3xl font-bold">Clinic Portal</h2>
+                <p className="text-blue-200 text-lg">Clinzor Healthcare System</p>
+              </div>
+            </div>
+          </div>
           
-          {/* Decorative elements */}
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '200px',
-              background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%)',
-              zIndex: 1,
-            }}
-          />
-        </Box>
+          <div className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h3 className="text-xl font-semibold mb-3">Patient Management</h3>
+              <p className="text-blue-100 leading-relaxed">
+                Streamline appointments, manage patient records, and coordinate care with our comprehensive clinic management system.
+              </p>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h3 className="text-xl font-semibold mb-3">Digital Health Records</h3>
+              <p className="text-blue-100 leading-relaxed">
+                Access electronic health records, prescriptions, and treatment histories in one secure, integrated platform.
+              </p>
+            </div>
 
-        {/* Right side - Login form */}
-        <Box
-          sx={{
-            width: { xs: '100%', md: '50%' },
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'white',
-            px: { xs: 3, sm: 4, md: 6, lg: 8 },
-            py: { xs: 4, md: 0 },
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '4px',
-              background: 'linear-gradient(90deg, #0A84FF, #007AFF, #0066CC)',
-              display: { xs: 'block', md: 'none' },
-            },
-          }}
-        >
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            sx={{
-              width: '100%',
-              maxWidth: '440px',
-            }}
-          >
-            <Box sx={{ mb: { xs: 4, md: 6 }, display: 'flex', flexDirection: 'column', alignItems: { xs: 'center', md: 'flex-start' } }}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, mb: 3 }}>
-                <LogoMark />
-              </Box>
-              
-              <Typography
-                component="h1"
-                level="h2"
-                sx={{
-                  fontWeight: 700,
-                  letterSpacing: '-0.025em',
-                  mb: 1.5,
-                  textAlign: { xs: 'center', md: 'left' },
-                  fontSize: { xs: '1.75rem', md: '2rem' },
-                }}
-              >
-                Welcome to Clinzor's Clinic Portal
-              </Typography>
-              <Typography
-                level="body-lg"
-                sx={{
-                  color: 'neutral.600',
-                  textAlign: { xs: 'center', md: 'left' },
-                  fontSize: '1rem',
-                }}
-              >
-                Sign in to access your healthcare workspace
-              </Typography>
-            </Box>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <h3 className="text-xl font-semibold mb-3">Secure & Efficient</h3>
+              <p className="text-blue-100 leading-relaxed">
+                HIPAA-compliant infrastructure ensuring patient privacy while optimizing clinical workflows.
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-8 border-t border-white/20">
+            <p className="text-blue-200 text-sm">
+              Empowering healthcare providers with modern technology
+            </p>
+          </div>
+        </div>
+        
+        <FloatingElements />
+      </div>
 
-            <motion.form 
-              onSubmit={handleSubmit}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <Stack spacing={3.5}>
-                <FormControl>
-                  <Typography
-                    component="label"
-                    htmlFor="email"
-                    level="body-sm"
-                    sx={{
-                      mb: 1,
-                      fontWeight: 600,
-                      color: 'neutral.800',
-                      display: 'block',
-                    }}
-                  >
-                    Email
-                  </Typography>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="your.name@clinzor.com"
-                    required
-                    value={formState.email}
-                    onChange={handleInputChange}
-                    startDecorator={<Mail sx={{ color: 'neutral.500' }} />}
-                    sx={{
-                      py: 1.5,
-                      '&:focus-within': {
-                        borderColor: 'primary.500',
-                      },
-                      '.MuiInput-input': {
-                        transition: 'all 0.2s ease',
-                        pl: 0.5,
-                      },
-                    }}
-                  />
-                </FormControl>
+      {/* Right Panel - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Header */}
+          <div className="lg:hidden mb-8 text-center">
+            <div className="flex justify-center mb-4">
+              <ClinicBadge />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Clinic Portal</h1>
+            <p className="text-gray-600">Clinzor Healthcare System</p>
+          </div>
 
-                <FormControl>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography
-                      component="label"
-                      htmlFor="password"
-                      level="body-sm"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'neutral.800',
-                      }}
-                    >
-                      Password
-                    </Typography>
-                    <Link
-                      href="#reset-password"
-                      level="body-sm"
-                      sx={{
-                        color: 'primary.600',
-                        fontWeight: 500,
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                          color: 'primary.500',
-                        },
-                      }}
-                    >
-                      Forgot password?
-                    </Link>
-                  </Box>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    value={formState.password}
-                    onChange={handleInputChange}
-                    startDecorator={<Lock sx={{ color: 'neutral.500' }} />}
-                    sx={{
-                      py: 1.5,
-                      '&:focus-within': {
-                        borderColor: 'primary.500',
-                      },
-                      '.MuiInput-input': {
-                        transition: 'all 0.2s ease',
-                        pl: 0.5,
-                      },
-                    }}
-                  />
-                </FormControl>
+          {/* Welcome Section */}
+          <div className="text-center lg:text-left mb-8">
+            <h1 className="hidden lg:block text-3xl font-bold text-gray-900 mb-2">
+              Welcome to Your Clinic
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Sign in to access patient management tools
+            </p>
+          </div>
 
-                <Checkbox
-                  label="Remember this device"
-                  name="persistent"
-                  checked={formState.persistent}
+          {/* Login Form */}
+          <div className="space-y-6">
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className={`h-5 w-5 transition-colors ${
+                    focusedField === 'email' ? 'text-blue-500' : 'text-gray-400'
+                  }`} />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formState.email}
                   onChange={handleInputChange}
-                  size="sm"
-                  sx={{
-                    color: 'neutral.600',
-                    '& .MuiCheckbox-checkbox': {
-                      borderRadius: '6px',
-                      transition: 'all 0.2s ease',
-                    },
-                    '&:hover .MuiCheckbox-checkbox': {
-                      borderColor: 'primary.400',
-                    },
-                  }}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField('')}
+                  className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                    focusedField === 'email'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
+                      : validationState.email === true
+                      ? 'border-green-500'
+                      : validationState.email === false
+                      ? 'border-red-500'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  placeholder="doctor@clinic.com"
                 />
+                {validationState.email !== null && (
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    {validationState.email ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
 
-                <Button
-                  component={motion.button}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  fullWidth
-                  loading={isLoading}
-                  sx={{
-                    py: 1.5,
-                    mt: 1,
-                    background: 'linear-gradient(to right, #007AFF, #0066CC)',
-                    color: 'white',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    '&:hover': {
-                      background: 'linear-gradient(to right, #0A84FF, #007AFF)',
-                    },
-                    boxShadow: '0 2px 10px rgba(0, 122, 255, 0.2)',
-                  }}
+            {/* Password Field */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="text-blue-600 hover:text-blue-500 text-sm font-medium transition-colors"
                 >
-                  Sign in
-                </Button>
-              </Stack>
-            </motion.form>
+                  Forgot password?
+                </button>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className={`h-5 w-5 transition-colors ${
+                    focusedField === 'password' ? 'text-blue-500' : 'text-gray-400'
+                  }`} />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formState.password}
+                  onChange={handleInputChange}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField('')}
+                  className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl transition-all duration-200 focus:outline-none ${
+                    focusedField === 'password'
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
+                      : validationState.password === true
+                      ? 'border-green-500'
+                      : validationState.password === false
+                      ? 'border-red-500'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  placeholder="••••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
 
-            <Box
-              component={motion.div}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              sx={{ 
-                mt: 4, 
-                textAlign: 'center',
-                py: 2,
-                px: 3,
-                borderRadius: '12px',
-                background: 'rgba(245, 247, 250, 0.6)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(228, 232, 240, 0.8)',
-              }}
+            {/* Remember Me */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="rememberMe"
+                  checked={formState.rememberMe}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                />
+                <span className="ml-2 text-sm text-gray-600">Keep me signed in</span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <Typography
-                level="body-sm"
-                sx={{
-                  color: 'neutral.600',
-                }}
-              >
-                New to Clinzor?{' '}
-                <Link
-                  href="#contact-admin"
-                  sx={{
-                    color: 'primary.600',
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      color: 'primary.500',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
-                  Contact your administrator
-                </Link>
-              </Typography>
-            </Box>
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Accessing Portal...
+                </>
+              ) : (
+                <>
+                  Sign in to Clinic Portal
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </div>
 
-            <Box 
-              component={motion.footer}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6, ease: [0.23, 1, 0.32, 1] }}
-              sx={{ 
-                mt: { xs: 6, md: 8 }, 
-                textAlign: 'center' 
-              }}
-            >
-              <Typography level="body-xs" sx={{ color: 'neutral.500' }}>
-                © {new Date().getFullYear()} Clinzor. All rights reserved.
-              </Typography>
-              <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 2 }}>
-                <Link 
-                  href="#privacy" 
-                  level="body-xs" 
-                  sx={{ 
-                    color: 'neutral.500',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      color: 'primary.500',
-                    },
-                  }}
-                >
-                  Privacy Policy
-                </Link>
-                <Link 
-                  href="#terms" 
-                  level="body-xs" 
-                  sx={{ 
-                    color: 'neutral.500',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      color: 'primary.500',
-                    },
-                  }}
-                >
-                  Terms of Service
-                </Link>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </CssVarsProvider>
+          {/* Quick Access */}
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button className="p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-sm font-medium text-blue-700">
+              Patient Registration
+            </button>
+            <button className="p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors text-sm font-medium text-blue-700">
+              Emergency Access
+            </button>
+          </div>
+
+          {/* Help Section */}
+          <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+            <div className="flex items-start gap-3">
+              <Heart className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">New to Our Clinic?</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Contact the front desk for account setup or technical support with the portal.
+                </p>
+                <div className="flex gap-3">
+                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+                    Request Access →
+                  </button>
+                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+                    Get Help →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-8 text-center text-sm text-gray-500">
+            <p>© {new Date().getFullYear()} Clinzor Healthcare. All rights reserved.</p>
+            <div className="flex justify-center gap-4 mt-2">
+              <button className="hover:text-blue-600 transition-colors">Privacy Policy</button>
+              <button className="hover:text-blue-600 transition-colors">Terms of Service</button>
+              <button className="hover:text-blue-600 transition-colors">HIPAA Notice</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default ClinicPortalLogin;
