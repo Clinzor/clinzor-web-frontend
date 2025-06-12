@@ -11,14 +11,14 @@ import Typography from "@mui/joy/Typography";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import Sidebar from "@/components/admin/Sidebar";
+import AdminSidebar from "@/components/admin/Sidebar";
 
 // Sidebar component
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
-      <Sidebar />
+      <AdminSidebar />
       <Box
         component="main"
         className="MainContent"

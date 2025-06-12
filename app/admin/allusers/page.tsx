@@ -2,61 +2,16 @@
 
 import * as React from "react";
 import { Box, Button, Typography, Breadcrumbs, Link } from "@mui/joy";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import UserManagementTable from "@/components/admin/usermanagement/Allusers";
+import BookingManagement from "@/components/expert/BookingManagement/BookingManagment";
+import AllUsersPage from "@/components/admin/usermanagement/Allusers";
 
-export default function Usermanagement() {
+export default function Allusers() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Breadcrumb Navigation */}
       <Box sx={{ display: "flex", alignItems: "center" }}>
-        <Breadcrumbs
-          size="sm"
-          aria-label="breadcrumbs"
-          separator={<ChevronRightRoundedIcon fontSize="small" />}
-          sx={{ pl: 0 }}
-        >
-          <Link underline="none" color="neutral" href="/admin/dashboard">
-            <HomeRoundedIcon />
-          </Link>
-          <Link
-            underline="hover"
-            color="neutral"
-            href="/admin/membermanagement"
-            sx={{ fontSize: 12, fontWeight: 500 }}
-          >
-            Member Management
-          </Link>
-        </Breadcrumbs>
       </Box>
-
-      {/* Header Action Row */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1,
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography level="h4" fontWeight="lg">
-          All Users
-        </Typography>
-        <Button
-          color="primary"
-          startDecorator={<DownloadRoundedIcon />}
-          size="sm"
-        >
-          Download PDF
-        </Button>
-      </Box>
-
-      {/* Table Section */}
-      <UserManagementTable />
+      <AllUsersPage />
     </Box>
   );
 }

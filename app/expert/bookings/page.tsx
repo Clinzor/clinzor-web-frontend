@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Box, Button, Typography, Breadcrumbs, Link } from "@mui/joy";
-import BookingManagement from "@/components/expert/BookingManagement/BookingManagment";
+import ExpertBookingManager from "@/components/expert/BookingManagement/BookingManagment";
 
 export default function bookings() {
   return (
@@ -12,7 +12,7 @@ export default function bookings() {
       </Box>
 
       {/* Table Section */}
-      <BookingManagement />
+      <ExpertBookingManager />
     </Box>
   );
 }

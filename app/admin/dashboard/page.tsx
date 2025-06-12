@@ -1,12 +1,18 @@
-import OrderList from '@/components/admin/dashboard/OrderList'
-import React from 'react'
+"use client";
 
-const page = () => {
+import * as React from "react";
+import { Box, Button, Typography, Breadcrumbs, Link } from "@mui/joy";
+import AdminDashboard from "@/components/admin/dashboard/Main"
+
+export default function AdminOverview() {
   return (
-    <div>
-        Page
-    </div>
-  )
-}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* Breadcrumb Navigation */}
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+      </Box>
 
-export default page
+      <AdminDashboard/>
+      
+    </Box>
+  );
+}
