@@ -109,7 +109,6 @@ export default function ExpertSidebar() {
   const menuItems = [
     { icon: <BarChart3 size={20} strokeWidth={1.5} />, label: 'Dashboard', href: '/expert' },
     { icon: <Calendar size={20} strokeWidth={1.5} />, label: 'Slot Management', href: '/expert/slotmanagement' },
-    { icon: <BookOpen size={20} strokeWidth={1.5} />, label: 'Booking Management', href: '/expert/bookings' },
   ];
 
   const handleItemClick = (href: string) => {
