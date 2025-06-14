@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search, Filter, Download, RefreshCw, Calendar, CheckCircle, XCircle, 
   AlertCircle, User, Video, Phone, MessageSquare, Eye, Edit, Trash2, 
@@ -8,37 +8,19 @@ import {
 // Types
 interface Booking {
   uuid: string;
-  is_rescheduled: boolean;
   created_by: string;
-  booking_type: string;
-  doctor_gender_preference: string | null;
   payment_mode: string;
-  booking_status: string;
   start_time: string;
   end_time: string;
-  offers_applied: any | null;
-  room_id: string | null;
-  customer_meeting_link: string | null;
-  expert_meeting_link: string | null;
   payment_status: string;
-  session_type: string | null;
-  patient_name: string | null;
-  patient_address: string | null;
-  patient_mobile: string | null;
-  patient_email: string | null;
+  booking_status: string;
+  room_id: string | null;
+  expert_meeting_link: string | null;
   booking_charge: string;
-  slot: string;
-  clinic_service: string | null;
+  booking_type: string;
   customer: string;
-  doctor: string | null;
+  slot: string;
   expert: string;
-  slot_details: {
-    start_time: string;
-    end_time: string;
-    is_available: boolean;
-    slot_type: string;
-    price: string;
-  } | null;
 }
 
 interface ModalProps {
@@ -113,75 +95,167 @@ interface CreateBookingPayload {
   clinic_service: string | null;
 }
 
-// Sample data structure based on your JSON
+// Update sample data with more realistic bookings
 const sampleBookings: Booking[] = [
   {
-    uuid: 'b1',
-    is_rescheduled: false,
-    created_by: 'expert@example.com',
-    booking_type: 'VIDEO_CALL',
-    payment_mode: 'ONLINE',
-    booking_status: 'PENDING',
-    start_time: '2024-03-20T10:00:00Z',
-    end_time: '2024-03-20T11:00:00Z',
-    customer_meeting_link: 'https://meet.google.com/abc-defg-hij',
-    expert_meeting_link: 'https://meet.google.com/xyz-uvw-123',
-    payment_status: 'PENDING',
-    session_type: 'CONSULTATION',
-    booking_charge: '100.00',
-    slot_details: {
-      start_time: '2024-03-20T10:00:00Z',
-      end_time: '2024-03-20T11:00:00Z',
-      is_available: false,
-      slot_type: 'REGULAR',
-      price: '100.00'
-    },
-    doctor_gender_preference: null,
-    patient_name: null,
-    patient_address: null,
-    patient_mobile: null,
-    patient_email: null,
-    clinic_service: null,
-    offers_applied: null,
-    room_id: 'room_123',
-    slot: 'slot_123',
-    customer: 'customer_123',
-    doctor: null,
-    expert: 'expert_123'
+    uuid: "BK0001",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-20T10:00:00Z",
+    end_time: "2024-03-20T10:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "COMPLETED",
+    room_id: "room_123",
+    expert_meeting_link: "https://meet.google.com/abc-defg-hij",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_001",
+    slot: "slot_001",
+    expert: "expert_001"
   },
   {
-    uuid: 'b2',
-    is_rescheduled: false,
-    created_by: 'expert@example.com',
-    booking_type: 'PHYSICAL_VISIT',
-    payment_mode: 'CASH',
-    booking_status: 'COMPLETED',
-    start_time: '2024-03-19T14:00:00Z',
-    end_time: '2024-03-19T15:00:00Z',
-    customer_meeting_link: null,
-    expert_meeting_link: null,
-    payment_status: 'COMPLETED',
-    session_type: 'FOLLOW_UP',
-    booking_charge: '150.00',
-    slot_details: {
-      start_time: '2024-03-19T14:00:00Z',
-      end_time: '2024-03-19T15:00:00Z',
-      is_available: false,
-      slot_type: 'REGULAR',
-      price: '150.00'
-    },
-    doctor_gender_preference: 'MALE',
-    patient_name: 'John Doe',
-    patient_address: '123 Main St, City',
-    patient_mobile: '+1234567890',
-    patient_email: 'john@example.com',
-    clinic_service: 'CLINIC_1',
-    offers_applied: null,
+    uuid: "BK0002",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-20T11:00:00Z",
+    end_time: "2024-03-20T11:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "CONFIRMED",
+    room_id: "room_124",
+    expert_meeting_link: "https://meet.google.com/klm-nopq-rst",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_002",
+    slot: "slot_002",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0003",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-20T14:00:00Z",
+    end_time: "2024-03-20T14:30:00Z",
+    payment_status: "PENDING",
+    booking_status: "PENDING",
     room_id: null,
-    slot: 'slot_456',
-    customer: 'customer_456',
-    doctor: null,
-    expert: 'expert_456'
+    expert_meeting_link: null,
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_003",
+    slot: "slot_003",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0004",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-20T15:00:00Z",
+    end_time: "2024-03-20T15:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "CANCELED",
+    room_id: null,
+    expert_meeting_link: null,
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_004",
+    slot: "slot_004",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0005",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-21T09:00:00Z",
+    end_time: "2024-03-21T09:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "CONFIRMED",
+    room_id: "room_125",
+    expert_meeting_link: "https://meet.google.com/uvw-xyz-123",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_005",
+    slot: "slot_005",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0006",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-21T10:00:00Z",
+    end_time: "2024-03-21T10:30:00Z",
+    payment_status: "PENDING",
+    booking_status: "PENDING",
+    room_id: null,
+    expert_meeting_link: null,
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_006",
+    slot: "slot_006",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0007",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-21T11:00:00Z",
+    end_time: "2024-03-21T11:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "COMPLETED",
+    room_id: "room_126",
+    expert_meeting_link: "https://meet.google.com/456-789-012",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_007",
+    slot: "slot_007",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0008",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-21T14:00:00Z",
+    end_time: "2024-03-21T14:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "CONFIRMED",
+    room_id: "room_127",
+    expert_meeting_link: "https://meet.google.com/345-678-901",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_008",
+    slot: "slot_008",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0009",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-21T15:00:00Z",
+    end_time: "2024-03-21T15:30:00Z",
+    payment_status: "PENDING",
+    booking_status: "PENDING",
+    room_id: null,
+    expert_meeting_link: null,
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_009",
+    slot: "slot_009",
+    expert: "expert_001"
+  },
+  {
+    uuid: "BK0010",
+    created_by: "expert@clinzor.com",
+    payment_mode: "ONLINE",
+    start_time: "2024-03-22T09:00:00Z",
+    end_time: "2024-03-22T09:30:00Z",
+    payment_status: "COMPLETED",
+    booking_status: "COMPLETED",
+    room_id: "room_128",
+    expert_meeting_link: "https://meet.google.com/234-567-890",
+    booking_charge: "150.00",
+    booking_type: "VIDEO_CALL",
+    customer: "patient_010",
+    slot: "slot_010",
+    expert: "expert_001"
   }
 ];
 
@@ -214,6 +288,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
       </div>
     </div>
   );
+};
+
+// Add type definitions for status configs
+type StatusConfig = {
+  color: string;
+  icon: string;
+};
+
+type StatusConfigs = {
+  [key: string]: StatusConfig;
 };
 
 const ExpertBookingManager: React.FC = () => {
@@ -272,23 +356,23 @@ const ExpertBookingManager: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
+  // Add a counter for booking numbers
+  const [bookingCounter, setBookingCounter] = useState(1);
+
   // Filter bookings based on criteria
   const filteredBookings = useMemo(() => {
     return bookings.filter(booking => {
-      // Search filter
       const searchMatch = !searchTerm || 
         booking.uuid.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.created_by.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.expert.toLowerCase().includes(searchTerm.toLowerCase());
 
-      // Status filters
       const statusMatch = filters.booking_status === 'ALL' || booking.booking_status === filters.booking_status;
       const paymentMatch = filters.payment_status === 'ALL' || booking.payment_status === filters.payment_status;
       const typeMatch = filters.booking_type === 'ALL' || booking.booking_type === filters.booking_type;
       const modeMatch = filters.payment_mode === 'ALL' || booking.payment_mode === filters.payment_mode;
 
-      // Date range filter
       let dateMatch = true;
       if (filters.from_date || filters.to_date) {
         const bookingDate = new Date(booking.start_time);
@@ -308,30 +392,61 @@ const ExpertBookingManager: React.FC = () => {
     });
   }, [bookings, searchTerm, filters]);
 
-  // Pagination
-  const totalItems = filteredBookings.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedBookings = filteredBookings.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Memoize pagination calculations
+  const paginationData = useMemo(() => {
+    const totalItems = filteredBookings.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginatedBookings = filteredBookings.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
 
-  // Statistics
+    return {
+      totalItems,
+      totalPages,
+      paginatedBookings,
+      startIndex: (currentPage - 1) * itemsPerPage + 1,
+      endIndex: Math.min(currentPage * itemsPerPage, totalItems)
+    };
+  }, [filteredBookings, currentPage, itemsPerPage]);
+
+  // Memoize statistics calculations
   const stats = useMemo(() => {
     const total = filteredBookings.length;
     const pending = filteredBookings.filter(b => b.booking_status === 'PENDING').length;
     const confirmed = filteredBookings.filter(b => b.booking_status === 'CONFIRMED').length;
     const completed = filteredBookings.filter(b => b.booking_status === 'COMPLETED').length;
     const canceled = filteredBookings.filter(b => b.booking_status === 'CANCELED').length;
-    const totalRevenue = filteredBookings
-      .filter(b => b.payment_status === 'COMPLETED')
-      .reduce((sum, b) => sum + (parseFloat(b.booking_charge.toString()) || 0), 0);
 
-    return { total, pending, confirmed, completed, canceled, totalRevenue };
+    return { total, pending, confirmed, completed, canceled };
   }, [filteredBookings]);
 
-  // Utility functions
-  const formatDateTime = (startTime: string, endTime: string) => {
+  // Update the status configs with proper typing
+  const statusConfigs = useMemo(() => ({
+    booking: {
+      'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
+      'CONFIRMED': { color: 'bg-blue-100 text-blue-800', icon: '✅' },
+      'COMPLETED': { color: 'bg-green-100 text-green-800', icon: '✅' },
+      'CANCELED': { color: 'bg-red-100 text-red-800', icon: '❌' }
+    } as StatusConfigs,
+    payment: {
+      'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
+      'COMPLETED': { color: 'bg-green-100 text-green-800', icon: '✅' },
+      'FAILED': { color: 'bg-red-100 text-red-800', icon: '❌' },
+      'REFUNDED': { color: 'bg-orange-100 text-orange-800', icon: '↩️' }
+    } as StatusConfigs
+  }), []);
+
+  // Update the utility functions with proper typing
+  const getStatusConfig = useCallback((status: string): StatusConfig => {
+    return statusConfigs.booking[status] || { color: 'bg-gray-100 text-gray-800', icon: '❓' };
+  }, [statusConfigs]);
+
+  const getPaymentStatusConfig = useCallback((status: string): StatusConfig => {
+    return statusConfigs.payment[status] || { color: 'bg-gray-100 text-gray-800', icon: '❓' };
+  }, [statusConfigs]);
+
+  const formatDateTime = useCallback((startTime: string, endTime: string) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
     
@@ -350,36 +465,7 @@ const ExpertBookingManager: React.FC = () => {
     })}`;
     
     return { date, time };
-  };
-
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { color: string; icon: string }> = {
-      'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
-      'CONFIRMED': { color: 'bg-blue-100 text-blue-800', icon: '✅' },
-      'COMPLETED': { color: 'bg-green-100 text-green-800', icon: '✅' },
-      'CANCELED': { color: 'bg-red-100 text-red-800', icon: '❌' }
-    };
-    return configs[status] || { color: 'bg-gray-100 text-gray-800', icon: '❓' };
-  };
-
-  const getPaymentStatusConfig = (status: string) => {
-    const configs: Record<string, { color: string; icon: string }> = {
-      'PENDING': { color: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
-      'COMPLETED': { color: 'bg-green-100 text-green-800', icon: '✅' },
-      'FAILED': { color: 'bg-red-100 text-red-800', icon: '❌' },
-      'REFUNDED': { color: 'bg-orange-100 text-orange-800', icon: '↩️' }
-    };
-    return configs[status] || { color: 'bg-gray-100 text-gray-800', icon: '❓' };
-  };
-
-  const getBookingTypeIcon = (type: string) => {
-    const icons: Record<string, JSX.Element> = {
-      'VIDEO_CALL': <Video size={16} className="text-blue-500" />,
-      'PHONE_CALL': <Phone size={16} className="text-green-500" />,
-      'PHYSICAL_VISIT': <User size={16} className="text-purple-500" />
-    };
-    return icons[type] || <MessageSquare size={16} className="text-gray-500" />;
-  };
+  }, []);
 
   // Event handlers
   const showNotification = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
@@ -426,10 +512,10 @@ const ExpertBookingManager: React.FC = () => {
     showNotification('Bookings exported successfully!');
   };
 
-  const handleView = (booking: Booking) => {
+  const handleView = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     setModalType('view');
-  };
+  }, []);
 
   const handleEdit = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -442,21 +528,21 @@ const ExpertBookingManager: React.FC = () => {
     setModalType('delete');
   };
 
-  const handleComplete = (booking: Booking) => {
+  const handleComplete = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     setModalType('complete');
-  };
+  }, []);
 
-  const handleCancel = (booking: Booking) => {
+  const handleCancel = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     setModalType('cancel');
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalType('');
     setSelectedBooking(null);
     setEditData({});
-  };
+  }, []);
 
   const handleCancelConfirm = () => {
     if (!selectedBooking) return;
@@ -513,382 +599,26 @@ const ExpertBookingManager: React.FC = () => {
     }
   };
 
-  // Update handleCreateBooking
-  const handleCreateBooking = async () => {
-    if (!selectedSlot) {
-      showNotification('Please select a slot first', 'error');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Create the payload exactly matching the API structure
-      const payload: CreateBookingPayload = {
-        uuid: crypto.randomUUID(),
-        created_by: 'fake@exampl.com',
-        payment_mode: createBookingData.payment_mode,
-        start_time: selectedSlot.start_time,
-        end_time: selectedSlot.end_time,
-        payment_status: 'PENDING',
-        booking_status: 'PENDING',
-        room_id: createBookingData.room_id,
-        customer_meeting_link: createBookingData.customer_meeting_link,
-        expert_meeting_link: createBookingData.expert_meeting_link,
-        booking_charge: createBookingData.booking_charge,
-        booking_type: createBookingData.booking_type,
-        customer: createBookingData.customer,
-        slot: selectedSlot.uuid,
-        expert: selectedSlot.expert,
-        doctor_gender_preference: null,
-        session_type: null,
-        patient_name: null,
-        patient_address: null,
-        patient_mobile: null,
-        patient_email: null,
-        clinic_service: null
-      };
-
-      // Simulate API call
-      const response: BookingResponse = {
-        status: 200,
-        message: "Expert booking Created",
-        data: {
-          ...payload,
-          is_rescheduled: false,
-          doctor_gender_preference: null,
-          offers_applied: null,
-          session_type: null,
-          patient_name: null,
-          patient_address: null,
-          patient_mobile: null,
-          patient_email: null,
-          clinic_service: null,
-          doctor: null,
-          slot_details: {
-            start_time: selectedSlot.start_time,
-            end_time: selectedSlot.end_time,
-            is_available: false,
-            slot_type: 'REGULAR',
-            price: '0.00'
-          }
-        }
-      };
-
-      setBookings(prev => [response.data, ...prev]);
-      showNotification('Booking created successfully!');
-      closeModal();
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      showNotification('Failed to create booking', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReschedule = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setModalType('reschedule');
-  };
-
-  const handleRescheduleConfirm = () => {
-    if (!selectedBooking) return;
-    
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setBookings(prev => prev.map(b => 
-        b.uuid === selectedBooking.uuid 
-          ? { ...b, is_rescheduled: true }
-          : b
-      ));
-      setIsLoading(false);
-      closeModal();
-      showNotification('Booking rescheduled successfully!');
-    }, 1000);
-  };
-
   // Add a utility function to format the booking ID
   const formatBookingId = (uuid: string) => {
     // Take first 6 characters and last 4 characters
     return `${uuid.slice(0, 6)}...${uuid.slice(-4)}`;
   };
 
-  // Update the create modal content
-  const renderCreateModalContent = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Slot Selection */}
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">Select Slot</label>
-          <select
-            value={selectedSlot?.uuid || ''}
-            onChange={(e) => {
-              const slot = slots.find(s => s.uuid === e.target.value);
-              setSelectedSlot(slot || null);
-            }}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            <option value="">Select a slot</option>
-            {slots.map(slot => (
-              <option key={slot.uuid} value={slot.uuid}>
-                {new Date(slot.start_time).toLocaleString()} - {new Date(slot.end_time).toLocaleString()}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Booking Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Booking Type</label>
-          <select
-            value={createBookingData.booking_type}
-            onChange={(e) => setCreateBookingData({...createBookingData, booking_type: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            {bookingTypes.map(type => (
-              <option key={type} value={type}>{type.replace('_', ' ')}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Session Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Session Type</label>
-          <select
-            value={createBookingData.session_type || ''}
-            onChange={(e) => setCreateBookingData({...createBookingData, session_type: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            <option value="">Select session type</option>
-            <option value="CONSULTATION">Consultation</option>
-            <option value="FOLLOW_UP">Follow Up</option>
-            <option value="EMERGENCY">Emergency</option>
-          </select>
-        </div>
-
-        {/* Doctor Gender Preference */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Doctor Gender Preference</label>
-          <select
-            value={createBookingData.doctor_gender_preference || ''}
-            onChange={(e) => setCreateBookingData({...createBookingData, doctor_gender_preference: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            <option value="">No Preference</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-          </select>
-        </div>
-
-        {/* Payment Mode */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Payment Mode</label>
-          <select
-            value={createBookingData.payment_mode}
-            onChange={(e) => setCreateBookingData({...createBookingData, payment_mode: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            {paymentModes.map(mode => (
-              <option key={mode} value={mode}>{mode}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Booking Charge */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Booking Charge</label>
-          <input
-            type="text"
-            value={createBookingData.booking_charge}
-            onChange={(e) => setCreateBookingData({...createBookingData, booking_charge: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            placeholder="0.00"
-          />
-        </div>
-
-        {/* Customer ID */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Customer ID</label>
-          <input
-            type="text"
-            value={createBookingData.customer}
-            onChange={(e) => setCreateBookingData({...createBookingData, customer: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            placeholder="Enter customer ID"
-          />
-        </div>
-
-        {/* Clinic Service */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Clinic Service</label>
-          <input
-            type="text"
-            value={createBookingData.clinic_service || ''}
-            onChange={(e) => setCreateBookingData({...createBookingData, clinic_service: e.target.value})}
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            placeholder="Enter clinic service ID"
-          />
-        </div>
-
-        {/* Video Call Specific Fields */}
-        {createBookingData.booking_type === 'VIDEO_CALL' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Room ID</label>
-              <input
-                type="text"
-                value={createBookingData.room_id || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, room_id: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter room ID"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Customer Meeting Link</label>
-              <input
-                type="text"
-                value={createBookingData.customer_meeting_link || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, customer_meeting_link: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter customer meeting link"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Expert Meeting Link</label>
-              <input
-                type="text"
-                value={createBookingData.expert_meeting_link || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, expert_meeting_link: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter expert meeting link"
-              />
-            </div>
-          </>
-        )}
-
-        {/* Physical Visit Specific Fields */}
-        {createBookingData.booking_type === 'PHYSICAL_VISIT' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Patient Name</label>
-              <input
-                type="text"
-                value={createBookingData.patient_name || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, patient_name: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter patient name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Patient Email</label>
-              <input
-                type="email"
-                value={createBookingData.patient_email || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, patient_email: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter patient email"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Patient Mobile</label>
-              <input
-                type="tel"
-                value={createBookingData.patient_mobile || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, patient_mobile: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter patient mobile"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Patient Address</label>
-              <input
-                type="text"
-                value={createBookingData.patient_address || ''}
-                onChange={(e) => setCreateBookingData({...createBookingData, patient_address: e.target.value})}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                placeholder="Enter patient address"
-              />
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Selected Slot Details */}
-      {selectedSlot && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Slot Details</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Start Time</p>
-              <p className="text-sm font-medium text-gray-900">
-                {new Date(selectedSlot.start_time).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">End Time</p>
-              <p className="text-sm font-medium text-gray-900">
-                {new Date(selectedSlot.end_time).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Status</p>
-              <p className="text-sm font-medium text-gray-900">{selectedSlot.status}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Booked</p>
-              <p className="text-sm font-medium text-gray-900">
-                {selectedSlot.is_booked ? 'Yes' : 'No'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3">
-        <button
-          onClick={closeModal}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateBooking}
-          disabled={isLoading || !selectedSlot}
-          className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-        >
-          {isLoading ? 'Creating...' : 'Create Booking'}
-        </button>
-      </div>
-    </div>
-  );
-
-  // Add useEffect to fetch slots when create modal opens
-  useEffect(() => {
-    if (modalType === 'create') {
-      fetchSlots();
-    }
-  }, [modalType]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Notification */}
       {notification && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-          notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-          notification.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+          notification?.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+          notification?.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
           'bg-amber-50 text-amber-800 border border-amber-200'
         }`}>
           <div className="flex items-center space-x-2">
-            {notification.type === 'success' ? <CheckCircle size={20} /> :
-             notification.type === 'error' ? <XCircle size={20} /> :
+            {notification?.type === 'success' ? <CheckCircle size={20} /> :
+             notification?.type === 'error' ? <XCircle size={20} /> :
              <AlertCircle size={20} />}
-            <span className="font-medium">{notification.message}</span>
+            <span className="font-medium">{notification?.message}</span>
           </div>
         </div>
       )}
@@ -897,24 +627,11 @@ const ExpertBookingManager: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Expert Booking Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Expert Bookings</h1>
             <p className="text-sm sm:text-base text-gray-600">Manage and track all expert bookings with advanced filtering</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setModalType('create')}
-              className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-            >
-              <Plus size={20} />
-              <span className="text-sm sm:text-base font-medium">Create New Booking</span>
-            </button>
-            <button
-              onClick={exportFilteredBookings}
-              className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Download size={18} />
-              <span className="text-sm sm:text-base">Export Filtered</span>
-            </button>
+
             <button
               onClick={() => window.location.reload()}
               className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -926,7 +643,7 @@ const ExpertBookingManager: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -983,18 +700,6 @@ const ExpertBookingManager: React.FC = () => {
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <XCircle className="text-red-600" size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Revenue</p>
-                <p className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</p>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <DollarSign className="text-green-600" size={24} />
               </div>
             </div>
           </div>
@@ -1071,34 +776,6 @@ const ExpertBookingManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type</label>
-                  <select
-                    value={filters.booking_type}
-                    onChange={(e) => setFilters({...filters, booking_type: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="ALL">All Types</option>
-                    {bookingTypes.map(type => (
-                      <option key={type} value={type}>{type.replace('_', ' ')}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Mode</label>
-                  <select
-                    value={filters.payment_mode}
-                    onChange={(e) => setFilters({...filters, payment_mode: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="ALL">All Modes</option>
-                    {paymentModes.map(mode => (
-                      <option key={mode} value={mode}>{mode}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
                   <input
                     type="date"
@@ -1126,7 +803,7 @@ const ExpertBookingManager: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-sm text-gray-600">
-              Showing <span className="font-medium text-gray-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, filteredBookings.length)}</span> of <span className="font-medium text-gray-900">{filteredBookings.length}</span> bookings
+              Showing <span className="font-medium text-gray-900">{paginationData.startIndex}</span> to <span className="font-medium text-gray-900">{paginationData.endIndex}</span> of <span className="font-medium text-gray-900">{paginationData.totalItems}</span> bookings
               {(Object.values(filters).some(f => f !== 'ALL' && f !== '') || searchTerm) && (
                 <span className="ml-2">
                   (filtered)
@@ -1134,7 +811,7 @@ const ExpertBookingManager: React.FC = () => {
               )}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Page {currentPage} of {totalPages}</span>
+              <span className="text-sm text-gray-600">Page {currentPage} of {paginationData.totalPages}</span>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -1144,8 +821,8 @@ const ExpertBookingManager: React.FC = () => {
                   <ChevronLeft size={20} />
                 </button>
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, paginationData.totalPages))}
+                  disabled={currentPage === paginationData.totalPages}
                   className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={20} />
@@ -1161,44 +838,23 @@ const ExpertBookingManager: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meeting Link</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {paginatedBookings.map((booking) => {
+                {paginationData.paginatedBookings.map((booking, index) => {
                   const { date, time } = formatDateTime(booking.start_time, booking.end_time);
                   const statusConfig = getStatusConfig(booking.booking_status);
-                  const paymentConfig = getPaymentStatusConfig(booking.payment_status);
                   
                   return (
                     <tr key={booking.uuid} className="hover:bg-gray-50">
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-gray-900">{formatBookingId(booking.uuid)}</span>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(booking.uuid);
-                                showNotification('Booking ID copied to clipboard!', 'success');
-                              }}
-                              className="text-gray-400 hover:text-gray-600"
-                              title="Copy full booking ID"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                              </svg>
-                            </button>
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {booking.created_by}
-                          </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {paginationData.startIndex + index}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -1206,35 +862,14 @@ const ExpertBookingManager: React.FC = () => {
                         <div className="text-sm text-gray-500">{time}</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          {getBookingTypeIcon(booking.booking_type)}
-                          <span className="text-sm text-gray-900">{booking.booking_type.replace('_', ' ')}</span>
-                        </div>
-                        {booking.session_type && (
-                          <div className="text-sm text-gray-500 mt-1">{booking.session_type}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
                           {statusConfig.icon} {booking.booking_status}
                         </span>
-                        {booking.is_rescheduled && (
-                          <div className="text-xs text-amber-600 mt-1">Rescheduled</div>
-                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${paymentConfig.color}`}>
-                          {paymentConfig.icon} {booking.payment_status}
-                        </span>
-                        <div className="text-xs text-gray-500 mt-1">{booking.payment_mode}</div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        ${(parseFloat(booking.booking_charge.toString()) || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {booking.customer_meeting_link ? (
+                        {booking.expert_meeting_link ? (
                           <a 
-                            href={booking.customer_meeting_link}
+                            href={booking.expert_meeting_link}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
@@ -1257,61 +892,13 @@ const ExpertBookingManager: React.FC = () => {
                             <span className="text-xs">View</span>
                           </button>
                           {booking.booking_status === 'PENDING' && (
-                            <>
-                              <button
-                                onClick={() => handleEdit(booking)}
-                                className="flex items-center space-x-1 px-2 py-1 text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
-                                title="Edit Booking Details"
-                              >
-                                <Edit size={16} />
-                                <span className="text-xs">Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleComplete(booking)}
-                                className="flex items-center space-x-1 px-2 py-1 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
-                                title="Mark Booking as Complete"
-                              >
-                                <CheckCircle size={16} />
-                                <span className="text-xs">Complete</span>
-                              </button>
-                              <button
-                                onClick={() => handleCancel(booking)}
-                                className="flex items-center space-x-1 px-2 py-1 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
-                                title="Cancel Booking"
-                              >
-                                <XCircle size={16} />
-                                <span className="text-xs">Cancel</span>
-                              </button>
-                            </>
-                          )}
-                          {booking.booking_status === 'CONFIRMED' && (
-                            <>
-                              <button
-                                onClick={() => handleComplete(booking)}
-                                className="flex items-center space-x-1 px-2 py-1 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
-                                title="Mark Booking as Complete"
-                              >
-                                <CheckCircle size={16} />
-                                <span className="text-xs">Complete</span>
-                              </button>
-                              <button
-                                onClick={() => handleCancel(booking)}
-                                className="flex items-center space-x-1 px-2 py-1 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
-                                title="Cancel Booking"
-                              >
-                                <XCircle size={16} />
-                                <span className="text-xs">Cancel</span>
-                              </button>
-                            </>
-                          )}
-                          {!booking.is_rescheduled && (
                             <button
-                              onClick={() => handleReschedule(booking)}
-                              className="flex items-center space-x-1 px-2 py-1 text-amber-600 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
-                              title="Reschedule Booking"
+                              onClick={() => handleComplete(booking)}
+                              className="flex items-center space-x-1 px-2 py-1 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
+                              title="Mark Booking as Complete"
                             >
-                              <RefreshCw size={16} />
-                              <span className="text-xs">Reschedule</span>
+                              <CheckCircle size={16} />
+                              <span className="text-xs">Complete</span>
                             </button>
                           )}
                         </div>
@@ -1336,110 +923,32 @@ const ExpertBookingManager: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Booking ID</h3>
-                <div className="mt-1 flex items-center space-x-2">
-                  <p className="text-sm text-gray-900">{selectedBooking.uuid}</p>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedBooking.uuid);
-                      showNotification('Booking ID copied to clipboard!', 'success');
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Copy booking ID"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
-                  </button>
-                </div>
+                <h3 className="text-sm font-medium text-gray-500">Booking Number</h3>
+                <p className="mt-1 text-sm text-gray-900">{selectedBooking?.uuid}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Date & Time</h3>
                 <p className="mt-1 text-sm text-gray-900">
-                  {formatDateTime(selectedBooking.start_time, selectedBooking.end_time).date}
+                  {formatDateTime(selectedBooking?.start_time || '', selectedBooking?.end_time || '').date}
                   <br />
-                  {formatDateTime(selectedBooking.start_time, selectedBooking.end_time).time}
+                  {formatDateTime(selectedBooking?.start_time || '', selectedBooking?.end_time || '').time}
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Booking Type</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.booking_type.replace('_', ' ')}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Session Type</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.session_type || 'N/A'}</p>
-              </div>
-              <div>
                 <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.booking_status}</p>
+                <p className="mt-1 text-sm text-gray-900">{selectedBooking?.booking_status}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Payment Status</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.payment_status}</p>
+                <p className="mt-1 text-sm text-gray-900">{selectedBooking?.payment_status}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Payment Mode</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.payment_mode}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Amount</h3>
-                <p className="mt-1 text-sm text-gray-900">₹{(parseFloat(selectedBooking.booking_charge.toString()) || 0).toFixed(2)}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Rescheduled</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.is_rescheduled ? 'Yes' : 'No'}</p>
-              </div>
-              {selectedBooking.booking_type === 'PHYSICAL_VISIT' && (
-                <>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Patient Name</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedBooking.patient_name}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Patient Email</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedBooking.patient_email}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Patient Mobile</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedBooking.patient_mobile}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Patient Address</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedBooking.patient_address}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Doctor Gender Preference</h3>
-                    <p className="mt-1 text-sm text-gray-900">{selectedBooking.doctor_gender_preference || 'N/A'}</p>
-                  </div>
-                </>
-              )}
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Clinic Service</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.clinic_service || 'N/A'}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Doctor</h3>
-                <p className="mt-1 text-sm text-gray-900">{selectedBooking.doctor || 'Not Assigned'}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Customer Meeting Link</h3>
-                {selectedBooking.customer_meeting_link ? (
-                  <a 
-                    href={selectedBooking.customer_meeting_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                  >
-                    <Video size={14} />
-                    <span>Join</span>
-                  </a>
-                ) : (
-                  <p className="mt-1 text-sm text-gray-500">-</p>
-                )}
+                <p className="mt-1 text-sm text-gray-900">{selectedBooking?.payment_mode}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Expert Meeting Link</h3>
-                {selectedBooking.expert_meeting_link ? (
+                {selectedBooking?.expert_meeting_link ? (
                   <a 
                     href={selectedBooking.expert_meeting_link}
                     target="_blank"
@@ -1451,27 +960,6 @@ const ExpertBookingManager: React.FC = () => {
                   </a>
                 ) : (
                   <p className="mt-1 text-sm text-gray-500">-</p>
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Slot Details</h3>
-                {selectedBooking.slot_details ? (
-                  <div className="mt-1 space-y-1">
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">Type:</span> {selectedBooking.slot_details.slot_type}
-                    </p>
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">Price:</span> ${selectedBooking.slot_details.price}
-                    </p>
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">Available:</span> {selectedBooking.slot_details.is_available ? 'Yes' : 'No'}
-                    </p>
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">Time:</span> {formatDateTime(selectedBooking.slot_details.start_time, selectedBooking.slot_details.end_time).time}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="mt-1 text-sm text-gray-500">No slot details available</p>
                 )}
               </div>
             </div>
@@ -1584,7 +1072,7 @@ const ExpertBookingManager: React.FC = () => {
         {selectedBooking && (
           <div className="space-y-4">
             <p className="text-sm text-gray-500">
-              Are you sure you want to mark this booking as complete? This will also mark the payment as completed.
+              Are you sure you want to mark this booking as complete?
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -1598,7 +1086,7 @@ const ExpertBookingManager: React.FC = () => {
                   setIsLoading(true);
                   setTimeout(() => {
                     setBookings(prev => prev.map(b => 
-                      b.uuid === selectedBooking.uuid ? { ...b, booking_status: 'COMPLETED', payment_status: 'COMPLETED' } : b
+                      b.uuid === selectedBooking.uuid ? { ...b, booking_status: 'COMPLETED' } : b
                     ));
                     setIsLoading(false);
                     closeModal();
@@ -1638,44 +1126,6 @@ const ExpertBookingManager: React.FC = () => {
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {isLoading ? 'Canceling...' : 'Yes, Cancel Booking'}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        isOpen={modalType === 'create'}
-        onClose={closeModal}
-        title="Create New Booking"
-        size="lg"
-      >
-        {renderCreateModalContent()}
-      </Modal>
-
-      <Modal
-        isOpen={modalType === 'reschedule'}
-        onClose={closeModal}
-        title="Reschedule Booking"
-      >
-        {selectedBooking && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">
-              Are you sure you want to reschedule this booking? This will mark the booking as rescheduled.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={closeModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRescheduleConfirm}
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {isLoading ? 'Rescheduling...' : 'Reschedule'}
               </button>
             </div>
           </div>
