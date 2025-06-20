@@ -23,6 +23,8 @@ import {
   XCircle,
   AlertCircle
 } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 // Type definitions
 interface ExpertSlot {
@@ -75,7 +77,7 @@ export default function ExpertSlotManagement() {
   const itemsPerPage = 10;
 
   // Combined DateTime Picker Component
-  const CombinedDateTimePicker = ({ 
+  const CombinedDateTimePicker = React.memo(({ 
     value, 
     onChange, 
     label, 
@@ -90,71 +92,265 @@ export default function ExpertSlotManagement() {
     minDateTime?: string;
     className?: string;
   }) => {
-    const [dateValue, setDateValue] = useState(value ? value.split('T')[0] : '');
-    const [timeValue, setTimeValue] = useState(value ? value.split('T')[1] || '09:00' : '09:00');
+    const [dateValue, setDateValue] = useState<Date | null>(value ? new Date(value) : null);
+    const [timeValue, setTimeValue] = useState(() => {
+      if (!value) return '09:00';
+      const date = new Date(value);
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    });
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     
-    const handleDateChange = (newDate: string) => {
-      setDateValue(newDate);
-      if (newDate && timeValue) {
-        onChange(`${newDate}T${timeValue}`);
+    const handleDateChange = useCallback((date: Date | null) => {
+      setDateValue(date);
+      if (date && timeValue) {
+        const [hours, minutes] = timeValue.split(':').map(Number);
+        const newDate = new Date(date);
+        newDate.setHours(hours, minutes, 0, 0);
+        onChange(newDate.toISOString());
       }
-    };
+      setIsDatePickerOpen(false);
+    }, [timeValue, onChange]);
 
-    const handleTimeChange = (newTime: string) => {
+    const handleTimeChange = useCallback((newTime: string) => {
       setTimeValue(newTime);
       if (dateValue && newTime) {
-        onChange(`${dateValue}T${newTime}`);
+        const [hours, minutes] = newTime.split(':').map(Number);
+        const newDate = new Date(dateValue);
+        newDate.setHours(hours, minutes, 0, 0);
+        onChange(newDate.toISOString());
       }
-    };
+    }, [dateValue, onChange]);
+
+    const handleContainerClick = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDatePickerOpen(true);
+    }, []);
+
+    const handleModalClick = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, []);
+
+    const handleCloseModal = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDatePickerOpen(false);
+    }, []);
+
+    const formattedDateTime = useMemo(() => {
+      if (!value) return null;
+      const date = new Date(value);
+      return {
+        date: date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        time: date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })
+      };
+    }, [value]);
 
     return (
-      <div className={`space-y-4 ${className}`}>
-        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-          <Calendar className="w-4 h-4" />
-          {label}
-        </label>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-600">Date</label>
-            <input
-              type="date"
-              value={dateValue}
-              onChange={(e) => handleDateChange(e.target.value)}
-              min={minDateTime ? minDateTime.split('T')[0] : new Date().toISOString().split('T')[0]}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm hover:shadow-md"
-            />
-          </div>
+      <div className={`space-y-6 ${className}`}>
+        <div 
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 cursor-pointer hover:shadow-lg transition-all duration-300"
+          onClick={handleContainerClick}
+        >
+          <label className="flex items-center gap-3 text-lg font-bold text-gray-800 mb-4">
+            <div className="p-2 bg-blue-500 rounded-xl">
+              <Calendar className="w-5 h-5 text-white" />
+            </div>
+            {label}
+          </label>
           
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-600">Time</label>
-            <input
-              type="time"
-              value={timeValue}
-              onChange={(e) => handleTimeChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm hover:shadow-md"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-500" />
+                Select Date
+              </label>
+              <div 
+                className={`w-full px-4 py-3 border-2 rounded-2xl focus:outline-none transition-all duration-300 bg-white shadow-sm hover:shadow-lg cursor-pointer font-medium ${
+                  error 
+                    ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100' 
+                    : 'border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 hover:border-blue-300'
+                }`}
+              >
+                {dateValue ? dateValue.toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric'
+                }) : 'Select date...'}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-500" />
+                Select Time
+              </label>
+              <input
+                type="time"
+                value={timeValue}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 bg-white shadow-sm hover:shadow-lg font-medium"
+              />
+            </div>
           </div>
         </div>
 
-        {/* DateTime Preview */}
-        {value && (
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200 shadow-sm">
+        {isDatePickerOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleCloseModal}
+          >
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+            />
+            <div 
+              className="relative bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100"
+              onClick={handleModalClick}
+            >
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="mt-4">
+                <DatePicker
+                  selected={dateValue}
+                  onChange={handleDateChange}
+                  minDate={minDateTime ? new Date(minDateTime) : new Date()}
+                  inline
+                  className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-lg"
+                  calendarClassName="!bg-white !border-2 !border-gray-200 !rounded-2xl !shadow-lg"
+                  wrapperClassName="w-full"
+                  renderCustomHeader={({
+                    date,
+                    decreaseMonth,
+                    increaseMonth,
+                    prevMonthButtonDisabled,
+                    nextMonthButtonDisabled,
+                  }) => (
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <button
+                        onClick={decreaseMonth}
+                        disabled={prevMonthButtonDisabled}
+                        className={`p-2 rounded-xl transition-colors ${
+                          prevMonthButtonDisabled 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={date.getMonth()}
+                          onChange={({ target: { value } }) => {
+                            const newDate = new Date(date);
+                            newDate.setMonth(parseInt(value));
+                            handleDateChange(newDate);
+                          }}
+                          className="text-lg font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {new Date(2000, i).toLocaleString('default', { month: 'long' })}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={date.getFullYear()}
+                          onChange={({ target: { value } }) => {
+                            const newDate = new Date(date);
+                            newDate.setFullYear(parseInt(value));
+                            handleDateChange(newDate);
+                          }}
+                          className="text-lg font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0"
+                        >
+                          {Array.from({ length: 10 }, (_, i) => {
+                            const year = new Date().getFullYear() + i;
+                            return (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                      <button
+                        onClick={increaseMonth}
+                        disabled={nextMonthButtonDisabled}
+                        className={`p-2 rounded-xl transition-colors ${
+                          nextMonthButtonDisabled 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  )}
+                  formatWeekDay={nameOfDay => nameOfDay.slice(0, 3)}
+                  calendarStartDay={1}
+                  dateFormat="MMMM d, yyyy"
+                  todayButton={
+                    <button className="w-full py-2 px-4 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      Today
+                    </button>
+                  }
+                  dayClassName={(date) => {
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    const isSelected = dateValue && dateValue.toDateString() === date.toDateString();
+                    const isDisabled = date < new Date(minDateTime || new Date());
+                    
+                    return `
+                      w-8 h-8 flex items-center justify-center rounded-full
+                      ${isToday ? 'bg-blue-100 text-blue-600 font-semibold' : ''}
+                      ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
+                      ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-50 cursor-pointer'}
+                      transition-colors duration-200
+                    `;
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {formattedDateTime && (
+          <div className="bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 p-6 rounded-2xl border border-emerald-200 shadow-lg">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Scheduled for:</p>
-                <p className="text-lg font-bold text-blue-900 mt-1">
-                  {new Date(value).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })} at {new Date(value).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })}
-                </p>
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-full shadow-md">
+                  <CheckCircle className="w-6 h-6 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Preview</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {formattedDateTime.date}
+                  </p>
+                  <p className="text-lg font-semibold text-blue-600">
+                    at {formattedDateTime.time}
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <div className="text-right">
+                  <div className="text-4xl">📅</div>
+                </div>
               </div>
             </div>
           </div>
@@ -163,7 +359,7 @@ export default function ExpertSlotManagement() {
         {error && <ErrorMessage message={error} />}
       </div>
     );
-  };
+  });
 
   // Smart Date Picker Component
   const SmartDatePicker = ({ 
@@ -181,21 +377,189 @@ export default function ExpertSlotManagement() {
     minDate?: string;
     className?: string;
   }) => {
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+      if (!value) return null;
+      const date = new Date(value);
+      return date;
+    });
+
+    const handleDateChange = useCallback((date: Date | null) => {
+      setSelectedDate(date);
+      if (date) {
+        const newDate = new Date(date);
+        // If there's an existing time, preserve it
+        if (selectedDate) {
+          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+        } else {
+          // Default to 9:00 AM
+          newDate.setHours(9, 0, 0, 0);
+        }
+        onChange(newDate.toISOString());
+      }
+      setIsDatePickerOpen(false);
+    }, [onChange, selectedDate]);
+
+    const handleContainerClick = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDatePickerOpen(true);
+    }, []);
+
+    const handleModalClick = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, []);
+
+    const handleCloseModal = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDatePickerOpen(false);
+    }, []);
+
     return (
       <div className={`space-y-3 ${className}`}>
         <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
           <CalendarDays className="w-4 h-4" />
           {label}
         </label>
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          min={minDate}
-          className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm hover:shadow-md ${
+        <div 
+          onClick={handleContainerClick}
+          className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm hover:shadow-md cursor-pointer ${
             error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
           }`}
-        />
+        >
+          {selectedDate ? selectedDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          }) : 'Select date...'}
+        </div>
+
+        {isDatePickerOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleCloseModal}
+          >
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300"
+            />
+            <div 
+              className="relative bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full mx-4 transform transition-all duration-300 scale-100"
+              onClick={handleModalClick}
+            >
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <div className="mt-4">
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={handleDateChange}
+                  minDate={minDate ? new Date(minDate) : new Date()}
+                  inline
+                  className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 text-lg"
+                  calendarClassName="!bg-white !border-2 !border-gray-200 !rounded-2xl !shadow-lg"
+                  wrapperClassName="w-full"
+                  renderCustomHeader={({
+                    date,
+                    decreaseMonth,
+                    increaseMonth,
+                    prevMonthButtonDisabled,
+                    nextMonthButtonDisabled,
+                  }) => (
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <button
+                        onClick={decreaseMonth}
+                        disabled={prevMonthButtonDisabled}
+                        className={`p-2 rounded-xl transition-colors ${
+                          prevMonthButtonDisabled 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={date.getMonth()}
+                          onChange={({ target: { value } }) => {
+                            const newDate = new Date(date);
+                            newDate.setMonth(parseInt(value));
+                            handleDateChange(newDate);
+                          }}
+                          className="text-lg font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {new Date(2000, i).toLocaleString('default', { month: 'long' })}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={date.getFullYear()}
+                          onChange={({ target: { value } }) => {
+                            const newDate = new Date(date);
+                            newDate.setFullYear(parseInt(value));
+                            handleDateChange(newDate);
+                          }}
+                          className="text-lg font-semibold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-0"
+                        >
+                          {Array.from({ length: 10 }, (_, i) => {
+                            const year = new Date().getFullYear() + i;
+                            return (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                      <button
+                        onClick={increaseMonth}
+                        disabled={nextMonthButtonDisabled}
+                        className={`p-2 rounded-xl transition-colors ${
+                          nextMonthButtonDisabled 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  )}
+                  formatWeekDay={nameOfDay => nameOfDay.slice(0, 3)}
+                  calendarStartDay={1}
+                  dateFormat="MMMM d, yyyy"
+                  todayButton={
+                    <button className="w-full py-2 px-4 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      Today
+                    </button>
+                  }
+                  dayClassName={(date) => {
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    const isSelected = selectedDate && selectedDate.toDateString() === date.toDateString();
+                    const isDisabled = date < new Date(minDate || new Date());
+                    
+                    return `
+                      w-8 h-8 flex items-center justify-center rounded-full
+                      ${isToday ? 'bg-blue-100 text-blue-600 font-semibold' : ''}
+                      ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
+                      ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-blue-50 cursor-pointer'}
+                      transition-colors duration-200
+                    `;
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && <ErrorMessage message={error} />}
       </div>
     );
@@ -298,7 +662,7 @@ export default function ExpertSlotManagement() {
         year: 'numeric'
       }),
       time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
+        hour: 'numeric',
         minute: '2-digit',
         hour12: true
       })
@@ -440,8 +804,14 @@ export default function ExpertSlotManagement() {
           const slotDate = new Date(date);
           slotDate.setHours(hours, minutes, 0, 0);
           
-          // Format the date exactly as required: "YYYY-MM-DDTHH:mm"
-          const formattedDate = slotDate.toISOString().slice(0, 16);
+          // Format the date in local timezone
+          const year = slotDate.getFullYear();
+          const month = String(slotDate.getMonth() + 1).padStart(2, '0');
+          const day = String(slotDate.getDate()).padStart(2, '0');
+          const hour = String(hours).padStart(2, '0');
+          const minute = String(minutes).padStart(2, '0');
+          
+          const formattedDate = `${year}-${month}-${day}T${hour}:${minute}`;
           slots.push({ start_time: formattedDate });
         });
       }
@@ -470,64 +840,56 @@ export default function ExpertSlotManagement() {
   const handleSave = useCallback(async () => {
     if (modalType === 'add' || modalType === 'edit') {
       if (!formData.start_time) {
-        showNotification('error', 'Start time is required');
+        setNotification({ type: 'error', message: 'Start time is required' });
         return;
       }
-
-      // Check for duplicate slot
       if (modalType === 'add' && slots.some(slot => slot.start_time === formData.start_time)) {
-        showNotification('error', 'A slot already exists at this time');
+        setNotification({ type: 'error', message: 'A slot already exists at this time' });
         return;
       }
     } else if (modalType === 'bulk') {
       if (bulkFormData.slot_list.length === 0) {
-        showNotification('error', 'Please generate slots before saving');
+        setNotification({ type: 'error', message: 'Please generate slots before saving' });
         return;
       }
     }
-
     setIsLoading(true);
-    
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // --- Local state logic only ---
       if (modalType === 'add' && formData.start_time) {
         const newSlot: ExpertSlot = {
           uuid: Date.now().toString(),
-          start_time: formData.start_time,
+          start_time: formData.start_time as string,
           status: 'DRAFT'
         };
         setSlots(prev => [...prev, newSlot]);
-        showNotification('success', 'Slot created successfully');
+        setNotification({ type: 'success', message: 'Slot created successfully' });
         closeModal();
       } else if (modalType === 'edit' && selectedSlot && formData.start_time) {
         const updatedSlot: ExpertSlot = {
           ...selectedSlot,
-          start_time: formData.start_time,
+          start_time: formData.start_time as string,
           status: formData.status || 'DRAFT'
         };
-        setSlots(prev => prev.map(slot => 
-          slot.uuid === selectedSlot.uuid ? updatedSlot : slot
-        ));
-        showNotification('success', 'Slot updated successfully');
+        setSlots(prev => prev.map(slot => slot.uuid === selectedSlot.uuid ? updatedSlot : slot));
+        setNotification({ type: 'success', message: 'Slot updated successfully' });
         closeModal();
       } else if (modalType === 'bulk') {
         const newSlots: ExpertSlot[] = bulkFormData.slot_list.map(slot => ({
           uuid: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          start_time: slot.start_time,
+          start_time: slot.start_time as string,
           status: 'DRAFT'
         }));
         setSlots(prev => [...prev, ...newSlots]);
-        showNotification('success', `Created ${newSlots.length} slots successfully`);
+        setNotification({ type: 'success', message: `Created ${newSlots.length} slots successfully` });
         closeModal();
       }
-    } catch (error) {
-      showNotification('error', 'Failed to save slots. Please try again.');
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error.message || 'Failed to save slots. Please try again.' });
     } finally {
       setIsLoading(false);
     }
-  }, [modalType, formData, selectedSlot, bulkFormData, slots, showNotification, closeModal]);
+  }, [modalType, formData, selectedSlot, bulkFormData, slots, closeModal]);
 
   // Toggle slot selection
   const toggleSlotSelection = (uuid: string) => {
@@ -559,28 +921,52 @@ export default function ExpertSlotManagement() {
     </div>
   );
 
+  // Notification component (modal-aware)
+  const NotificationBanner = ({ notification, onClose }: { notification: Notification | null; onClose?: () => void }) => {
+    if (!notification) return null;
+    return (
+      <div className={`w-full flex items-center justify-between gap-4 px-4 py-3 rounded-lg shadow-md mb-4 border text-base font-medium transition-all
+        ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+          notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-200' :
+          'bg-amber-50 text-amber-800 border-amber-200'}
+      `}>
+        <div className="flex items-center gap-2">
+          {notification.type === 'success' ? <CheckCircle size={20} /> :
+           notification.type === 'error' ? <XCircle size={20} /> :
+           <AlertCircle size={20} />}
+          <span>{notification.message}</span>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="ml-2 p-1 rounded-full hover:bg-gray-100">
+            <X size={18} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   // Modal Components
-  const Modal = ({ isOpen, onClose, title, children, size = 'md' }: {
+  const Modal = ({ isOpen, onClose, title, children, size = 'md', notification, onNotificationClose }: {
     isOpen: boolean;
     onClose: () => void;
     title: string;
     children: React.ReactNode;
     size?: 'sm' | 'md' | 'lg' | 'xl';
+    notification?: Notification | null;
+    onNotificationClose?: () => void;
   }) => {
     if (!isOpen) return null;
-
     const sizeClasses = {
       sm: 'max-w-md',
       md: 'max-w-lg',
       lg: 'max-w-2xl',
       xl: 'max-w-4xl'
     };
-
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto`}>
-          <div className="flex justify-between items-center p-6 border-b border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+        <div className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[95vh] overflow-y-auto flex flex-col`}>
+          <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900">{title}</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-xl hover:bg-gray-100"
@@ -588,9 +974,9 @@ export default function ExpertSlotManagement() {
               <X size={20} />
             </button>
           </div>
-          <div className="p-6">
-            {children}
-          </div>
+          {/* Notification at top of modal */}
+          {notification && <div className="px-4 pt-4"><NotificationBanner notification={notification} onClose={onNotificationClose} /></div>}
+          <div className="p-4 sm:p-6 flex-1 flex flex-col">{children}</div>
         </div>
       </div>
     );
@@ -602,6 +988,8 @@ export default function ExpertSlotManagement() {
       onClose={closeModal}
       title={modalType === 'add' ? 'Create New Slot' : 'Edit Slot'}
       size="lg"
+      notification={notification}
+      onNotificationClose={() => setNotification(null)}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6">
@@ -663,6 +1051,8 @@ export default function ExpertSlotManagement() {
       onClose={closeModal}
       title="Bulk Create Slots"
       size="xl"
+      notification={notification}
+      onNotificationClose={() => setNotification(null)}
     >
       <div className="space-y-6">
         {/* Template Generator */}
@@ -847,24 +1237,71 @@ export default function ExpertSlotManagement() {
     </Modal>
   );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
-          notification?.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-          notification?.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-          'bg-amber-50 text-amber-800 border border-amber-200'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {notification?.type === 'success' ? <CheckCircle size={20} /> :
-             notification?.type === 'error' ? <XCircle size={20} /> :
-             <AlertCircle size={20} />}
-            <span className="font-medium">{notification?.message}</span>
+  const ViewModal = () => (
+    <Modal
+      isOpen={modalType === 'view'}
+      onClose={closeModal}
+      title="View Slot Details"
+      size="md"
+    >
+      {selectedSlot && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500 rounded-xl">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Slot Information</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Date & Time</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {formatDateTime(selectedSlot.start_time).date}
+                  </p>
+                  <p className="text-lg font-semibold text-blue-600">
+                    {formatDateTime(selectedSlot.start_time).time}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    selectedSlot.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    selectedSlot.status === 'DRAFT' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                    selectedSlot.status === 'CANCELLED' ? 'bg-red-50 text-red-700 border-red-200' :
+                    'bg-gray-50 text-gray-700 border-gray-200'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      selectedSlot.status === 'ACTIVE' ? 'bg-emerald-500' :
+                      selectedSlot.status === 'DRAFT' ? 'bg-amber-500' :
+                      selectedSlot.status === 'CANCELLED' ? 'bg-red-500' :
+                      'bg-gray-500'
+                    } mr-1.5`}></span>
+                    {selectedSlot.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <button
+              onClick={closeModal}
+              className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-semibold"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
+    </Modal>
+  );
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Header Section */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-8">
@@ -975,10 +1412,67 @@ export default function ExpertSlotManagement() {
 
         {/* Slots Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
+          {/* Responsive Table/Card View */}
+          <div className="block sm:hidden">
+            {/* Mobile: Card view */}
+            <div className="divide-y divide-gray-200">
+              {paginatedSlots.map((slot) => {
+                const { date, time } = formatDateTime(slot.start_time);
+                const statusConfig = getStatusConfig(slot.status || '');
+                return (
+                  <div key={slot.uuid} className="p-4 flex flex-col gap-2 bg-white hover:bg-blue-50 transition rounded-xl mb-2 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedSlots.has(slot.uuid || '')}
+                          onChange={() => toggleSlotSelection(slot.uuid || '')}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-xs font-semibold text-gray-500">Select</span>
+                      </div>
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}> 
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} mr-1.5`}></span>
+                        {slot.status}
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-sm font-medium text-gray-900">{date}</div>
+                      <div className="text-xs text-gray-500">{time}</div>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 mt-2">
+                      <button
+                        onClick={() => handleView(slot)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        aria-label="View"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(slot)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        aria-label="Edit"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(slot)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            {/* Desktop: Table view */}
+            <table className="w-full min-w-[600px]">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
                   <th className="px-6 py-3 text-left">
                     <div className="flex items-center gap-2">
                       <input
@@ -1006,7 +1500,7 @@ export default function ExpertSlotManagement() {
                   const { date, time } = formatDateTime(slot.start_time);
                   const statusConfig = getStatusConfig(slot.status || '');
                   return (
-                    <tr key={slot.uuid} className="hover:bg-gray-50">
+                    <tr key={slot.uuid} className="hover:bg-blue-50 transition">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
@@ -1018,7 +1512,7 @@ export default function ExpertSlotManagement() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="text-sm font-medium text-gray-900">{date}</p>
-                          <p className="text-sm text-gray-500">{time}</p>
+                          <p className="text-xs text-gray-500">{time}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -1032,18 +1526,21 @@ export default function ExpertSlotManagement() {
                           <button
                             onClick={() => handleView(slot)}
                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            aria-label="View"
                           >
                             <Eye size={16} />
                           </button>
                           <button
                             onClick={() => handleEdit(slot)}
                             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            aria-label="Edit"
                           >
                             <Edit3 size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(slot)}
                             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Delete"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -1055,30 +1552,29 @@ export default function ExpertSlotManagement() {
               </tbody>
             </table>
           </div>
-
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredSlots.length)} of {filteredSlots.length} slots
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-2">
+              <p className="text-xs sm:text-sm text-gray-500">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredSlots.length)} of {filteredSlots.length} slots
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                  aria-label="Previous Page"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                  aria-label="Next Page"
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
           )}
@@ -1088,6 +1584,7 @@ export default function ExpertSlotManagement() {
       {/* Modals */}
       <AddEditModal />
       <BulkCreateModal />
+      <ViewModal />
     </div>
   );
 }

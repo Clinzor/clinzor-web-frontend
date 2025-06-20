@@ -8,7 +8,8 @@ import {
   X,
   ChevronLeft,
   LogOut,
-  User
+  User,
+  Video
 } from 'lucide-react';
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -109,6 +110,7 @@ export default function ExpertSidebar() {
   const menuItems = [
     { icon: <BarChart3 size={20} strokeWidth={1.5} />, label: 'Dashboard', href: '/expert' },
     { icon: <Calendar size={20} strokeWidth={1.5} />, label: 'Slot Management', href: '/expert/slotmanagement' },
+    { icon: <Video size={20} strokeWidth={1.5} />, label: 'Expert Video Calls', href: '/expert/videocall/portal' },
   ];
 
   const handleItemClick = (href: string) => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search, Filter, Download, RefreshCw, Calendar, CheckCircle, XCircle, 
   AlertCircle, User, Video, Phone, MessageSquare, Eye, Edit, Trash2, 
-  ChevronLeft, ChevronRight, Clock, DollarSign, AlertTriangle, Save, Plus
+  ChevronLeft, ChevronRight, Clock, DollarSign, AlertTriangle, Save, Plus, X, PhoneOff
 } from 'lucide-react';
 
 // Types
@@ -95,6 +95,14 @@ interface CreateBookingPayload {
   clinic_service: string | null;
 }
 
+// Add missing type definitions
+interface ChatMessage {
+  id: number;
+  text: string;
+  sender: string;
+  timestamp: string;
+}
+
 // Update sample data with more realistic bookings
 const sampleBookings: Booking[] = [
   {
@@ -106,7 +114,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "COMPLETED",
     room_id: "room_123",
-    expert_meeting_link: "https://meet.google.com/abc-defg-hij",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_123?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_001",
@@ -122,7 +130,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "CONFIRMED",
     room_id: "room_124",
-    expert_meeting_link: "https://meet.google.com/klm-nopq-rst",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_124?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_002",
@@ -170,7 +178,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "CONFIRMED",
     room_id: "room_125",
-    expert_meeting_link: "https://meet.google.com/uvw-xyz-123",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_125?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_005",
@@ -202,7 +210,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "COMPLETED",
     room_id: "room_126",
-    expert_meeting_link: "https://meet.google.com/456-789-012",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_126?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_007",
@@ -218,7 +226,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "CONFIRMED",
     room_id: "room_127",
-    expert_meeting_link: "https://meet.google.com/345-678-901",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_127?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_008",
@@ -250,7 +258,7 @@ const sampleBookings: Booking[] = [
     payment_status: "COMPLETED",
     booking_status: "COMPLETED",
     room_id: "room_128",
-    expert_meeting_link: "https://meet.google.com/234-567-890",
+    expert_meeting_link: "https://app.100ms.live/meeting/room_128?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
     booking_charge: "150.00",
     booking_type: "VIDEO_CALL",
     customer: "patient_010",
@@ -300,6 +308,110 @@ type StatusConfigs = {
   [key: string]: StatusConfig;
 };
 
+// Add new interface for VideoCallModal
+interface VideoCallModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  roomId: string;
+  bookingId: string;
+}
+
+// Video Call Modal Component
+const VideoCallModal: React.FC<VideoCallModalProps> = ({ isOpen, onClose, roomId, bookingId }) => {
+  const [videoCallUrl, setVideoCallUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen && roomId) {
+      // If roomId is a full URL, use it directly
+      if (roomId.startsWith('http')) {
+        setVideoCallUrl(roomId);
+        setIsLoading(false);
+      } else {
+        // If it's just a room ID, fetch the URL from API (fallback)
+        const fetchVideoCallUrl = async () => {
+          try {
+            setIsLoading(true);
+            setError('');
+            
+            const response = await fetch(`/api/expert/videocall/url?roomId=${roomId}&userName=Expert`);
+            
+            if (!response.ok) {
+              throw new Error('Failed to get video call URL');
+            }
+            
+            const data = await response.json();
+            setVideoCallUrl(data.videoCallUrl);
+          } catch (err) {
+            console.error('Error fetching video call URL:', err);
+            setError('Failed to load video call. Please try again.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchVideoCallUrl();
+      }
+    }
+  }, [isOpen, roomId]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Video Call</h2>
+            <p className="text-sm text-gray-500">Booking: {bookingId}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <XCircle size={20} />
+          </button>
+        </div>
+        
+        <div className="flex-1 relative">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 text-lg">Loading video call...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="bg-red-600 rounded-full p-4 mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+                  <PhoneOff className="text-white" size={24} />
+                </div>
+                <h3 className="text-red-600 text-xl font-semibold mb-2">Connection Failed</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : (
+            <iframe
+              src={videoCallUrl}
+              className="w-full h-full border-0"
+              allow="camera; microphone; fullscreen; speaker; display-capture"
+              allowFullScreen
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ExpertBookingManager: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>(sampleBookings);
   const [searchTerm, setSearchTerm] = useState('');
@@ -343,7 +455,9 @@ const ExpertBookingManager: React.FC = () => {
     booking_type: 'ALL',
     from_date: '',
     to_date: '',
-    payment_mode: 'ALL'
+    payment_mode: 'ALL',
+    sort_by: 'date_desc',
+    quick_date: 'ALL'
   });
 
   const bookingStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELED'];
@@ -359,9 +473,27 @@ const ExpertBookingManager: React.FC = () => {
   // Add a counter for booking numbers
   const [bookingCounter, setBookingCounter] = useState(1);
 
-  // Filter bookings based on criteria
+  // Add quick date options
+  const quickDateOptions = [
+    { value: 'ALL', label: 'All Time' },
+    { value: 'TODAY', label: 'Today' },
+    { value: 'TOMORROW', label: 'Tomorrow' },
+    { value: 'THIS_WEEK', label: 'This Week' },
+    { value: 'NEXT_WEEK', label: 'Next Week' },
+    { value: 'THIS_MONTH', label: 'This Month' }
+  ];
+
+  // Add sorting options
+  const sortOptions = [
+    { value: 'date_desc', label: 'Date (Newest First)' },
+    { value: 'date_asc', label: 'Date (Oldest First)' },
+    { value: 'status_asc', label: 'Status (A-Z)' },
+    { value: 'status_desc', label: 'Status (Z-A)' }
+  ];
+
+  // Update the filteredBookings logic to include sorting
   const filteredBookings = useMemo(() => {
-    return bookings.filter(booking => {
+    let filtered = bookings.filter(booking => {
       const searchMatch = !searchTerm || 
         booking.uuid.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.created_by.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -373,23 +505,77 @@ const ExpertBookingManager: React.FC = () => {
       const typeMatch = filters.booking_type === 'ALL' || booking.booking_type === filters.booking_type;
       const modeMatch = filters.payment_mode === 'ALL' || booking.payment_mode === filters.payment_mode;
 
+      // Handle quick date filters
       let dateMatch = true;
-      if (filters.from_date || filters.to_date) {
-        const bookingDate = new Date(booking.start_time);
-        const fromDate = filters.from_date ? new Date(filters.from_date) : null;
-        const toDate = filters.to_date ? new Date(filters.to_date) : null;
+      const bookingDate = new Date(booking.start_time);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const thisWeekStart = new Date(today);
+      thisWeekStart.setDate(today.getDate() - today.getDay());
+      
+      const nextWeekStart = new Date(thisWeekStart);
+      nextWeekStart.setDate(thisWeekStart.getDate() + 7);
+      
+      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        if (fromDate && toDate) {
-          dateMatch = bookingDate >= fromDate && bookingDate <= toDate;
-        } else if (fromDate) {
-          dateMatch = bookingDate >= fromDate;
-        } else if (toDate) {
-          dateMatch = bookingDate <= toDate;
-        }
+      switch (filters.quick_date) {
+        case 'TODAY':
+          dateMatch = bookingDate.toDateString() === today.toDateString();
+          break;
+        case 'TOMORROW':
+          dateMatch = bookingDate.toDateString() === tomorrow.toDateString();
+          break;
+        case 'THIS_WEEK':
+          dateMatch = bookingDate >= thisWeekStart && bookingDate < nextWeekStart;
+          break;
+        case 'NEXT_WEEK':
+          const nextWeekEnd = new Date(nextWeekStart);
+          nextWeekEnd.setDate(nextWeekStart.getDate() + 7);
+          dateMatch = bookingDate >= nextWeekStart && bookingDate < nextWeekEnd;
+          break;
+        case 'THIS_MONTH':
+          const thisMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          dateMatch = bookingDate >= thisMonthStart && bookingDate <= thisMonthEnd;
+          break;
+        default:
+          if (filters.from_date || filters.to_date) {
+            const fromDate = filters.from_date ? new Date(filters.from_date) : null;
+            const toDate = filters.to_date ? new Date(filters.to_date) : null;
+
+            if (fromDate && toDate) {
+              dateMatch = bookingDate >= fromDate && bookingDate <= toDate;
+            } else if (fromDate) {
+              dateMatch = bookingDate >= fromDate;
+            } else if (toDate) {
+              dateMatch = bookingDate <= toDate;
+            }
+          }
       }
 
       return searchMatch && statusMatch && paymentMatch && typeMatch && modeMatch && dateMatch;
     });
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (filters.sort_by) {
+        case 'date_desc':
+          return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+        case 'date_asc':
+          return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+        case 'status_asc':
+          return a.booking_status.localeCompare(b.booking_status);
+        case 'status_desc':
+          return b.booking_status.localeCompare(a.booking_status);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
   }, [bookings, searchTerm, filters]);
 
   // Memoize pagination calculations
@@ -480,7 +666,9 @@ const ExpertBookingManager: React.FC = () => {
       booking_type: 'ALL',
       from_date: '',
       to_date: '',
-      payment_mode: 'ALL'
+      payment_mode: 'ALL',
+      sort_by: 'date_desc',
+      quick_date: 'ALL'
     });
     setSearchTerm('');
     setCurrentPage(1);
@@ -536,6 +724,35 @@ const ExpertBookingManager: React.FC = () => {
   const handleCancel = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
     setModalType('cancel');
+  }, []);
+
+  // Add new handler for video call
+  const handleVideoCall = useCallback((booking: Booking) => {
+    // If we have a room ID, use the new video call structure
+    if (booking.room_id) {
+      window.open(`/expert/videocall/${booking.room_id}`, '_blank');
+    } else if (booking.expert_meeting_link) {
+      // If we have a direct meeting link, use the portal
+      const params = new URLSearchParams({
+        roomId: booking.room_id || '',
+        userName: 'Expert',
+        bookingId: booking.uuid,
+        userType: 'expert',
+        videoCallUrl: booking.expert_meeting_link
+      });
+      
+      window.open(`/expert/videocall/portal?${params.toString()}`, '_blank');
+    } else {
+      // Fallback to portal with default values
+      const params = new URLSearchParams({
+        roomId: 'default',
+        userName: 'Expert',
+        bookingId: booking.uuid,
+        userType: 'expert'
+      });
+      
+      window.open(`/expert/videocall/portal?${params.toString()}`, '_blank');
+    }
   }, []);
 
   const closeModal = useCallback(() => {
@@ -605,100 +822,127 @@ const ExpertBookingManager: React.FC = () => {
     return `${uuid.slice(0, 6)}...${uuid.slice(-4)}`;
   };
 
+  // Update the chatMessages state with proper typing
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // Update the newMessage state with proper typing
+  const [newMessage, setNewMessage] = useState('');
+
+  // Update the showChat state with proper typing
+  const [showChat, setShowChat] = useState(false);
+
+  // Update the isCallActive state with proper typing
+  const [isCallActive, setIsCallActive] = useState(false);
+
+  // Event handler for sending a message
+  const sendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    // Simulate sending a message
+    const message: ChatMessage = {
+      id: Date.now(),
+      text: newMessage,
+      sender: 'expert',
+      timestamp: new Date().toISOString()
+    };
+    setChatMessages(prev => [...prev, message]);
+    setNewMessage('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg transform transition-all duration-300 ease-in-out ${
           notification?.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
           notification?.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
           'bg-amber-50 text-amber-800 border border-amber-200'
         }`}>
           <div className="flex items-center space-x-2">
-            {notification?.type === 'success' ? <CheckCircle size={20} /> :
-             notification?.type === 'error' ? <XCircle size={20} /> :
-             <AlertCircle size={20} />}
+            {notification?.type === 'success' ? <CheckCircle size={20} className="text-emerald-600" /> :
+             notification?.type === 'error' ? <XCircle size={20} className="text-red-600" /> :
+             <AlertCircle size={20} className="text-amber-600" />}
             <span className="font-medium">{notification?.message}</span>
           </div>
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-10">
         {/* Header Section */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Expert Bookings</h1>
-            <p className="text-sm sm:text-base text-gray-600">Manage and track all expert bookings with advanced filtering</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Expert Bookings</h1>
+            <p className="text-base sm:text-lg text-gray-600">Manage and track all expert bookings with advanced filtering</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-
             <button
               onClick={() => window.location.reload()}
-              className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              <RefreshCw size={18} />
-              <span className="text-sm sm:text-base">Refresh</span>
+              <RefreshCw size={18} className="animate-spin-slow" />
+              <span className="text-sm sm:text-base font-medium">Refresh</span>
             </button>
           </div>
         </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="p-3 bg-blue-50 rounded-xl">
                 <Calendar className="text-blue-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
               </div>
-              <div className="p-3 bg-yellow-50 rounded-lg">
+              <div className="p-3 bg-yellow-50 rounded-xl">
                 <Clock className="text-yellow-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Confirmed</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.confirmed}</p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.confirmed}</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="p-3 bg-blue-50 rounded-xl">
                 <CheckCircle className="text-blue-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-emerald-600">{stats.completed}</p>
+                <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.completed}</p>
               </div>
-              <div className="p-3 bg-emerald-50 rounded-lg">
+              <div className="p-3 bg-emerald-50 rounded-xl">
                 <CheckCircle className="text-emerald-600" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Canceled</p>
-                <p className="text-2xl font-bold text-red-600">{stats.canceled}</p>
+                <p className="text-3xl font-bold text-red-600 mt-1">{stats.canceled}</p>
               </div>
-              <div className="p-3 bg-red-50 rounded-lg">
+              <div className="p-3 bg-red-50 rounded-xl">
                 <XCircle className="text-red-600" size={24} />
               </div>
             </div>
@@ -706,17 +950,17 @@ const ExpertBookingManager: React.FC = () => {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex flex-col space-y-4">
             <div className="w-full">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search by booking ID, customer, expert, or email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm sm:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 text-base border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
             </div>
@@ -724,18 +968,18 @@ const ExpertBookingManager: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg transition-colors ${
-                  showFilters ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`flex items-center space-x-2 px-5 py-3 rounded-xl transition-all duration-200 ${
+                  showFilters ? 'bg-blue-100 text-blue-700 shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 <Filter size={18} />
-                <span className="text-sm sm:text-base">Advanced Filters</span>
+                <span className="text-base font-medium">Advanced Filters</span>
               </button>
               
               {(Object.values(filters).some(f => f !== 'ALL' && f !== '') || searchTerm) && (
                 <button
                   onClick={clearFilters}
-                  className="px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm sm:text-base"
+                  className="px-5 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 text-base font-medium"
                 >
                   Clear All Filters
                 </button>
@@ -746,13 +990,42 @@ const ExpertBookingManager: React.FC = () => {
           {/* Advanced Filters */}
           {showFilters && (
             <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {/* Quick Date Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quick Date Filter</label>
+                  <select
+                    value={filters.quick_date}
+                    onChange={(e) => setFilters({...filters, quick_date: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
+                  >
+                    {quickDateOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sort By */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                  <select
+                    value={filters.sort_by}
+                    onChange={(e) => setFilters({...filters, sort_by: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
+                  >
+                    {sortOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Existing filters with improved styling */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Booking Status</label>
                   <select
                     value={filters.booking_status}
                     onChange={(e) => setFilters({...filters, booking_status: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
                   >
                     <option value="ALL">All Status</option>
                     {bookingStatuses.map(status => (
@@ -766,7 +1039,7 @@ const ExpertBookingManager: React.FC = () => {
                   <select
                     value={filters.payment_status}
                     onChange={(e) => setFilters({...filters, payment_status: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
                   >
                     <option value="ALL">All Payments</option>
                     {paymentStatuses.map(status => (
@@ -780,8 +1053,8 @@ const ExpertBookingManager: React.FC = () => {
                   <input
                     type="date"
                     value={filters.from_date}
-                    onChange={(e) => setFilters({...filters, from_date: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setFilters({...filters, from_date: e.target.value, quick_date: 'ALL'})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
                   />
                 </div>
 
@@ -790,8 +1063,8 @@ const ExpertBookingManager: React.FC = () => {
                   <input
                     type="date"
                     value={filters.to_date}
-                    onChange={(e) => setFilters({...filters, to_date: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setFilters({...filters, to_date: e.target.value, quick_date: 'ALL'})}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all duration-200"
                   />
                 </div>
               </div>
@@ -800,30 +1073,30 @@ const ExpertBookingManager: React.FC = () => {
         </div>
 
         {/* Results Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-sm text-gray-600">
               Showing <span className="font-medium text-gray-900">{paginationData.startIndex}</span> to <span className="font-medium text-gray-900">{paginationData.endIndex}</span> of <span className="font-medium text-gray-900">{paginationData.totalItems}</span> bookings
               {(Object.values(filters).some(f => f !== 'ALL' && f !== '') || searchTerm) && (
-                <span className="ml-2">
+                <span className="ml-2 text-blue-600">
                   (filtered)
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <span className="text-sm text-gray-600">Page {currentPage} of {paginationData.totalPages}</span>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, paginationData.totalPages))}
                   disabled={currentPage === paginationData.totalPages}
-                  className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -832,73 +1105,57 @@ const ExpertBookingManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Bookings Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        {/* Bookings Table (Desktop) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Desktop Table: hidden on mobile */}
+          <div className="overflow-x-auto w-full hidden sm:block">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meeting Link</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {paginationData.paginatedBookings.map((booking, index) => {
                   const { date, time } = formatDateTime(booking.start_time, booking.end_time);
                   const statusConfig = getStatusConfig(booking.booking_status);
-                  
                   return (
-                    <tr key={booking.uuid} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap">
+                    <tr key={booking.uuid} className="hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {paginationData.startIndex + index}
+                          {paginationData.startIndex + index} 
                         </div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{date}</div>
                         <div className="text-sm text-gray-500">{time}</div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
                           {statusConfig.icon} {booking.booking_status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {booking.expert_meeting_link ? (
-                          <a 
-                            href={booking.expert_meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 text-sm flex items-center space-x-1"
-                          >
-                            <Video size={14} />
-                            <span>Join</span>
-                          </a>
-                        ) : (
-                          <span className="text-gray-500 text-sm">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-3">
                           <button
                             onClick={() => handleView(booking)}
-                            className="flex items-center space-x-1 px-2 py-1 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                            className="flex items-center space-x-2 px-3 py-2 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200"
                             title="View Booking Details"
                           >
                             <Eye size={16} />
-                            <span className="text-xs">View</span>
+                            <span>View</span>
                           </button>
                           {booking.booking_status === 'PENDING' && (
                             <button
                               onClick={() => handleComplete(booking)}
-                              className="flex items-center space-x-1 px-2 py-1 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
+                              className="flex items-center space-x-2 px-3 py-2 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-200"
                               title="Mark Booking as Complete"
                             >
                               <CheckCircle size={16} />
-                              <span className="text-xs">Complete</span>
+                              <span>Complete</span>
                             </button>
                           )}
                         </div>
@@ -908,6 +1165,46 @@ const ExpertBookingManager: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card/List View: only on mobile */}
+          <div className="sm:hidden p-2 space-y-4">
+            {paginationData.paginatedBookings.map((booking, index) => {
+              const { date, time } = formatDateTime(booking.start_time, booking.end_time);
+              const statusConfig = getStatusConfig(booking.booking_status);
+              return (
+                <div key={booking.uuid} className="bg-gray-50 rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">#{paginationData.startIndex + index}</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>{statusConfig.icon} {booking.booking_status}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{date}</div>
+                    <div className="text-xs text-gray-500">{time}</div>
+                  </div>
+                  <div className="flex space-x-2 pt-2">
+                    <button
+                      onClick={() => handleView(booking)}
+                      className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all duration-200 text-xs"
+                      title="View Booking Details"
+                    >
+                      <Eye size={14} />
+                      <span>View</span>
+                    </button>
+                    {booking.booking_status === 'PENDING' && (
+                      <button
+                        onClick={() => handleComplete(booking)}
+                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 rounded-lg transition-all duration-200 text-xs"
+                        title="Mark Booking as Complete"
+                      >
+                        <CheckCircle size={14} />
+                        <span>Complete</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -921,12 +1218,12 @@ const ExpertBookingManager: React.FC = () => {
       >
         {selectedBooking && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-4 rounded-xl">
                 <h3 className="text-sm font-medium text-gray-500">Booking Number</h3>
                 <p className="mt-1 text-sm text-gray-900">{selectedBooking?.uuid}</p>
               </div>
-              <div>
+              <div className="bg-gray-50 p-4 rounded-xl">
                 <h3 className="text-sm font-medium text-gray-500">Date & Time</h3>
                 <p className="mt-1 text-sm text-gray-900">
                   {formatDateTime(selectedBooking?.start_time || '', selectedBooking?.end_time || '').date}
@@ -934,33 +1231,17 @@ const ExpertBookingManager: React.FC = () => {
                   {formatDateTime(selectedBooking?.start_time || '', selectedBooking?.end_time || '').time}
                 </p>
               </div>
-              <div>
+              <div className="bg-gray-50 p-4 rounded-xl">
                 <h3 className="text-sm font-medium text-gray-500">Status</h3>
                 <p className="mt-1 text-sm text-gray-900">{selectedBooking?.booking_status}</p>
               </div>
-              <div>
+              <div className="bg-gray-50 p-4 rounded-xl">
                 <h3 className="text-sm font-medium text-gray-500">Payment Status</h3>
                 <p className="mt-1 text-sm text-gray-900">{selectedBooking?.payment_status}</p>
               </div>
-              <div>
+              <div className="bg-gray-50 p-4 rounded-xl">
                 <h3 className="text-sm font-medium text-gray-500">Payment Mode</h3>
                 <p className="mt-1 text-sm text-gray-900">{selectedBooking?.payment_mode}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Expert Meeting Link</h3>
-                {selectedBooking?.expert_meeting_link ? (
-                  <a 
-                    href={selectedBooking.expert_meeting_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                  >
-                    <Video size={14} />
-                    <span>Join</span>
-                  </a>
-                ) : (
-                  <p className="mt-1 text-sm text-gray-500">-</p>
-                )}
               </div>
             </div>
           </div>
@@ -1131,6 +1412,59 @@ const ExpertBookingManager: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Chat Panel */}
+      {showChat && isCallActive && (
+        <div className="fixed right-4 top-4 bottom-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-40 flex flex-col">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Chat</h3>
+            <button
+              onClick={() => setShowChat(false)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          
+          <div className="flex-1 p-4 overflow-y-auto space-y-3">
+            {chatMessages.length === 0 ? (
+              <p className="text-gray-500 text-center text-sm">No messages yet</p>
+            ) : (
+              chatMessages.map((message) => (
+                <div key={message.id} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-700">{message.sender}</span>
+                    <span className="text-xs text-gray-500">{message.timestamp}</span>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-900">
+                    {message.text}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Add chat input form */}
+          <form onSubmit={sendMessage} className="p-4 border-t border-gray-200">
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="submit"
+                disabled={!newMessage.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

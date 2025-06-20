@@ -17,82 +17,124 @@ import {
   User,
   Calendar,
   FileText,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Shield,
+  Building,
+  DollarSign,
+  Video,
+  Home,
+  MapPin,
+  Clock,
+  Star,
+  Filter,
+  RefreshCw,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
-// Sample services data
-const initialServicesData = [
+// Sample services data based on your API structure
+const initialServicesData: Service[] = [
   {
-    uuid: "5bfffdfc-0af4-4d17-8d0c-08466e2315e5",
-    created_by: "admin@gmail.com",
-    name: "Cardiology",
-    description: "Specialist in diagnosing and treating heart and blood vessel conditions.",
+    uuid: "1",
+    name: "Cardiology Consultation",
+    description: "Expert consultation for heart-related issues",
     tags: "heart,cardiology,blood pressure,ECG,chest pain",
     image: null,
-    created_at: "2025-05-20T10:30:00Z",
-    updated_at: "2025-05-22T14:15:00Z"
+    status: "APPROVED",
+    is_video_call: true,
+    is_clinic_visit: true,
+    is_home_service: false,
+    consultation_charge_video_call: "0",
+    consultation_charge_clinic: null,
+    consultation_charge_home_visit: "0",
+    treatment_charge_video_call: "0",
+    treatment_charge_clinic: null,
+    treatment_charge_home_visit: "0"
   },
   {
-    uuid: "7c12a3b4-1ef5-4a18-9e1d-12345e6789ab",
-    created_by: "doctor@clinic.com",
-    name: "Dermatology",
-    description: "Comprehensive skin care and treatment for various dermatological conditions.",
-    tags: "skin,acne,dermatitis,cosmetic,moles",
+    uuid: "2",
+    name: "Heart Surgery",
+    description: "Advanced surgical procedures for heart conditions",
+    tags: "heart",
     image: null,
-    created_at: "2025-05-19T09:15:00Z",
-    updated_at: "2025-05-21T16:45:00Z"
+    status: "APPROVED",
+    is_video_call: true,
+    is_clinic_visit: true,
+    is_home_service: false,
+    consultation_charge_video_call: "0",
+    consultation_charge_clinic: null,
+    consultation_charge_home_visit: "0",
+    treatment_charge_video_call: "0",
+    treatment_charge_clinic: null,
+    treatment_charge_home_visit: "0"
   },
   {
-    uuid: "9d34e5f6-2gh7-4b29-0f2e-23456f7890bc",
-    created_by: "admin@gmail.com",
-    name: "Pediatrics",
-    description: "Medical care for infants, children, and adolescents up to 18 years old.",
-    tags: "children,pediatric,vaccination,growth,development",
-    image: null,
-    created_at: "2025-05-18T11:20:00Z",
-    updated_at: "2025-05-23T08:30:00Z"
-  },
-  {
-    uuid: "1a56b7c8-3hi9-4c40-1g3f-34567g8901cd",
-    created_by: "specialist@health.com",
-    name: "Orthopedics",
-    description: "Treatment of musculoskeletal system including bones, joints, and muscles.",
-    tags: "bones,joints,fractures,sports injury,arthritis",
-    image: null,
-    created_at: "2025-05-17T13:45:00Z",
-    updated_at: "2025-05-20T10:20:00Z"
-  },
-  {
-    uuid: "2b67c8d9-4ij0-5d51-2h4g-45678h9012de",
-    created_by: "admin@gmail.com",
-    name: "Neurology",
-    description: "Diagnosis and treatment of disorders of the nervous system.",
+    uuid: "3",
+    name: "Neurology Consultation",
+    description: "Specialized consultation for neurological disorders",
     tags: "brain,nerves,headache,seizures,stroke",
     image: null,
-    created_at: "2025-05-16T15:30:00Z",
-    updated_at: "2025-05-22T12:10:00Z"
+    status: "PENDING",
+    is_video_call: true,
+    is_clinic_visit: true,
+    is_home_service: false,
+    consultation_charge_video_call: "0",
+    consultation_charge_clinic: null,
+    consultation_charge_home_visit: "0",
+    treatment_charge_video_call: "0",
+    treatment_charge_clinic: null,
+    treatment_charge_home_visit: "0"
   },
   {
-    uuid: "3c78d9e0-5jk1-6e62-3i5h-56789i0123ef",
-    created_by: "doctor@clinic.com",
-    name: "Psychiatry",
-    description: "Mental health care and treatment of psychological disorders.",
-    tags: "mental health,depression,anxiety,therapy,counseling",
+    uuid: "4",
+    name: "General Medicine",
+    description: "Comprehensive medical consultation and treatment",
+    tags: "general,medicine,consultation,diagnosis",
     image: null,
-    created_at: "2025-05-15T14:20:00Z",
-    updated_at: "2025-05-21T09:55:00Z"
+    status: "APPROVED",
+    is_video_call: true,
+    is_clinic_visit: true,
+    is_home_service: false,
+    consultation_charge_video_call: "0",
+    consultation_charge_clinic: null,
+    consultation_charge_home_visit: "0",
+    treatment_charge_video_call: "0",
+    treatment_charge_clinic: null,
+    treatment_charge_home_visit: "0"
   }
 ];
 
 type Service = {
   uuid: string;
-  created_by: string;
   name: string;
   description: string;
   tags: string;
+  status: 'APPROVED' | 'PENDING' | 'REJECTED';
   image: string | null;
-  created_at: string;
-  updated_at: string;
+  is_video_call: boolean;
+  is_clinic_visit: boolean;
+  is_home_service: boolean;
+  consultation_charge_video_call: string | null;
+  consultation_charge_clinic: string | null;
+  consultation_charge_home_visit: string | null;
+  treatment_charge_video_call: string | null;
+  treatment_charge_clinic: string | null;
+  treatment_charge_home_visit: string | null;
+};
+
+type ServiceLink = {
+  clinic: string;
+  service: string;
+  rank: string;
+  consultation_charge_video_call?: number;
+  consultation_charge_home_visit?: number;
+  treatment_charge_video_call?: number;
+  treatment_charge_physical_visit?: number;
+  consultation_charge_physical_visit?: number;
+  treatment_charge_home_visit?: number;
+  is_video_call: boolean;
+  is_home_service: boolean;
+  is_clinic_visit: boolean;
 };
 
 type Notification = {
@@ -100,19 +142,51 @@ type Notification = {
   message: string;
 } | null;
 
-type ModalMode = 'view' | 'edit' | 'add' | null;
+type ModalMode = 'view' | 'edit' | 'add' | 'link' | 'delete' | null;
+
+type NewService = {
+  name: string;
+  description: string;
+  tags: string;
+  is_video_call: boolean;
+  is_clinic_visit: boolean;
+  is_home_service: boolean;
+  consultation_charge_video_call: string | null;
+  consultation_charge_clinic: string | null;
+  consultation_charge_home_visit: string | null;
+  treatment_charge_video_call: string | null;
+  treatment_charge_clinic: string | null;
+  treatment_charge_home_visit: string | null;
+};
 
 export default function ServiceManagement() {
   const [services, setServices] = useState<Service[]>(initialServicesData);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [linkingService, setLinkingService] = useState<ServiceLink | null>(null);
   const [notification, setNotification] = useState<Notification>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
   const [isMobileView, setIsMobileView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newService, setNewService] = useState<NewService>({
+    name: '',
+    description: '',
+    tags: '',
+    is_video_call: true,
+    is_clinic_visit: true,
+    is_home_service: false,
+    consultation_charge_video_call: null,
+    consultation_charge_clinic: null,
+    consultation_charge_home_visit: null,
+    treatment_charge_video_call: null,
+    treatment_charge_clinic: null,
+    treatment_charge_home_visit: null
+  });
 
   // Check if we're in mobile view
   React.useEffect(() => {
@@ -125,13 +199,16 @@ export default function ServiceManagement() {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
-  // Filter services based on search
+  // Filter services based on search and status
   const filteredServices = services.filter(service => {
     const searchLower = searchTerm.toLowerCase();
-    return service.name.toLowerCase().includes(searchLower) ||
-           service.description.toLowerCase().includes(searchLower) ||
-           service.tags.toLowerCase().includes(searchLower) ||
-           service.created_by.toLowerCase().includes(searchLower);
+    const matchesSearch = service.name.toLowerCase().includes(searchLower) ||
+                         service.description.toLowerCase().includes(searchLower) ||
+                         (service.tags && service.tags.toLowerCase().includes(searchLower));
+    
+    const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination
@@ -142,20 +219,39 @@ export default function ServiceManagement() {
   // Reset to first page when search changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, itemsPerPage]);
+  }, [searchTerm, itemsPerPage, statusFilter]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const getStatusConfig = (status: Service['status']) => {
+    switch (status) {
+      case 'APPROVED':
+        return {
+          color: 'bg-green-100 text-green-700 border-green-200',
+          icon: CheckCircle,
+          text: 'Approved'
+        };
+      case 'PENDING':
+        return {
+          color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+          icon: Clock,
+          text: 'Pending'
+        };
+      case 'REJECTED':
+        return {
+          color: 'bg-red-100 text-red-700 border-red-200',
+          icon: XCircle,
+          text: 'Rejected'
+        };
+      default:
+        return {
+          color: 'bg-gray-100 text-gray-700 border-gray-200',
+          icon: Clock,
+          text: status
+        };
+    }
   };
 
-  const formatTags = (tags: string) => {
+  const formatTags = (tags: string | null) => {
+    if (!tags) return [];
     return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
   };
 
@@ -166,92 +262,153 @@ export default function ServiceManagement() {
     }, 3000);
   };
 
-  const handleViewService = (service: Service) => {
-    setSelectedService(service);
-    setModalMode('view');
-  };
-
-  const handleEditService = (service: Service) => {
-    setEditingService({ ...service });
-    setModalMode('edit');
-  };
-
-  const handleAddService = () => {
-    const newService: Service = {
-      uuid: `temp-${Date.now()}`,
-      created_by: "current@user.com", // This would come from auth context
+  const handleAddClick = () => {
+    setModalMode('add');
+    setIsModalOpen(true);
+    setNewService({
       name: '',
       description: '',
       tags: '',
-      image: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    setEditingService(newService);
-    setModalMode('add');
+      is_video_call: true,
+      is_clinic_visit: true,
+      is_home_service: false,
+      consultation_charge_video_call: null,
+      consultation_charge_clinic: null,
+      consultation_charge_home_visit: null,
+      treatment_charge_video_call: null,
+      treatment_charge_clinic: null,
+      treatment_charge_home_visit: null
+    });
   };
 
-  const handleDeleteService = (uuid: string) => {
-    if (window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-      setServices(services.filter(service => service.uuid !== uuid));
-      showNotification('success', 'Service deleted successfully.');
-    }
+  const handleViewService = (service: Service) => {
+    setSelectedService(service);
+    setModalMode('view');
+    setIsModalOpen(true);
   };
 
-  const handleSaveService = async () => {
-    if (!editingService) return;
-    
-    // Validation
-    if (!editingService.name.trim()) {
-      showNotification('error', 'Service name is required.');
-      return;
-    }
-    
-    if (!editingService.description.trim()) {
-      showNotification('error', 'Service description is required.');
+  const handleEditClick = (service: Service) => {
+    setSelectedService(service);
+    setNewService({
+      name: service.name,
+      description: service.description,
+      tags: service.tags,
+      is_video_call: service.is_video_call,
+      is_clinic_visit: service.is_clinic_visit,
+      is_home_service: service.is_home_service,
+      consultation_charge_video_call: service.consultation_charge_video_call,
+      consultation_charge_clinic: service.consultation_charge_clinic,
+      consultation_charge_home_visit: service.consultation_charge_home_visit,
+      treatment_charge_video_call: service.treatment_charge_video_call,
+      treatment_charge_clinic: service.treatment_charge_clinic,
+      treatment_charge_home_visit: service.treatment_charge_home_visit
+    });
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (service: Service) => {
+    setSelectedService(service);
+    setModalMode('delete');
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalMode(null);
+    setSelectedService(null);
+  };
+
+  const handleAddService = async () => {
+    if (!newService.name || !newService.description) {
+      showNotification('error', 'Please fill in all required fields.');
       return;
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     try {
-      let updatedServices;
-      
-      if (modalMode === 'add') {
-        const newService = {
-          ...editingService,
-          uuid: `service-${Date.now()}`, // In real app, this comes from backend
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        updatedServices = [...services, newService];
-        showNotification('success', 'Service created successfully.');
-      } else {
-        updatedServices = services.map(service =>
-          service.uuid === editingService.uuid
-            ? { ...editingService, updated_at: new Date().toISOString() }
-            : service
-        );
-        showNotification('success', 'Service updated successfully.');
-      }
-      
-      setServices(updatedServices);
+      const service: Service = {
+        uuid: Math.random().toString(36).substr(2, 9),
+        name: newService.name,
+        description: newService.description,
+        tags: newService.tags,
+        image: null,
+        status: 'PENDING',
+        is_video_call: newService.is_video_call,
+        is_clinic_visit: newService.is_clinic_visit,
+        is_home_service: newService.is_home_service,
+        consultation_charge_video_call: newService.consultation_charge_video_call,
+        consultation_charge_clinic: newService.consultation_charge_clinic,
+        consultation_charge_home_visit: newService.consultation_charge_home_visit,
+        treatment_charge_video_call: newService.treatment_charge_video_call,
+        treatment_charge_clinic: newService.treatment_charge_clinic,
+        treatment_charge_home_visit: newService.treatment_charge_home_visit
+      };
+
+      setServices([...services, service]);
+      showNotification('success', 'Service added successfully.');
       handleCloseModal();
     } catch (error) {
-      showNotification('error', 'An error occurred. Please try again.');
+      showNotification('error', 'Failed to add service. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCloseModal = () => {
-    setModalMode(null);
-    setSelectedService(null);
-    setEditingService(null);
+  const handleEditService = async () => {
+    if (!selectedService) return;
+    
+    if (!newService.name || !newService.description) {
+      showNotification('error', 'Please fill in all required fields.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const updatedService: Service = {
+        ...selectedService,
+        name: newService.name,
+        description: newService.description,
+        tags: newService.tags,
+        is_video_call: newService.is_video_call,
+        is_clinic_visit: newService.is_clinic_visit,
+        is_home_service: newService.is_home_service,
+        consultation_charge_video_call: newService.consultation_charge_video_call,
+        consultation_charge_clinic: newService.consultation_charge_clinic,
+        consultation_charge_home_visit: newService.consultation_charge_home_visit,
+        treatment_charge_video_call: newService.treatment_charge_video_call,
+        treatment_charge_clinic: newService.treatment_charge_clinic,
+        treatment_charge_home_visit: newService.treatment_charge_home_visit
+      };
+
+      setServices(services.map(service => 
+        service.uuid === selectedService.uuid ? updatedService : service
+      ));
+      showNotification('success', 'Service updated successfully.');
+      handleCloseModal();
+    } catch (error) {
+      showNotification('error', 'Failed to update service. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!selectedService) return;
+
+    setIsLoading(true);
+
+    try {
+      setServices(services.filter(service => service.uuid !== selectedService.uuid));
+      showNotification('success', 'Service deleted successfully.');
+      handleCloseModal();
+    } catch (error) {
+      showNotification('error', 'Failed to delete service. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Generate page numbers for pagination
@@ -280,70 +437,6 @@ export default function ServiceManagement() {
     return pages;
   };
 
-  // Mobile Card Component
-  const MobileServiceCard = ({ service }: { service: Service }) => (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="font-medium text-gray-900 text-sm">{service.name}</h3>
-          <p className="text-xs text-gray-500 flex items-center mt-1">
-            <User size={10} className="mr-1" />
-            {service.created_by}
-          </p>
-        </div>
-      </div>
-      
-      <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-        {service.description}
-      </p>
-      
-      <div className="flex flex-wrap gap-1 mb-3">
-        {formatTags(service.tags).slice(0, 3).map((tag, index) => (
-          <span key={index} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-xs text-blue-700">
-            <Tag size={8} className="mr-1" />
-            {tag}
-          </span>
-        ))}
-        {formatTags(service.tags).length > 3 && (
-          <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-xs text-gray-600">
-            +{formatTags(service.tags).length - 3} more
-          </span>
-        )}
-      </div>
-      
-      <div className="text-xs text-gray-500 mb-3">
-        <div className="flex items-center">
-          <Calendar size={10} className="mr-1" />
-          Updated: {formatDate(service.updated_at)}
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={() => handleViewService(service)}
-          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          title="View Details"
-        >
-          <Eye size={14} />
-        </button>
-        <button
-          onClick={() => handleEditService(service)}
-          className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-          title="Edit Service"
-        >
-          <Edit3 size={14} />
-        </button>
-        <button
-          onClick={() => handleDeleteService(service.uuid)}
-          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete Service"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </div>
-  );
-
   // Modal Component
   const Modal = () => {
     if (!modalMode) return null;
@@ -351,9 +444,13 @@ export default function ServiceManagement() {
     const isViewMode = modalMode === 'view';
     const isEditMode = modalMode === 'edit';
     const isAddMode = modalMode === 'add';
+    const isDeleteMode = modalMode === 'delete';
     
     const currentService = isViewMode ? selectedService : editingService;
-    if (!currentService) return null;
+    if (!currentService && !isDeleteMode) return null;
+
+    const statusConfig = getStatusConfig(currentService?.status || 'PENDING');
+    const StatusIcon = statusConfig.icon;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -364,6 +461,7 @@ export default function ServiceManagement() {
               {isViewMode && 'Service Details'}
               {isEditMode && 'Edit Service'}
               {isAddMode && 'Add New Service'}
+              {isDeleteMode && 'Delete Service'}
             </h2>
             <button
               onClick={handleCloseModal}
@@ -375,55 +473,183 @@ export default function ServiceManagement() {
           
           {/* Modal Content */}
           <div className="p-6 space-y-6">
-            {isViewMode ? (
-              // View Mode
+            {isDeleteMode && selectedService ? (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
-                  <p className="text-gray-900">{currentService.name}</p>
+                <div className="flex items-center justify-center text-red-500 mb-4">
+                  <AlertTriangle size={48} />
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <p className="text-gray-700">{currentService.description}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                  <div className="flex flex-wrap gap-2">
-                    {formatTags(currentService.tags).map((tag, index) => (
-                      <span key={index} className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-sm text-blue-700">
-                        <Tag size={12} className="mr-1" />
-                        {tag}
-                      </span>
-                    ))}
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Are you sure you want to delete this service?
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    This action cannot be undone. This will permanently delete the service
+                    <span className="font-semibold"> {selectedService.name}</span> and all associated data.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={handleCloseModal}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDeleteService}
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 size={16} />
+                          Delete Service
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </div>
+            ) : isViewMode ? (
+              // View Mode - Show service details
+              <div className="space-y-6">
+                {/* Service Status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
+                      {StatusIcon && <StatusIcon size={14} />}
+                      {statusConfig.text}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Service Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
-                    <p className="text-gray-700 flex items-center">
-                      <User size={14} className="mr-2" />
-                      {currentService.created_by}
-                    </p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Service Name</h3>
+                    <p className="text-base text-gray-900">{currentService?.name}</p>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Service ID</label>
-                    <p className="text-gray-700 font-mono text-sm">{currentService.uuid}</p>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
+                    <p className="text-base text-gray-900">{currentService?.description}</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {currentService?.tags ? formatTags(currentService.tags).map((tag, index) => (
+                        <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
+                          {tag}
+                        </span>
+                      )) : (
+                        <span className="text-gray-500">No tags</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Service Type</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {currentService?.is_video_call && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 text-xs text-purple-700 font-medium border border-purple-100">
+                          Video Call
+                        </span>
+                      )}
+                      {currentService?.is_clinic_visit && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-xs text-green-700 font-medium border border-green-100">
+                          Clinic Visit
+                        </span>
+                      )}
+                      {currentService?.is_home_service && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
+                          Home Visit
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Created</label>
-                    <p className="text-gray-700 text-sm">{formatDate(currentService.created_at)}</p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
-                    <p className="text-gray-700 text-sm">{formatDate(currentService.updated_at)}</p>
+
+                {/* Charges */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Service Charges</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Consultation Charges */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-3">Consultation Charges</h4>
+                      <div className="space-y-3">
+                        {currentService?.is_video_call && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Video Call</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.consultation_charge_video_call ? 
+                                `₹${currentService.consultation_charge_video_call}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                        {currentService?.is_clinic_visit && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Clinic Visit</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.consultation_charge_clinic ? 
+                                `₹${currentService.consultation_charge_clinic}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                        {currentService?.is_home_service && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Home Visit</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.consultation_charge_home_visit ? 
+                                `₹${currentService.consultation_charge_home_visit}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Treatment Charges */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-500 mb-3">Treatment Charges</h4>
+                      <div className="space-y-3">
+                        {currentService?.is_video_call && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Video Call</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.treatment_charge_video_call ? 
+                                `₹${currentService.treatment_charge_video_call}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                        {currentService?.is_clinic_visit && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Clinic Visit</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.treatment_charge_clinic ? 
+                                `₹${currentService.treatment_charge_clinic}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                        {currentService?.is_home_service && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Home Visit</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {currentService.treatment_charge_home_visit ? 
+                                `₹${currentService.treatment_charge_home_visit}` : 
+                                'Not available'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -431,56 +657,119 @@ export default function ServiceManagement() {
               // Edit/Add Mode
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Service Name <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
                   <input
                     type="text"
-                    value={currentService.name}
-                    onChange={(e) => setEditingService({ ...currentService, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter service name"
+                    value={newService.name}
+                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
                   <textarea
-                    value={currentService.description}
-                    onChange={(e) => setEditingService({ ...currentService, description: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter service description"
+                    value={newService.description}
+                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                    rows={3}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                  <label className="block text-sm font-medium text-gray-700">Tags</label>
                   <input
                     type="text"
-                    value={currentService.tags}
-                    onChange={(e) => setEditingService({ ...currentService, tags: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter tags separated by commas"
+                    value={newService.tags}
+                    onChange={(e) => setNewService({ ...newService, tags: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Separate multiple tags with commas</p>
                 </div>
-                
-                {isEditMode && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Service ID</label>
-                      <p className="text-gray-700 font-mono text-sm">{currentService.uuid}</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Created By</label>
-                      <p className="text-gray-700">{currentService.created_by}</p>
-                    </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Video Call</label>
+                    <input
+                      type="checkbox"
+                      checked={newService.is_video_call}
+                      onChange={(e) => setNewService({ ...newService, is_video_call: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Clinic Visit</label>
+                    <input
+                      type="checkbox"
+                      checked={newService.is_clinic_visit}
+                      onChange={(e) => setNewService({ ...newService, is_clinic_visit: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Home Service</label>
+                    <input
+                      type="checkbox"
+                      checked={newService.is_home_service}
+                      onChange={(e) => setNewService({ ...newService, is_home_service: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Video Call Consultation Charge</label>
+                    <input
+                      type="number"
+                      value={newService.consultation_charge_video_call || ''}
+                      onChange={(e) => setNewService({ ...newService, consultation_charge_video_call: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Clinic Consultation Charge</label>
+                    <input
+                      type="number"
+                      value={newService.consultation_charge_clinic || ''}
+                      onChange={(e) => setNewService({ ...newService, consultation_charge_clinic: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Home Visit Consultation Charge</label>
+                    <input
+                      type="number"
+                      value={newService.consultation_charge_home_visit || ''}
+                      onChange={(e) => setNewService({ ...newService, consultation_charge_home_visit: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Video Call Treatment Charge</label>
+                    <input
+                      type="number"
+                      value={newService.treatment_charge_video_call || ''}
+                      onChange={(e) => setNewService({ ...newService, treatment_charge_video_call: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Clinic Treatment Charge</label>
+                    <input
+                      type="number"
+                      value={newService.treatment_charge_clinic || ''}
+                      onChange={(e) => setNewService({ ...newService, treatment_charge_clinic: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Home Visit Treatment Charge</label>
+                    <input
+                      type="number"
+                      value={newService.treatment_charge_home_visit || ''}
+                      onChange={(e) => setNewService({ ...newService, treatment_charge_home_visit: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -496,7 +785,7 @@ export default function ServiceManagement() {
             
             {!isViewMode && (
               <button
-                onClick={handleSaveService}
+                onClick={handleEditService}
                 disabled={isLoading}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
               >
@@ -527,15 +816,15 @@ export default function ServiceManagement() {
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Service Management</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Manage your clinic's services and their details
+              {filteredServices.length} services found
             </p>
           </div>
           <button
-            onClick={handleAddService}
+            onClick={handleAddClick}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto"
           >
             <PlusCircle size={16} />
-            <span>Add New Service</span>
+            <span>Add Service</span>
           </button>
         </div>
       </div>
@@ -577,199 +866,157 @@ export default function ServiceManagement() {
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search services by name, description, tags, or creator..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Search by name, description, or tags..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
           
-          {/* Items per page */}
-          <select
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Results Summary */}
-      <div className="mx-4 sm:mx-6 mt-4 px-4 py-3 bg-white rounded-lg border border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <p className="text-sm text-gray-600">
-            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredServices.length)} of {filteredServices.length} services
-          </p>
-          <p className="text-xs text-gray-500">
-            Page {currentPage} of {totalPages}
-          </p>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-grow mx-4 sm:mx-6 mt-4 mb-4">
-        {filteredServices.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No services found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by adding your first service.'}
-            </p>
-            {!searchTerm && (
-              <button
-                onClick={handleAddService}
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <PlusCircle size={16} />
-                Add New Service
-              </button>
-            )}
+          {/* Status Filter */}
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PENDING">Pending</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
           </div>
-        ) : isMobileView ? (
-          /* Mobile Card View */
-          <div className="space-y-3">
-            {paginatedServices.map((service) => (
-              <MobileServiceCard key={service.uuid} service={service} />
-            ))}
+          
+          {/* Items Per Page */}
+          <div>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={6}>6 per page</option>
+              <option value={12}>12 per page</option>
+              <option value={24}>24 per page</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Service Cards */}
+      <div className="flex-1 px-4 sm:px-6 py-6">
+        {paginatedServices.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <FileText size={48} className="mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No services found</h3>
+            <p className="text-gray-500">Try adjusting your search or filters</p>
           </div>
         ) : (
-          /* Desktop Table View */
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Service Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tags
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created By
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Updated
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedServices.map((service) => (
-                    <tr key={service.uuid} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                          <div className="text-xs text-gray-500 font-mono">{service.uuid}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs">
-                          <p className="line-clamp-2">{service.description}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {formatTags(service.tags).slice(0, 2).map((tag, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-xs text-blue-700">
-                              <Tag size={10} className="mr-1" />
-                              {tag}
-                            </span>
-                          ))}
-                          {formatTags(service.tags).length > 2 && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-xs text-gray-600">
-                              +{formatTags(service.tags).length - 2} more
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-700">{service.created_by}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-600">{formatDate(service.updated_at)}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => handleViewService(service)}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEditService(service)}
-                            className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteService(service.uuid)}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedServices.map((service) => (
+              <div key={service.uuid} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                {/* Header with status */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 text-sm truncate">{service.name}</h3>
+                    <p className="text-xs text-gray-500 flex items-center mt-1 truncate">
+                      <Tag size={10} className="mr-1 flex-shrink-0" />
+                      {service.tags ? formatTags(service.tags)[0] : 'No tags'}
+                    </p>
+                  </div>
+                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusConfig(service.status).color}`}>
+                    {(() => {
+                      const StatusIcon = getStatusConfig(service.status).icon;
+                      return StatusIcon ? <StatusIcon size={10} className="mr-1" /> : null;
+                    })()}
+                    {getStatusConfig(service.status).text}
+                  </div>
+                </div>
+                
+                {/* Description */}
+                <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                  {service.description}
+                </p>
+                
+                {/* Tags */}
+                {service.tags && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {formatTags(service.tags).slice(0, 2).map((tag, index) => (
+                      <span key={index} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
+                        {tag}
+                      </span>
+                    ))}
+                    {formatTags(service.tags).length > 2 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 text-xs text-gray-600 font-medium border border-gray-200">
+                        +{formatTags(service.tags).length - 2} more
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Actions */}
+                <div className="flex justify-end gap-1">
+                  <button
+                    onClick={() => handleViewService(service)}
+                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="View Details"
+                  >
+                    <Eye size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleEditClick(service)}
+                    className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Edit Service"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(service)}
+                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Service"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-1 mb-6">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          {generatePageNumbers().map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 text-sm border rounded ${
-                page === currentPage
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronRight size={14} />
-          </button>
+        <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredServices.length)} of {filteredServices.length} services
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Modal */}
-      {Modal()}
+      <Modal />
     </div>
   );
 }
