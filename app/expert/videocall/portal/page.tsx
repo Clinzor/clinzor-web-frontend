@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   ArrowLeft, PhoneOff, Video, Calendar, Clock, Users, 
@@ -701,3 +701,5 @@ export default function VideoCallPortal() {
     </div>
   );
 }
+
+export const dynamic = 'force-dynamic';
