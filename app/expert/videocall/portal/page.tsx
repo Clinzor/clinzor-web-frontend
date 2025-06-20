@@ -187,7 +187,7 @@ const LocalMediaVideoCall: React.FC<LocalMediaVideoCallProps> = ({
   );
 };
 
-export default function VideoCallPortal() {
+function VideoCallPortalContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [videoCalls, setVideoCalls] = useState<VideoCall[]>([]);
@@ -699,6 +699,14 @@ export default function VideoCallPortal() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VideoCallPortal() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" /></div>}>
+      <VideoCallPortalContent />
+    </Suspense>
   );
 }
 
