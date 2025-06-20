@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 // 100ms SDK for token generation
@@ -9,8 +11,6 @@ const HMS_CONFIG = {
   appSecret: process.env.HMS_APP_SECRET || 'your_app_secret_here',
   // You can get these from your 100ms dashboard
 };
-
-export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
