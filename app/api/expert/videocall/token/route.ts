@@ -10,6 +10,8 @@ const HMS_CONFIG = {
   // You can get these from your 100ms dashboard
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
