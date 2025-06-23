@@ -238,7 +238,7 @@ export default function AdminSidebar() {
       badge: '245',
       badgeColor: 'blue' as const,
       children: [
-        { label: 'All Users', href: '/admin/users/all' },
+        { label: 'All Users', href: '/admin/allusers' },
         { label: 'Blocked Users', href: '/admin/blocked', badge: '12', badgeColor: 'red' as const },
         { label: 'User Analytics', href: '/admin/analytics' }
       ]
@@ -249,8 +249,8 @@ export default function AdminSidebar() {
       badge: '48',
       badgeColor: 'green' as const,
       children: [
-        { label: 'All Clinics', href: '/admin/clinics/all' },
-        { label: 'Pending Approvals', href: '/admin/clinics/pending', badge: '7', badgeColor: 'yellow' as const },
+        { label: 'All Clinics', href: '/admin/allclinics' },
+        { label: 'Pending Approvals', href: '/admin/pending', badge: '7', badgeColor: 'yellow' as const },
         { label: 'Clinic Analytics', href: '/admin/clinics/analytics' }
       ]
     },
@@ -260,7 +260,7 @@ export default function AdminSidebar() {
       badge: '89',
       badgeColor: 'blue' as const,
       children: [
-        { label: 'All Experts', href: '/admin/experts/all' },
+        { label: 'All Experts', href: '/admin/experts' },
         { label: 'Pending Verification', href: '/admin/experts/pending', badge: '5', badgeColor: 'yellow' as const },
         { label: 'Expert Performance', href: '/admin/experts/performance' }
       ]
@@ -271,18 +271,16 @@ export default function AdminSidebar() {
       badge: '156',
       badgeColor: 'green' as const,
       children: [
-        { label: 'All Bookings', href: '/admin/bookings/all' },
-        { label: 'Cancelled Bookings', href: '/admin/bookings/cancelled' },
-        { label: 'Booking Analytics', href: '/admin/bookings/analytics' }
+        { label: 'All Bookings', href: '/admin/bookings' },
+        { label: 'Slot Management', href: '/admin/slots' },
       ]
     },
     {
       icon: <Stethoscope size={20} strokeWidth={1.5} />,
       label: 'Service Management',
       children: [
-        { label: 'All Services', href: '/admin/services/all' },
-        { label: 'Service Categories', href: '/admin/services/categories' },
-        { label: 'Pricing Management', href: '/admin/services/pricing' }
+        { label: 'All Services', href: '/admin/allservices' },
+        { label: 'Clinic Services Listing', href: '/admin/clinicservices' },
       ]
     },
     {
@@ -291,7 +289,7 @@ export default function AdminSidebar() {
       badge: 'New',
       badgeColor: 'green' as const,
       children: [
-        { label: 'Settlement Tracker', href: '/admin/dues/settlements' },
+        { label: 'Dues List', href: '/admin/dues' },
         { label: 'Pending Amounts', href: '/admin/dues/pending', badge: '₹45K', badgeColor: 'red' as const },
         { label: 'Payment History', href: '/admin/dues/history' },
         { label: 'Financial Reports', href: '/admin/dues/reports' }
@@ -303,9 +301,18 @@ export default function AdminSidebar() {
       badge: '8',
       badgeColor: 'yellow' as const,
       children: [
-        { label: 'Active Offers', href: '/admin/offers/active' },
-        { label: 'Create Offer', href: '/admin/offers/create' },
-        { label: 'Offer Analytics', href: '/admin/offers/analytics' }
+        { label: 'Offers List', href: '/admin/offers' },
+      ]
+    },
+    {
+      icon: <Home size={20} strokeWidth={1.5} />,
+      label: 'Camp Management',
+      badge: '15',
+      badgeColor: 'blue' as const,
+      children: [
+        { label: 'All Camps', href: '/admin/allcamps' },
+        { label: 'Pending Camps', href: '/admin/pendingcamps', badge: '2', badgeColor: 'yellow' as const },
+        { label: 'Camp Analytics', href: '/admin/camps/analytics' }
       ]
     }
   ];
@@ -313,6 +320,7 @@ export default function AdminSidebar() {
   const bottomMenuItems = [
     { icon: <HelpCircle size={20} strokeWidth={1.5} />, label: 'FAQ Management', href: '/admin/faq' },
     { icon: <FileText size={20} strokeWidth={1.5} />, label: 'Blog Management', href: '/admin/blog', badge: '3', badgeColor: 'blue' as const },
+    { icon: <Building2 size={20} strokeWidth={1.5} />, label: 'Organization Management', href: '/admin/org' },
   ];
 
   const handleItemClick = (href: string) => {

@@ -26,6 +26,7 @@ import {
   Unlock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import useMedia from '../../../src/hooks/useMedia';
 
 interface User {
   uuid: string;
@@ -364,6 +365,8 @@ export default function BlockedUsersPage() {
     message: string;
   } | null>(null);
   
+  const isMobile = useMedia('(max-width: 640px)');
+  
   // Load blocked users on component mount
   useEffect(() => {
     const loadUsers = async () => {
@@ -470,6 +473,9 @@ export default function BlockedUsersPage() {
     window.location.reload();
   };
   
+  // Users Display mode: force grid on mobile
+  const effectiveViewMode = isMobile ? 'grid' : viewMode;
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -482,7 +488,7 @@ export default function BlockedUsersPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div 
@@ -517,7 +523,7 @@ export default function BlockedUsersPage() {
         </motion.div>
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <motion.div 
             className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
             initial={{ opacity: 0, y: 20 }}
@@ -594,11 +600,11 @@ export default function BlockedUsersPage() {
         
         {/* Filters and Search */}
         <motion.div 
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8"
+          className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-gray-100 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-4">
             {/* Search */}
             <div className="flex-1 relative">
               <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -642,25 +648,27 @@ export default function BlockedUsersPage() {
               <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
             
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-                }`}
-              >
-                Table
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-                }`}
-              >
-                Grid
-              </button>
-            </div>
+            {/* View Mode Toggle: hide on mobile */}
+            {!isMobile && (
+              <div className="flex bg-gray-100 rounded-lg p-1 w-full md:w-auto">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                  }`}
+                >
+                  Table
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                  }`}
+                >
+                  Grid
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -691,8 +699,8 @@ export default function BlockedUsersPage() {
         </div>
 
         {/* Users Display */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {effectiveViewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             {paginatedUsers.map((user) => (
               <BlockedUserCard
                 key={user.uuid}
@@ -704,12 +712,12 @@ export default function BlockedUsersPage() {
           </div>
         ) : (
           <motion.div 
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="min-w-[600px] sm:min-w-full overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

@@ -6,12 +6,10 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import UserManagementTable from "@/components/admin/usermanagement/Allusers";
-import BlockedUsersTable from "@/components/admin/usermanagement/blockedusers";
-import AllDoctorsTable from "@/components/admin/doctorslist/doctors";
-import PaymentsTable from "@/components/admin/payments/payments";
-import ServiceManagement from "@/components/admin/servicesmanagement/service";
+import PendingClinics from "@/components/admin/clincs/PendingClinics";
 
-export default function docters() {
+
+export default function Usermanagement() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Breadcrumb Navigation */}
@@ -31,36 +29,12 @@ export default function docters() {
             href="/admin/membermanagement"
             sx={{ fontSize: 12, fontWeight: 500 }}
           >
-           Blocked Users
+            Clinic Management
           </Link>
         </Breadcrumbs>
       </Box>
 
-      {/* Header Action Row */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1,
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography level="h4" fontWeight="lg">
-          All Users
-        </Typography>
-        <Button
-          color="primary"
-          startDecorator={<DownloadRoundedIcon />}
-          size="sm"
-        >
-          Download PDF
-        </Button>
-      </Box>
-
-      {/* Table Section */}
-      <ServiceManagement />
+      <PendingClinics />
     </Box>
   );
 }

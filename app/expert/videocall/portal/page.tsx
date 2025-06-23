@@ -21,6 +21,10 @@ interface VideoCall {
   hmsRoomCode?: string;
   hmsToken?: string;
   hmsRoomUrl?: string;
+  patient_name?: string;
+  patient_mobile?: string;
+  patient_email?: string;
+  patient_address?: string;
 }
 
 interface LocalMediaVideoCallProps {
@@ -200,6 +204,7 @@ function VideoCallPortalContent() {
   const [isInCall, setIsInCall] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [expandedPatientId, setExpandedPatientId] = useState<string | null>(null);
 
   const userType = searchParams.get('userType') || 'expert';
   const userName = searchParams.get('userName') || 'Expert User';
@@ -218,7 +223,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'cardio-room-123',
       hmsToken: 'hms_token_123',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-123'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-123',
+      patient_name: 'John Smith',
+      patient_mobile: '1234567890',
+      patient_email: 'john.smith@email.com',
+      patient_address: '123 Main St, Springfield',
     },
     {
       id: '2',
@@ -232,7 +241,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'derma-room-124',
       hmsToken: 'hms_token_124',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-124'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-124',
+      patient_name: 'Emma Wilson',
+      patient_mobile: '9876543210',
+      patient_email: 'emma.wilson@email.com',
+      patient_address: '456 Oak Ave, Metropolis',
     },
     {
       id: '3',
@@ -246,7 +259,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'pediatric-room-125',
       hmsToken: 'hms_token_125',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-125'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-125',
+      patient_name: 'Tommy Johnson',
+      patient_mobile: '5551234567',
+      patient_email: 'tommy.johnson@email.com',
+      patient_address: '789 Pine Rd, Gotham',
     },
     {
       id: '4',
@@ -260,7 +277,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'ent-room-129',
       hmsToken: 'hms_token_129',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-129'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-129',
+      patient_name: 'Amit Kumar',
+      patient_mobile: '8889990000',
+      patient_email: 'amit.kumar@email.com',
+      patient_address: '22 MG Road, Mumbai',
     },
     {
       id: '5',
@@ -274,7 +295,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'genmed-room-130',
       hmsToken: 'hms_token_130',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-130'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-130',
+      patient_name: 'Riya Sen',
+      patient_mobile: '7778889999',
+      patient_email: 'riya.sen@email.com',
+      patient_address: '11 Park St, Kolkata',
     },
     {
       id: '6',
@@ -288,7 +313,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'diabetes-room-131',
       hmsToken: 'hms_token_131',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-131'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-131',
+      patient_name: 'Manoj Pillai',
+      patient_mobile: '6667778888',
+      patient_email: 'manoj.pillai@email.com',
+      patient_address: '55 Lake View, Kochi',
     },
     {
       id: '7',
@@ -302,7 +331,11 @@ function VideoCallPortalContent() {
       userType: 'expert',
       hmsRoomCode: 'ortho-room-132',
       hmsToken: 'hms_token_132',
-      hmsRoomUrl: 'https://100ms.live/meeting/room-132'
+      hmsRoomUrl: 'https://100ms.live/meeting/room-132',
+      patient_name: 'Asha Thomas',
+      patient_mobile: '9990001111',
+      patient_email: 'asha.thomas@email.com',
+      patient_address: '88 Residency Rd, Bangalore',
     }
   ];
 
@@ -622,6 +655,23 @@ function VideoCallPortalContent() {
                               </>
                             )}
                           </button>
+                        )}
+
+                        <button
+                          onClick={() => setExpandedPatientId(videoCall.id === expandedPatientId ? null : videoCall.id)}
+                          className="mt-2 px-3 py-1.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold hover:bg-blue-200 transition"
+                          aria-label={videoCall.id === expandedPatientId ? 'Close Patient Details' : 'Open Patient Details'}
+                          title={videoCall.id === expandedPatientId ? 'Close Patient Details' : 'Open Patient Details'}
+                        >
+                          {videoCall.id === expandedPatientId ? 'Close' : 'Open'} Patient Details
+                        </button>
+                        {videoCall.id === expandedPatientId && (
+                          <div className="mt-3 p-3 rounded bg-gray-50 border text-xs text-gray-700">
+                            <div><strong>Name:</strong> {videoCall.patient_name}</div>
+                            <div><strong>Phone:</strong> {videoCall.patient_mobile}</div>
+                            <div><strong>Email:</strong> {videoCall.patient_email}</div>
+                            <div><strong>Address:</strong> {videoCall.patient_address}</div>
+                          </div>
                         )}
                       </div>
                     </div>

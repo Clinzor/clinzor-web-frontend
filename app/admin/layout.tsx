@@ -17,7 +17,7 @@ import AdminSidebar from "@/components/admin/Sidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }} >
       <AdminSidebar />
       <Box
         component="main"
@@ -37,6 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           pb: { xs: 2, sm: 2, md: 3 },
           gap: 1,
           overflow: "auto", // enable scroll inside main content
+          zIndex: 10, // ensure main content is above sidebar or overlays
         }}
       >
 

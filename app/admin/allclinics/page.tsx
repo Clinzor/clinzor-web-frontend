@@ -28,32 +28,9 @@ export default function Usermanagement() {
             href="/admin/membermanagement"
             sx={{ fontSize: 12, fontWeight: 500 }}
           >
-            Member Management
+            Clinic Management
           </Link>
         </Breadcrumbs>
-      </Box>
-
-      {/* Header Action Row */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1,
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography level="h4" fontWeight="lg">
-          All Users
-        </Typography>
-        <Button
-          color="primary"
-          startDecorator={<DownloadRoundedIcon />}
-          size="sm"
-        >
-          Download PDF
-        </Button>
       </Box>
 
       <AllClinicsTable />

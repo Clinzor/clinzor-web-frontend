@@ -28,6 +28,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import useMedia from '../../../src/hooks/useMedia';
 
 interface User {
   uuid: string;
@@ -416,6 +417,8 @@ export default function AllUsersPage() {
     message: string;
   } | null>(null);
   
+  const isMobile = useMedia('(max-width: 640px)');
+  
   // Load users on component mount
   useEffect(() => {
     const loadUsers = async () => {
@@ -609,6 +612,9 @@ export default function AllUsersPage() {
     window.location.reload();
   };
   
+  // Users Display mode: force grid on mobile
+  const effectiveViewMode = isMobile ? 'grid' : viewMode;
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -621,46 +627,34 @@ export default function AllUsersPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div 
-          className="flex flex-col md:flex-row md:items-center justify-between mb-8"
+          className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <Users className="mr-3 text-blue-600" size={32} />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+              <Users className="mr-2 sm:mr-3 text-blue-600" size={28} />
               All Users
             </h1>
-            <p className="text-gray-600 mt-1">Manage and monitor all platform users</p>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and monitor all platform users</p>
           </div>
-          
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <div className="flex items-center gap-2 sm:gap-4 mt-2 md:mt-0 w-full md:w-auto">
             <button 
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto"
             >
               <RefreshCw size={16} />
-              Refresh
-            </button>
-            <button 
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Download size={16} />
-              Export
-            </button>
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              <Plus size={16} />
-              Add User
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </motion.div>
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <motion.div 
             className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
             initial={{ opacity: 0, y: 20 }}
@@ -737,29 +731,29 @@ export default function AllUsersPage() {
         
         {/* Filters and Search */}
         <motion.div 
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8"
+          className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-gray-100 mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-4">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative w-full">
               <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search users by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
               />
             </div>
             
             {/* Role Filter */}
-            <div className="relative">
+            <div className="relative w-full md:w-auto">
               <select
                 value={selectedRole}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedRole(e.target.value as User['role'] | 'ALL')}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 sm:py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto text-sm sm:text-base"
               >
                 <option value="ALL">All Roles</option>
                 <option value="CUSTOMER">Customer</option>
@@ -771,11 +765,11 @@ export default function AllUsersPage() {
             </div>
             
             {/* Status Filter */}
-            <div className="relative">
+            <div className="relative w-full md:w-auto">
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 sm:py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto text-sm sm:text-base"
               >
                 <option value="ALL">All Status</option>
                 <option value="ACTIVE">Active</option>
@@ -785,31 +779,33 @@ export default function AllUsersPage() {
               <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
             
-            {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-                }`}
-              >
-                Table
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
-                }`}
-              >
-                Grid
-              </button>
-            </div>
+            {/* View Mode Toggle: hide on mobile */}
+            {!isMobile && (
+              <div className="flex bg-gray-100 rounded-lg p-1 w-full md:w-auto">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                  }`}
+                >
+                  Table
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                  }`}
+                >
+                  Grid
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
         
         {/* Results Count */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-600">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-2">
+          <p className="text-gray-600 text-sm sm:text-base">
             Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length} users
           </p>
           <div className="flex items-center gap-2">
@@ -834,8 +830,8 @@ export default function AllUsersPage() {
         </div>
         
         {/* Users Display */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {effectiveViewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             {paginatedUsers.map((user) => (
               <UserCard
                 key={user.uuid}
@@ -849,12 +845,12 @@ export default function AllUsersPage() {
           </div>
         ) : (
           <motion.div 
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="min-w-[600px] sm:min-w-full overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -900,15 +896,15 @@ export default function AllUsersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <motion.div 
-            className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+            className="flex flex-col sm:flex-row items-center justify-between bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 gap-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors w-1/2 sm:w-auto ${
                   currentPage === 1 
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -922,7 +918,7 @@ export default function AllUsersPage() {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors w-1/2 sm:w-auto ${
                   currentPage === totalPages 
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -931,7 +927,6 @@ export default function AllUsersPage() {
                 Next
               </button>
             </div>
-            
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Items per page:</span>
               <select
