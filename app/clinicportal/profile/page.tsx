@@ -1,16 +1,17 @@
 "use client";
+import dynamicImport from "next/dynamic";
+import { Box } from "@mui/joy";
 
-import * as React from "react";
-import { Box, Button, Typography, Breadcrumbs, Link } from "@mui/joy";
-import ClinicSettingsDashboard from "@/components/clinicportal/layout/Profile";
+const ClinicSettingsDashboard = dynamicImport(
+  () => import("@/components/clinicportal/layout/Profile"),
+  { ssr: false }
+);
+
+export const dynamic = "force-dynamic";
 
 export default function ClinicProfilePage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* Breadcrumb Navigation */}
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-      </Box>
-
       {/* Table Section */}
       <ClinicSettingsDashboard />
     </Box>

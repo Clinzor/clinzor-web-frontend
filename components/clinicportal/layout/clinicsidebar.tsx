@@ -88,24 +88,28 @@ export default function ClinicSidebar() {
   
   // Handle resize to switch between mobile and desktop views
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setCollapsed(false);
-        setMobileOpen(false);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    
-    return () => window.removeEventListener('resize', handleResize);
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        if (window.innerWidth < 768) {
+          setCollapsed(false);
+          setMobileOpen(false);
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      handleResize();
+      
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, []);
 
   // Set active item based on current path
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path) {
-      setActiveItem(path);
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path) {
+        setActiveItem(path);
+      }
     }
   }, []);
 
