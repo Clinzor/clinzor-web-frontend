@@ -1,1022 +1,1564 @@
-"use client";
 import React, { useState } from 'react';
 import { 
-  PlusCircle, 
-  X, 
-  Save, 
-  AlertTriangle,
-  Info,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  Edit3,
-  Trash2,
-  Eye,
-  Search,
-  Tag,
-  User,
-  Calendar,
-  FileText,
-  Image as ImageIcon,
-  Shield,
-  Building,
+  Search, 
+  Plus, 
+  Filter,
+  Edit3, 
+  Eye, 
+  Trash2, 
+  MoreHorizontal,
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  X,
+  Heart,
+  Stethoscope,
+  Brain,
+  Activity,
   DollarSign,
   Video,
   Home,
-  MapPin,
-  Clock,
+  Building,
   Star,
-  Filter,
-  RefreshCw,
-  CheckCircle,
+  Tag,
+  FileText,
+  Image as ImageIcon,
   XCircle
 } from 'lucide-react';
 
-// Sample services data based on your API structure
-const initialServicesData: Service[] = [
-  {
-    uuid: "1",
-    name: "Cardiology Consultation",
-    description: "Expert consultation for heart-related issues",
-    tags: "heart,cardiology,blood pressure,ECG,chest pain",
-    image: null,
-    status: "APPROVED",
-    is_video_call: true,
-    is_clinic_visit: true,
-    is_home_service: false,
-    consultation_charge_video_call: "0",
-    consultation_charge_clinic: null,
-    consultation_charge_home_visit: "0",
-    treatment_charge_video_call: "0",
-    treatment_charge_clinic: null,
-    treatment_charge_home_visit: "0"
-  },
-  {
-    uuid: "2",
-    name: "Heart Surgery",
-    description: "Advanced surgical procedures for heart conditions",
-    tags: "heart",
-    image: null,
-    status: "APPROVED",
-    is_video_call: true,
-    is_clinic_visit: true,
-    is_home_service: false,
-    consultation_charge_video_call: "0",
-    consultation_charge_clinic: null,
-    consultation_charge_home_visit: "0",
-    treatment_charge_video_call: "0",
-    treatment_charge_clinic: null,
-    treatment_charge_home_visit: "0"
-  },
-  {
-    uuid: "3",
-    name: "Neurology Consultation",
-    description: "Specialized consultation for neurological disorders",
-    tags: "brain,nerves,headache,seizures,stroke",
-    image: null,
-    status: "PENDING",
-    is_video_call: true,
-    is_clinic_visit: true,
-    is_home_service: false,
-    consultation_charge_video_call: "0",
-    consultation_charge_clinic: null,
-    consultation_charge_home_visit: "0",
-    treatment_charge_video_call: "0",
-    treatment_charge_clinic: null,
-    treatment_charge_home_visit: "0"
-  },
-  {
-    uuid: "4",
-    name: "General Medicine",
-    description: "Comprehensive medical consultation and treatment",
-    tags: "general,medicine,consultation,diagnosis",
-    image: null,
-    status: "APPROVED",
-    is_video_call: true,
-    is_clinic_visit: true,
-    is_home_service: false,
-    consultation_charge_video_call: "0",
-    consultation_charge_clinic: null,
-    consultation_charge_home_visit: "0",
-    treatment_charge_video_call: "0",
-    treatment_charge_clinic: null,
-    treatment_charge_home_visit: "0"
-  }
-];
-
-type Service = {
+// Types
+interface Service {
   uuid: string;
+  created_by: string;
   name: string;
   description: string;
   tags: string;
-  status: 'APPROVED' | 'PENDING' | 'REJECTED';
   image: string | null;
-  is_video_call: boolean;
-  is_clinic_visit: boolean;
-  is_home_service: boolean;
-  consultation_charge_video_call: string | null;
-  consultation_charge_clinic: string | null;
-  consultation_charge_home_visit: string | null;
-  treatment_charge_video_call: string | null;
-  treatment_charge_clinic: string | null;
-  treatment_charge_home_visit: string | null;
-};
+  status: 'APPROVED' | 'PENDING' | 'REJECTED';
+}
 
-type ServiceLink = {
+interface ClinicService {
+  uuid: string;
+  service: string;
+  clinic: string;
+  service_name: string;
+  created_by: string;
+  clinic_provided_name: string | null;
+  rank: number;
+  consultation_charge_video_call: string;
+  consultation_charge_physical_visit: string;
+  consultation_charge_home_visit: string;
+  treatment_charge_video_call: string;
+  treatment_charge_physical_visit: string;
+  treatment_charge_home_visit: string;
+  status: 'APPROVED' | 'PENDING' | 'REJECTED';
+  is_video_call: boolean;
+  is_home_visit: boolean;
+  is_physical_visit: boolean;
+  image: string | null;
+  description: string | null;
+  reason_for_rejection: string | null;
+}
+
+interface NewService {
+  name: string;
+  description: string;
+  tags: string;
+}
+
+interface NewClinicService {
   clinic: string;
   service: string;
   rank: string;
-  consultation_charge_video_call?: number;
-  consultation_charge_home_visit?: number;
-  treatment_charge_video_call?: number;
-  treatment_charge_physical_visit?: number;
-  consultation_charge_physical_visit?: number;
-  treatment_charge_home_visit?: number;
+  consultation_charge_video_call: string;
+  consultation_charge_home_visit: string;
+  treatment_charge_video_call: string;
+  treatment_charge_physical_visit: string;
+  consultation_charge_physical_visit: string;
+  treatment_charge_home_visit: string;
   is_video_call: boolean;
   is_home_service: boolean;
   is_clinic_visit: boolean;
-};
+  clinic_provided_name: string;
+}
 
-type Notification = {
-  type: 'success' | 'warning' | 'error';
-  message: string;
-} | null;
+// Sample data
+const sampleClinics = [
+  { uuid: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f", name: "City General Hospital" },
+  { uuid: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f", name: "Metro Medical Center" },
+  { uuid: "c3d9f5e2-5b6c-5d8e-9f0g-2b3c4d5e6f7g", name: "Downtown Clinic" }
+];
 
-type ModalMode = 'view' | 'edit' | 'add' | 'link' | 'delete' | null;
+const sampleServices: Service[] = [
+  {
+    uuid: "d7afe788-af8b-4fd4-b65b-bab700df841a",
+    created_by: "admin@gmail.com",
+    name: "cardiologist",
+    description: "Specialist in diagnosing and treating heart and blood vessel conditions.",
+    tags: "heart,cardiology,blood pressure,ECG,chest pain",
+    image: null,
+    status: "APPROVED"
+  },
+  {
+    uuid: "661d42bc-4393-49a3-ab8f-c24b6ab17c38",
+    created_by: "admin@gmail.com",
+    name: "heart speciality",
+    description: "Focus on the diagnosis, treatment, and management of heart and blood vessel conditions",
+    tags: "heart",
+    image: null,
+    status: "APPROVED"
+  },
+  {
+    uuid: "62111833-4927-4060-acdf-f2d857e9d688",
+    created_by: "admin@gmail.com",
+    name: "neurologist",
+    description: "Specialist in diagnosing and treating nervous system disorders.",
+    tags: "brain,neurology,headache,seizure,stroke",
+    image: null,
+    status: "PENDING"
+  },
+  {
+    uuid: "5bfffdfc-0af4-4d17-8d0c-08466e2315e5",
+    created_by: "admin@gmail.com",
+    name: "physician",
+    description: "General medical practitioner providing comprehensive healthcare.",
+    tags: "general,medicine,primary care,checkup",
+    image: null,
+    status: "REJECTED"
+  }
+];
 
-type NewService = {
-  name: string;
-  description: string;
-  tags: string;
-  is_video_call: boolean;
-  is_clinic_visit: boolean;
-  is_home_service: boolean;
-  consultation_charge_video_call: string | null;
-  consultation_charge_clinic: string | null;
-  consultation_charge_home_visit: string | null;
-  treatment_charge_video_call: string | null;
-  treatment_charge_clinic: string | null;
-  treatment_charge_home_visit: string | null;
-};
+const sampleClinicServices: ClinicService[] = [
+  {
+    uuid: "159e3627-65eb-40b2-b535-37cbb6535ab8",
+    service: "d7afe788-af8b-4fd4-b65b-bab700df841a",
+    clinic: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f",
+    service_name: "cardiology",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: "Advanced Cardiology Care",
+    rank: 1,
+    consultation_charge_video_call: "400.00",
+    consultation_charge_physical_visit: "200.00",
+    consultation_charge_home_visit: "200.00",
+    treatment_charge_video_call: "600.00",
+    treatment_charge_physical_visit: "500.00",
+    treatment_charge_home_visit: "800.00",
+    status: "APPROVED",
+    is_video_call: true,
+    is_home_visit: false,
+    is_physical_visit: true,
+    image: null,
+    description: "Premium cardiology services with experienced specialists",
+    reason_for_rejection: null
+  },
+  {
+    uuid: "269f4738-76fc-51c3-c646-48dcc7646cb9",
+    service: "661d42bc-4393-49a3-ab8f-c24b6ab17c38",
+    clinic: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f",
+    service_name: "heart speciality",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: null,
+    rank: 2,
+    consultation_charge_video_call: "350.00",
+    consultation_charge_physical_visit: "180.00",
+    consultation_charge_home_visit: "250.00",
+    treatment_charge_video_call: "550.00",
+    treatment_charge_physical_visit: "450.00",
+    treatment_charge_home_visit: "700.00",
+    status: "PENDING",
+    is_video_call: true,
+    is_home_visit: true,
+    is_physical_visit: true,
+    image: null,
+    description: null,
+    reason_for_rejection: null
+  }
+];
 
-export default function ServiceManagement() {
-  const [services, setServices] = useState<Service[]>(initialServicesData);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [modalMode, setModalMode] = useState<ModalMode>(null);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [linkingService, setLinkingService] = useState<ServiceLink | null>(null);
-  const [notification, setNotification] = useState<Notification>(null);
+const ServiceManagement: React.FC = () => {
+  // State management
+  const [services, setServices] = useState<Service[]>(sampleServices);
+  const [clinicServices, setClinicServices] = useState<ClinicService[]>(sampleClinicServices);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'services' | 'clinic-services'>('services');
+  const itemsPerPage = 6;
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [clinicFilter, setClinicFilter] = useState('');
+
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Service | ClinicService | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'delete' | 'edit-rank' | null>(null);
+  
   const [newService, setNewService] = useState<NewService>({
     name: '',
     description: '',
-    tags: '',
-    is_video_call: true,
-    is_clinic_visit: true,
-    is_home_service: false,
-    consultation_charge_video_call: null,
-    consultation_charge_clinic: null,
-    consultation_charge_home_visit: null,
-    treatment_charge_video_call: null,
-    treatment_charge_clinic: null,
-    treatment_charge_home_visit: null
+    tags: ''
   });
 
-  // Check if we're in mobile view
-  React.useEffect(() => {
-    const checkViewport = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    
-    checkViewport();
-    window.addEventListener('resize', checkViewport);
-    return () => window.removeEventListener('resize', checkViewport);
-  }, []);
+  const [newClinicService, setNewClinicService] = useState<NewClinicService>({
+    clinic: '',
+    service: '',
+    rank: '1',
+    consultation_charge_video_call: '',
+    consultation_charge_home_visit: '',
+    treatment_charge_video_call: '',
+    treatment_charge_physical_visit: '',
+    consultation_charge_physical_visit: '',
+    treatment_charge_home_visit: '',
+    is_video_call: false,
+    is_home_service: false,
+    is_clinic_visit: true,
+    clinic_provided_name: ''
+  });
 
-  // Filter services based on search and status
+  // Validation state
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+
+  // Add after state declarations
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Helper functions
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'APPROVED': return {
+        color: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+        dot: 'bg-emerald-500',
+        icon: CheckCircle
+      };
+      case 'PENDING': return {
+        color: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+        dot: 'bg-amber-500',
+        icon: Clock
+      };
+      case 'REJECTED': return {
+        color: 'bg-red-500/10 text-red-700 border-red-500/20',
+        dot: 'bg-red-500',
+        icon: AlertCircle
+      };
+      default: return {
+        color: 'bg-slate-500/10 text-slate-700 border-slate-500/20',
+        dot: 'bg-slate-500',
+        icon: AlertCircle
+      };
+    }
+  };
+
+  const getServiceIcon = (serviceName: string) => {
+    const name = serviceName.toLowerCase();
+    if (name.includes('cardio') || name.includes('heart')) return Heart;
+    if (name.includes('neuro') || name.includes('brain')) return Brain;
+    if (name.includes('physician') || name.includes('general')) return Stethoscope;
+    return Activity;
+  };
+
+  const getClinicName = (clinicId: string) => {
+    return sampleClinics.find(c => c.uuid === clinicId)?.name || 'Unknown Clinic';
+  };
+
+  const getServiceName = (serviceId: string) => {
+    return services.find(s => s.uuid === serviceId)?.name || 'Unknown Service';
+  };
+
+  // Filtering logic
   const filteredServices = services.filter(service => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = service.name.toLowerCase().includes(searchLower) ||
-                         service.description.toLowerCase().includes(searchLower) ||
-                         (service.tags && service.tags.toLowerCase().includes(searchLower));
-    
-    const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
+    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         service.tags.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter ? service.status === statusFilter : true;
     
     return matchesSearch && matchesStatus;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedServices = filteredServices.slice(startIndex, startIndex + itemsPerPage);
+  const filteredClinicServices = clinicServices.filter(clinicService => {
+    const matchesSearch = clinicService.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (clinicService.clinic_provided_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    const matchesStatus = statusFilter ? clinicService.status === statusFilter : true;
+    const matchesClinic = clinicFilter ? clinicService.clinic === clinicFilter : true;
+    
+    return matchesSearch && matchesStatus && matchesClinic;
+  });
 
-  // Reset to first page when search changes
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, itemsPerPage, statusFilter]);
+  // Pagination logic
+  const currentData = activeTab === 'services' ? filteredServices : filteredClinicServices;
+  const totalPages = Math.ceil(currentData.length / itemsPerPage);
+  const paginatedData = currentData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const getStatusConfig = (status: Service['status']) => {
-    switch (status) {
-      case 'APPROVED':
-        return {
-          color: 'bg-green-100 text-green-700 border-green-200',
-          icon: CheckCircle,
-          text: 'Approved'
-        };
-      case 'PENDING':
-        return {
-          color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-          icon: Clock,
-          text: 'Pending'
-        };
-      case 'REJECTED':
-        return {
-          color: 'bg-red-100 text-red-700 border-red-200',
-          icon: XCircle,
-          text: 'Rejected'
-        };
-      default:
-        return {
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
-          icon: Clock,
-          text: status
-        };
+  // Statistics
+  const totalServices = services.length;
+  const approvedServices = services.filter(s => s.status === 'APPROVED').length;
+  const pendingServices = services.filter(s => s.status === 'PENDING').length;
+  const rejectedServices = services.filter(s => s.status === 'REJECTED').length;
+
+  const totalClinicServices = clinicServices.length;
+  const approvedClinicServices = clinicServices.filter(cs => cs.status === 'APPROVED').length;
+
+  // Validation functions
+  const validateServiceForm = () => {
+    const errors: { [key: string]: string } = {};
+    if (!newService.name.trim()) errors.name = 'Service name is required.';
+    if (!newService.description.trim()) errors.description = 'Description is required.';
+    if (!newService.tags.trim()) errors.tags = 'Tags are required.';
+    return errors;
+  };
+
+  const validateClinicServiceForm = () => {
+    const errors: { [key: string]: string } = {};
+    if (!newClinicService.clinic) errors.clinic = 'Clinic is required.';
+    if (!newClinicService.service) errors.service = 'Service is required.';
+    if (!newClinicService.rank || isNaN(Number(newClinicService.rank))) errors.rank = 'Valid rank is required.';
+    
+    // Validate charges based on enabled services
+    if (newClinicService.is_video_call) {
+      if (!newClinicService.consultation_charge_video_call) errors.consultation_charge_video_call = 'Video consultation charge is required.';
+      if (!newClinicService.treatment_charge_video_call) errors.treatment_charge_video_call = 'Video treatment charge is required.';
     }
+    if (newClinicService.is_clinic_visit) {
+      if (!newClinicService.consultation_charge_physical_visit) errors.consultation_charge_physical_visit = 'Physical consultation charge is required.';
+      if (!newClinicService.treatment_charge_physical_visit) errors.treatment_charge_physical_visit = 'Physical treatment charge is required.';
+    }
+    if (newClinicService.is_home_service) {
+      if (!newClinicService.consultation_charge_home_visit) errors.consultation_charge_home_visit = 'Home consultation charge is required.';
+      if (!newClinicService.treatment_charge_home_visit) errors.treatment_charge_home_visit = 'Home treatment charge is required.';
+    }
+    
+    return errors;
   };
 
-  const formatTags = (tags: string | null) => {
-    if (!tags) return [];
-    return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  // CRUD operations
+  const handleCreateService = () => {
+    const errors = validateServiceForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const service: Service = {
+      uuid: `service-${Date.now()}`,
+      ...newService,
+      status: 'PENDING',
+      image: null,
+      created_by: 'admin@clinic.com'
+    };
+    
+    setServices([service, ...services]);
+    resetServiceForm();
+    setShowCreateModal(false);
+    showToast('Service added successfully!', 'success');
   };
 
-  const showNotification = (type: 'success' | 'warning' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => {
-      setNotification(null);
-    }, 3000);
+  const handleCreateClinicService = () => {
+    const errors = validateClinicServiceForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const clinicService: ClinicService = {
+      uuid: `clinic-service-${Date.now()}`,
+      service: newClinicService.service,
+      clinic: newClinicService.clinic,
+      service_name: getServiceName(newClinicService.service),
+      created_by: 'admin@clinic.com',
+      clinic_provided_name: newClinicService.clinic_provided_name || null,
+      rank: parseInt(newClinicService.rank),
+      consultation_charge_video_call: newClinicService.consultation_charge_video_call,
+      consultation_charge_physical_visit: newClinicService.consultation_charge_physical_visit,
+      consultation_charge_home_visit: newClinicService.consultation_charge_home_visit,
+      treatment_charge_video_call: newClinicService.treatment_charge_video_call,
+      treatment_charge_physical_visit: newClinicService.treatment_charge_physical_visit,
+      treatment_charge_home_visit: newClinicService.treatment_charge_home_visit,
+      status: 'PENDING',
+      is_video_call: newClinicService.is_video_call,
+      is_home_visit: newClinicService.is_home_service,
+      is_physical_visit: newClinicService.is_clinic_visit,
+      image: null,
+      description: null,
+      reason_for_rejection: null
+    };
+    
+    setClinicServices([clinicService, ...clinicServices]);
+    resetClinicServiceForm();
+    setShowCreateModal(false);
+    showToast('Clinic service added successfully!', 'success');
   };
 
-  const handleAddClick = () => {
-    setModalMode('add');
-    setIsModalOpen(true);
+  const handleDelete = () => {
+    if (!selectedItem) return;
+    
+    if (activeTab === 'services') {
+      setServices(services.filter(s => s.uuid !== selectedItem.uuid));
+      showToast('Service deleted successfully!', 'success');
+    } else {
+      setClinicServices(clinicServices.filter(cs => cs.uuid !== selectedItem.uuid));
+      showToast('Clinic service deleted successfully!', 'success');
+    }
+    closeModal();
+  };
+
+  // Modal handlers
+  const handleView = (item: Service | ClinicService) => {
+    setSelectedItem(item);
+    setModalMode('view');
+  };
+
+  const handleEdit = (item: Service | ClinicService) => {
+    setSelectedItem(item);
+    if (activeTab === 'services') {
+      const service = item as Service;
+      setNewService({
+        name: service.name,
+        description: service.description,
+        tags: service.tags
+      });
+    }
+    setModalMode('edit');
+  };
+
+  const handleDeleteConfirm = (item: Service | ClinicService) => {
+    setSelectedItem(item);
+    setModalMode('delete');
+  };
+
+  const closeModal = () => {
+    setModalMode(null);
+    setSelectedItem(null);
+    resetForms();
+    setFormErrors({});
+    setShowCreateModal(false);
+  };
+
+  const resetForms = () => {
+    resetServiceForm();
+    resetClinicServiceForm();
+  };
+
+  const resetServiceForm = () => {
     setNewService({
       name: '',
       description: '',
-      tags: '',
-      is_video_call: true,
-      is_clinic_visit: true,
+      tags: ''
+    });
+  };
+
+  const resetClinicServiceForm = () => {
+    setNewClinicService({
+      clinic: '',
+      service: '',
+      rank: '1',
+      consultation_charge_video_call: '',
+      consultation_charge_home_visit: '',
+      treatment_charge_video_call: '',
+      treatment_charge_physical_visit: '',
+      consultation_charge_physical_visit: '',
+      treatment_charge_home_visit: '',
+      is_video_call: false,
       is_home_service: false,
-      consultation_charge_video_call: null,
-      consultation_charge_clinic: null,
-      consultation_charge_home_visit: null,
-      treatment_charge_video_call: null,
-      treatment_charge_clinic: null,
-      treatment_charge_home_visit: null
+      is_clinic_visit: true,
+      clinic_provided_name: ''
     });
   };
 
-  const handleViewService = (service: Service) => {
-    setSelectedService(service);
-    setModalMode('view');
-    setIsModalOpen(true);
+  const resetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setClinicFilter('');
   };
 
-  const handleEditClick = (service: Service) => {
-    setSelectedService(service);
-    setNewService({
-      name: service.name,
-      description: service.description,
-      tags: service.tags,
-      is_video_call: service.is_video_call,
-      is_clinic_visit: service.is_clinic_visit,
-      is_home_service: service.is_home_service,
-      consultation_charge_video_call: service.consultation_charge_video_call,
-      consultation_charge_clinic: service.consultation_charge_clinic,
-      consultation_charge_home_visit: service.consultation_charge_home_visit,
-      treatment_charge_video_call: service.treatment_charge_video_call,
-      treatment_charge_clinic: service.treatment_charge_clinic,
-      treatment_charge_home_visit: service.treatment_charge_home_visit
-    });
-    setModalMode('edit');
-    setIsModalOpen(true);
+  // Add state for rank editing
+  const [rankEditValue, setRankEditValue] = useState('');
+
+  // Add handler to open rank edit modal
+  const handleEditRank = (clinicService: ClinicService) => {
+    setSelectedItem(clinicService);
+    setRankEditValue(clinicService.rank.toString());
+    setModalMode('edit-rank');
   };
 
-  const handleDeleteClick = (service: Service) => {
-    setSelectedService(service);
-    setModalMode('delete');
-    setIsModalOpen(true);
+  // Add handler to save rank
+  const handleSaveRank = () => {
+    if (!selectedItem) return;
+    setClinicServices(clinicServices.map(cs =>
+      cs.uuid === selectedItem.uuid ? { ...cs, rank: parseInt(rankEditValue) } : cs
+    ));
+    showToast('Rank updated successfully!', 'success');
+    closeModal();
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalMode(null);
-    setSelectedService(null);
-  };
-
-  const handleAddService = async () => {
-    if (!newService.name || !newService.description) {
-      showNotification('error', 'Please fill in all required fields.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const service: Service = {
-        uuid: Math.random().toString(36).substr(2, 9),
-        name: newService.name,
-        description: newService.description,
-        tags: newService.tags,
-        image: null,
-        status: 'PENDING',
-        is_video_call: newService.is_video_call,
-        is_clinic_visit: newService.is_clinic_visit,
-        is_home_service: newService.is_home_service,
-        consultation_charge_video_call: newService.consultation_charge_video_call,
-        consultation_charge_clinic: newService.consultation_charge_clinic,
-        consultation_charge_home_visit: newService.consultation_charge_home_visit,
-        treatment_charge_video_call: newService.treatment_charge_video_call,
-        treatment_charge_clinic: newService.treatment_charge_clinic,
-        treatment_charge_home_visit: newService.treatment_charge_home_visit
-      };
-
-      setServices([...services, service]);
-      showNotification('success', 'Service added successfully.');
-      handleCloseModal();
-    } catch (error) {
-      showNotification('error', 'Failed to add service. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEditService = async () => {
-    if (!selectedService) return;
-    
-    if (!newService.name || !newService.description) {
-      showNotification('error', 'Please fill in all required fields.');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const updatedService: Service = {
-        ...selectedService,
-        name: newService.name,
-        description: newService.description,
-        tags: newService.tags,
-        is_video_call: newService.is_video_call,
-        is_clinic_visit: newService.is_clinic_visit,
-        is_home_service: newService.is_home_service,
-        consultation_charge_video_call: newService.consultation_charge_video_call,
-        consultation_charge_clinic: newService.consultation_charge_clinic,
-        consultation_charge_home_visit: newService.consultation_charge_home_visit,
-        treatment_charge_video_call: newService.treatment_charge_video_call,
-        treatment_charge_clinic: newService.treatment_charge_clinic,
-        treatment_charge_home_visit: newService.treatment_charge_home_visit
-      };
-
-      setServices(services.map(service => 
-        service.uuid === selectedService.uuid ? updatedService : service
-      ));
-      showNotification('success', 'Service updated successfully.');
-      handleCloseModal();
-    } catch (error) {
-      showNotification('error', 'Failed to update service. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteService = async () => {
-    if (!selectedService) return;
-
-    setIsLoading(true);
-
-    try {
-      setServices(services.filter(service => service.uuid !== selectedService.uuid));
-      showNotification('success', 'Service deleted successfully.');
-      handleCloseModal();
-    } catch (error) {
-      showNotification('error', 'Failed to delete service. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Generate page numbers for pagination
-  const generatePageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = isMobileView ? 3 : 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      const halfVisible = Math.floor(maxVisiblePages / 2);
-      let startPage = Math.max(1, currentPage - halfVisible);
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-      
-      if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-    
-    return pages;
-  };
-
-  // Modal Component
-  const Modal = () => {
-    if (!modalMode) return null;
-
-    const isViewMode = modalMode === 'view';
-    const isEditMode = modalMode === 'edit';
-    const isAddMode = modalMode === 'add';
-    const isDeleteMode = modalMode === 'delete';
-    
-    const currentService = isViewMode ? selectedService : editingService;
-    if (!currentService && !isDeleteMode) return null;
-
-    const statusConfig = getStatusConfig(currentService?.status || 'PENDING');
-    const StatusIcon = statusConfig.icon;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          {/* Modal Header */}
-          <div className="flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {isViewMode && 'Service Details'}
-              {isEditMode && 'Edit Service'}
-              {isAddMode && 'Add New Service'}
-              {isDeleteMode && 'Delete Service'}
-            </h2>
-            <button
-              onClick={handleCloseModal}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-          
-          {/* Modal Content */}
-          <div className="p-6 space-y-6">
-            {isDeleteMode && selectedService ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center text-red-500 mb-4">
-                  <AlertTriangle size={48} />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3
+          ${toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}
+        >
+          {toast.type === 'success' ? <CheckCircle className="w-5 h-5 text-emerald-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
+          <span className="font-medium">{toast.message}</span>
+        </div>
+      )}
+      {/* Header */}
+      <div className="backdrop-blur-xl bg-white/80 border-b border-slate-200/60 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center space-x-8">
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
+                  Service Management
+                </h1>
+                <p className="text-sm text-slate-500 mt-1">Manage services and clinic service offerings</p>
+              </div>
+              
+              {/* Stats Cards */}
+              <div className="hidden lg:flex items-center space-x-6">
+                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <Settings className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600 font-medium">
+                      {activeTab === 'services' ? 'Total Services' : 'Clinic Services'}
+                    </p>
+                    <p className="text-lg font-bold text-blue-700">
+                      {activeTab === 'services' ? totalServices : totalClinicServices}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Are you sure you want to delete this service?
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    This action cannot be undone. This will permanently delete the service
-                    <span className="font-semibold"> {selectedService.name}</span> and all associated data.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={handleCloseModal}
-                      className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDeleteService}
-                      disabled={isLoading}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Deleting...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 size={16} />
-                          Delete Service
-                        </>
-                      )}
-                    </button>
+                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
+                  <div className="p-2 bg-emerald-500 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-emerald-600 font-medium">Approved</p>
+                    <p className="text-lg font-bold text-emerald-700">
+                      {activeTab === 'services' ? approvedServices : approvedClinicServices}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
+                  <div className="p-2 bg-amber-500 rounded-lg">
+                    <Clock className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-600 font-medium">Pending</p>
+                    <p className="text-lg font-bold text-amber-700">
+                      {activeTab === 'services' ? pendingServices : clinicServices.filter(cs => cs.status === 'PENDING').length}
+                    </p>
                   </div>
                 </div>
               </div>
-            ) : isViewMode ? (
-              // View Mode - Show service details
-              <div className="space-y-6">
-                {/* Service Status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                      {StatusIcon && <StatusIcon size={14} />}
-                      {statusConfig.text}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Service Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Service Name</h3>
-                    <p className="text-base text-gray-900">{currentService?.name}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-                    <p className="text-base text-gray-900">{currentService?.description}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {currentService?.tags ? formatTags(currentService.tags).map((tag, index) => (
-                        <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
-                          {tag}
-                        </span>
-                      )) : (
-                        <span className="text-gray-500">No tags</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-2">Service Type</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {currentService?.is_video_call && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-50 text-xs text-purple-700 font-medium border border-purple-100">
-                          Video Call
-                        </span>
-                      )}
-                      {currentService?.is_clinic_visit && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-50 text-xs text-green-700 font-medium border border-green-100">
-                          Clinic Visit
-                        </span>
-                      )}
-                      {currentService?.is_home_service && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
-                          Home Visit
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Charges */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Service Charges</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Consultation Charges */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-3">Consultation Charges</h4>
-                      <div className="space-y-3">
-                        {currentService?.is_video_call && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Video Call</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.consultation_charge_video_call ? 
-                                `₹${currentService.consultation_charge_video_call}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                        {currentService?.is_clinic_visit && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Clinic Visit</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.consultation_charge_clinic ? 
-                                `₹${currentService.consultation_charge_clinic}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                        {currentService?.is_home_service && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Home Visit</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.consultation_charge_home_visit ? 
-                                `₹${currentService.consultation_charge_home_visit}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Treatment Charges */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-3">Treatment Charges</h4>
-                      <div className="space-y-3">
-                        {currentService?.is_video_call && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Video Call</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.treatment_charge_video_call ? 
-                                `₹${currentService.treatment_charge_video_call}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                        {currentService?.is_clinic_visit && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Clinic Visit</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.treatment_charge_clinic ? 
-                                `₹${currentService.treatment_charge_clinic}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                        {currentService?.is_home_service && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Home Visit</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {currentService.treatment_charge_home_visit ? 
-                                `₹${currentService.treatment_charge_home_visit}` : 
-                                'Not available'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Edit/Add Mode
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={newService.name}
-                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    value={newService.description}
-                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Tags</label>
-                  <input
-                    type="text"
-                    value={newService.tags}
-                    onChange={(e) => setNewService({ ...newService, tags: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Video Call</label>
-                    <input
-                      type="checkbox"
-                      checked={newService.is_video_call}
-                      onChange={(e) => setNewService({ ...newService, is_video_call: e.target.checked })}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Clinic Visit</label>
-                    <input
-                      type="checkbox"
-                      checked={newService.is_clinic_visit}
-                      onChange={(e) => setNewService({ ...newService, is_clinic_visit: e.target.checked })}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Home Service</label>
-                    <input
-                      type="checkbox"
-                      checked={newService.is_home_service}
-                      onChange={(e) => setNewService({ ...newService, is_home_service: e.target.checked })}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Video Call Consultation Charge</label>
-                    <input
-                      type="number"
-                      value={newService.consultation_charge_video_call || ''}
-                      onChange={(e) => setNewService({ ...newService, consultation_charge_video_call: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Clinic Consultation Charge</label>
-                    <input
-                      type="number"
-                      value={newService.consultation_charge_clinic || ''}
-                      onChange={(e) => setNewService({ ...newService, consultation_charge_clinic: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Home Visit Consultation Charge</label>
-                    <input
-                      type="number"
-                      value={newService.consultation_charge_home_visit || ''}
-                      onChange={(e) => setNewService({ ...newService, consultation_charge_home_visit: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Video Call Treatment Charge</label>
-                    <input
-                      type="number"
-                      value={newService.treatment_charge_video_call || ''}
-                      onChange={(e) => setNewService({ ...newService, treatment_charge_video_call: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Clinic Treatment Charge</label>
-                    <input
-                      type="number"
-                      value={newService.treatment_charge_clinic || ''}
-                      onChange={(e) => setNewService({ ...newService, treatment_charge_clinic: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Home Visit Treatment Charge</label>
-                    <input
-                      type="number"
-                      value={newService.treatment_charge_home_visit || ''}
-                      onChange={(e) => setNewService({ ...newService, treatment_charge_home_visit: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Modal Footer */}
-          <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-            <button
-              onClick={handleCloseModal}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              {isViewMode ? 'Close' : 'Cancel'}
-            </button>
+            </div>
             
-            {!isViewMode && (
+            {/* Show Add button only for the active tab */}
+            {activeTab === 'services' && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <Plus className="w-5 h-5 mr-2 relative" />
+                <span className="relative">Add Service</span>
+            </button>
+            )}
+            {activeTab === 'clinic-services' && (
               <button
-                onClick={handleEditService}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                onClick={() => setShowCreateModal(true)}
+                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
               >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} />
-                    {isAddMode ? 'Create Service' : 'Update Service'}
-                  </>
-                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                <Plus className="w-5 h-5 mr-2 relative" />
+                <span className="relative">Add Clinic Service</span>
               </button>
             )}
           </div>
         </div>
       </div>
-    );
-  };
 
-  return (
-    <div className="w-full min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Service Management</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {filteredServices.length} services found
-            </p>
-          </div>
-          <button
-            onClick={handleAddClick}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto"
-          >
-            <PlusCircle size={16} />
-            <span>Add Service</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Notification */}
-      {notification && (
-        <div className={`mx-4 sm:mx-6 mt-4 p-3 rounded-lg flex justify-between items-center ${
-          notification.type === 'success' ? 'bg-green-50 border border-green-200' : 
-          notification.type === 'error' ? 'bg-red-50 border border-red-200' :
-          'bg-amber-50 border border-amber-200'
-        }`}>
-          <div className="flex items-center text-sm font-medium">
-            {notification.type === 'success' ? (
-              <Check size={16} className="text-green-500 mr-2" />
-            ) : notification.type === 'error' ? (
-              <X size={16} className="text-red-500 mr-2" />
-            ) : (
-              <AlertTriangle size={16} className="text-amber-500 mr-2" />
-            )}
-            <span className={
-              notification.type === 'success' ? 'text-green-700' : 
-              notification.type === 'error' ? 'text-red-700' :
-              'text-amber-700'
-            }>
-              {notification.message}
-            </span>
-          </div>
-          <button 
-            onClick={() => setNotification(null)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
-      {/* Search and Filters */}
-      <div className="bg-white mx-4 sm:mx-6 mt-4 p-4 rounded-lg border border-gray-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, description, or tags..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="bg-white/80 border border-slate-200 rounded-2xl p-2 inline-flex">
+            <button
+              onClick={() => {setActiveTab('services'); setCurrentPage(1);}}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === 'services'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
-              <option value="all">All Status</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PENDING">Pending</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
-          </div>
-          
-          {/* Items Per Page */}
-          <div>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              Services
+            </button>
+            <button
+              onClick={() => {setActiveTab('clinic-services'); setCurrentPage(1);}}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                activeTab === 'clinic-services'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
-              <option value={6}>6 per page</option>
-              <option value={12}>12 per page</option>
-              <option value={24}>24 per page</option>
-            </select>
+              Clinic Services
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Service Cards */}
-      <div className="flex-1 px-4 sm:px-6 py-6">
-        {paginatedServices.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <FileText size={48} className="mx-auto" />
+        {/* Filters Section */}
+        <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
+            {/* Search Bar */}
+            <div className="xl:col-span-1">
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Search</label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={`Search ${activeTab === 'services' ? 'services' : 'clinic services'}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                />
+              </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No services found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+
+            {/* Status Filter */}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
+              >
+                <option value="">All Status</option>
+                <option value="APPROVED">Approved</option>
+                <option value="PENDING">Pending</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+
+            {/* Clinic Filter (only for clinic services) */}
+            {activeTab === 'clinic-services' && (
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic</label>
+                <select
+                  value={clinicFilter}
+                  onChange={(e) => setClinicFilter(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
+                >
+                  <option value="">All Clinics</option>
+                  {sampleClinics.map(clinic => (
+                    <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={resetFilters}
+              className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Content Grid */}
+        {currentData.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+              <Settings className="relative w-16 h-16 text-slate-400 mx-auto mb-6" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-3">
+              No {activeTab === 'services' ? 'services' : 'clinic services'} found
+            </h3>
+            <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">
+              Try adjusting your search terms or add your first {activeTab === 'services' ? 'service' : 'clinic service'}
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Your First {activeTab === 'services' ? 'Service' : 'Clinic Service'}
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {paginatedServices.map((service) => (
-              <div key={service.uuid} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                {/* Header with status */}
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 text-sm truncate">{service.name}</h3>
-                    <p className="text-xs text-gray-500 flex items-center mt-1 truncate">
-                      <Tag size={10} className="mr-1 flex-shrink-0" />
-                      {service.tags ? formatTags(service.tags)[0] : 'No tags'}
-                    </p>
-                  </div>
-                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusConfig(service.status).color}`}>
-                    {(() => {
-                      const StatusIcon = getStatusConfig(service.status).icon;
-                      return StatusIcon ? <StatusIcon size={10} className="mr-1" /> : null;
-                    })()}
-                    {getStatusConfig(service.status).text}
-                  </div>
-                </div>
-                
-                {/* Description */}
-                <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                  {service.description}
-                </p>
-                
-                {/* Tags */}
-                {service.tags && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {formatTags(service.tags).slice(0, 2).map((tag, index) => (
-                      <span key={index} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 text-xs text-blue-700 font-medium border border-blue-100">
-                        {tag}
-                      </span>
-                    ))}
-                    {formatTags(service.tags).length > 2 && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 text-xs text-gray-600 font-medium border border-gray-200">
-                        +{formatTags(service.tags).length - 2} more
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Actions */}
-                <div className="flex justify-end gap-1">
-                  <button
-                    onClick={() => handleViewService(service)}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="View Details"
-                  >
-                    <Eye size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleEditClick(service)}
-                    className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Edit Service"
-                  >
-                    <Edit3 size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(service)}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Service"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {activeTab === 'services' 
+              ? (paginatedData as Service[]).map((service) => {
+                  const statusConfig = getStatusConfig(service.status);
+                  const StatusIcon = statusConfig.icon;
+                  const ServiceIcon = getServiceIcon(service.name);
+                  
+                  return (
+                    <div key={service.uuid} className="group relative">
+                      <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
+                        <div className="p-6">
+                          {/* Header */}
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                                  <ServiceIcon className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                    {service.name}
+                                  </h3>
+                                  <p className="text-sm text-slate-600">
+                                    {service.description}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
+                                <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                                <StatusIcon className="w-4 h-4" />
+                                <span>{service.status}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Description */}
+                          <div className="mb-4">
+                            <p className="text-slate-700 text-sm line-clamp-3">
+                              {service.description}
+                            </p>
+                          </div>
+                          {/* Tags */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {service.tags.split(',').map((tag, idx) => (
+                              <span key={idx} className="inline-block px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium">
+                                #{tag.trim()}
+                              </span>
+                            ))}
+                          </div>
+                          {/* Actions */}
+                          <div className="flex items-center justify-between">
+                            <button onClick={() => handleView(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                              <Eye className="w-4 h-4 mr-1" /> View
+                            </button>
+                            <div className="flex space-x-2">
+                              <button onClick={() => handleEdit(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
+                                <Edit3 className="w-4 h-4 mr-1" /> Edit
+                              </button>
+                              <button onClick={() => handleDeleteConfirm(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              : (paginatedData as ClinicService[]).map((clinicService) => {
+                  const statusConfig = getStatusConfig(clinicService.status);
+                  const StatusIcon = statusConfig.icon;
+                  const ServiceIcon = getServiceIcon(clinicService.service_name);
+                  return (
+                    <div key={clinicService.uuid} className="group relative">
+                      <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
+                        <div className="p-6">
+                          {/* Header */}
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                                  <ServiceIcon className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                    {clinicService.clinic_provided_name || clinicService.service_name}
+                                  </h3>
+                                  <p className="text-sm text-slate-600">
+                                    {getClinicName(clinicService.clinic)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
+                                <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                                <StatusIcon className="w-4 h-4" />
+                                <span>{clinicService.status}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Description */}
+                          {clinicService.description && (
+                            <div className="mb-4">
+                              <p className="text-slate-700 text-sm line-clamp-3">
+                                {clinicService.description}
+                              </p>
+                            </div>
+                          )}
+                          {/* Charges */}
+                          <div className="mb-4">
+                            <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                              {clinicService.is_video_call && (
+                                <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
+                                  <Video className="w-4 h-4 mr-1 text-blue-500" />
+                                  Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                                </span>
+                              )}
+                              {clinicService.is_physical_visit && (
+                                <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                                  <Home className="w-4 h-4 mr-1 text-green-500" />
+                                  Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
+                                </span>
+                              )}
+                              {clinicService.is_home_visit && (
+                                <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
+                                  <Building className="w-4 h-4 mr-1 text-amber-500" />
+                                  Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Actions */}
+                          <div className="flex items-center justify-between">
+                            <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                              <Eye className="w-4 h-4 mr-1" /> View
+                            </button>
+                            <div className="flex space-x-2">
+                              <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
+                                <Edit3 className="w-4 h-4 mr-1" /> Edit
+                              </button>
+                              <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
+                                <Trash2 className="w-4 h-4 mr-1" /> Delete
+                              </button>
+                              <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                                <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            }
+          </div>
+        )}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-8">
+            <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+              >
+                &lt;
+              </button>
+              {[...Array(totalPages)].map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium ${currentPage === idx + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700 hover:bg-slate-50'}`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+              >
+                &gt;
+              </button>
+            </nav>
           </div>
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-500">
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredServices.length)} of {filteredServices.length} services
+      {/* Modal for Add Service or Add Clinic Service */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {activeTab === 'services' ? 'Add Service' : 'Add Clinic Service'}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={16} />
-              </button>
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {activeTab === 'services' ? (
+                <form onSubmit={e => { e.preventDefault(); handleCreateService(); }} className="space-y-5">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Service Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.name ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.name}
+                      onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
+                      placeholder="e.g. Dermatology"
+                    />
+                    {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
+                  </div>
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
+                    <textarea
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.description ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.description}
+                      onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
+                      placeholder="Describe the service..."
+                      rows={3}
+                    />
+                    {formErrors.description && <p className="text-xs text-red-500 mt-1">{formErrors.description}</p>}
+                  </div>
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Tags <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.tags ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.tags}
+                      onChange={e => setNewService(s => ({ ...s, tags: e.target.value }))}
+                      placeholder="e.g. skin,dermatology,allergy"
+                    />
+                    {formErrors.tags && <p className="text-xs text-red-500 mt-1">{formErrors.tags}</p>}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    >
+                      Add Service
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={e => { e.preventDefault(); handleCreateClinicService(); }} className="space-y-5">
+                  {/* Clinic */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Clinic <span className="text-red-500">*</span></label>
+                    <select
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.clinic ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.clinic}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic: e.target.value }))}
+                    >
+                      <option value="">Select Clinic</option>
+                      {sampleClinics.map(clinic => (
+                        <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
+                      ))}
+                    </select>
+                    {formErrors.clinic && <p className="text-xs text-red-500 mt-1">{formErrors.clinic}</p>}
+                  </div>
+                  {/* Service */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
+                    <select
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.service ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.service}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, service: e.target.value }))}
+                    >
+                      <option value="">Select Service</option>
+                      {services.map(service => (
+                        <option key={service.uuid} value={service.uuid}>{service.name}</option>
+                      ))}
+                    </select>
+                    {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
+                  </div>
+                  {/* Clinic Provided Name (optional) */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                      value={newClinicService.clinic_provided_name}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
+                      placeholder="(Optional) Custom name for this service at the clinic"
+                    />
+                  </div>
+                  {/* Rank */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.rank}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
+                      min={1}
+                      placeholder="e.g. 1"
+                    />
+                    {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
+                  </div>
+                  {/* Facility Toggles */}
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
+                      /> Video Call
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_clinic_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
+                      /> Physical Visit
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_home_service}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
+                      /> Home Visit
+                    </label>
+                  </div>
+                  {/* Charges - show fields as per toggles */}
+                  {newClinicService.is_video_call && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_video_call}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
+                          placeholder="e.g. 400"
+                        />
+                        {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_video_call}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
+                          placeholder="e.g. 800"
+                        />
+                        {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {newClinicService.is_clinic_visit && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_physical_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
+                          placeholder="e.g. 200"
+                        />
+                        {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_physical_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
+                          placeholder="e.g. 500"
+                        />
+                        {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {newClinicService.is_home_service && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_home_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
+                          placeholder="e.g. 200"
+                        />
+                        {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_home_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
+                          placeholder="e.g. 600"
+                        />
+                        {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    >
+                      Add Clinic Service
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal */}
-      <Modal />
+      {/* View Modal */}
+      {modalMode === 'view' && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">View {activeTab === 'services' ? 'Service' : 'Clinic Service'}</h2>
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {activeTab === 'services' ? (
+                (() => { const service = selectedItem as Service; return (
+                  <>
+                    {/* Image */}
+                    <div className="flex justify-center mb-4">
+                      {service.image ? (
+                        <img src={service.image} alt={service.name} className="w-28 h-28 object-cover rounded-xl border" />
+                      ) : (
+                        <div className="w-28 h-28 bg-slate-200 flex items-center justify-center rounded-xl border text-slate-400">No Image</div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Name:</span> {service.name}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Description:</span> {service.description}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Tags:</span> {service.tags}
+                    </div>
+                  </>
+                ); })()
+              ) : (
+                (() => { const clinicService = selectedItem as ClinicService & { default_image?: string };
+                  // Prefer image, then default_image, else placeholder
+                  const imageUrl = clinicService.image || (clinicService as any).default_image || null;
+                  return (
+                  <>
+                    {/* Image */}
+                    <div className="flex justify-center mb-4">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={clinicService.clinic_provided_name || clinicService.service_name} className="w-28 h-28 object-cover rounded-xl border" />
+                      ) : (
+                        <div className="w-28 h-28 bg-slate-200 flex items-center justify-center rounded-xl border text-slate-400">No Image</div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Service:</span> {getServiceName(clinicService.service)}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Clinic Provided Name:</span> {clinicService.clinic_provided_name || '-'}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Rank:</span> {clinicService.rank}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Description:</span> {clinicService.description || '-'}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Facilities:</span>
+                      <ul className="list-disc ml-6">
+                        {clinicService.is_video_call && <li>Video Call</li>}
+                        {clinicService.is_physical_visit && <li>Physical Visit</li>}
+                        {clinicService.is_home_visit && <li>Home Visit</li>}
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Charges:</span>
+                      <ul className="list-disc ml-6">
+                        {clinicService.is_video_call && <li>Consultation (Video): ₹{clinicService.consultation_charge_video_call}, Treatment (Video): ₹{clinicService.treatment_charge_video_call}</li>}
+                        {clinicService.is_physical_visit && <li>Consultation (Physical): ₹{clinicService.consultation_charge_physical_visit}, Treatment (Physical): ₹{clinicService.treatment_charge_physical_visit}</li>}
+                        {clinicService.is_home_visit && <li>Consultation (Home): ₹{clinicService.consultation_charge_home_visit}, Treatment (Home): ₹{clinicService.treatment_charge_home_visit}</li>}
+                      </ul>
+                    </div>
+                    {clinicService.reason_for_rejection && (
+                      <div>
+                        <span className="font-semibold text-red-500">Reason for Rejection:</span> {clinicService.reason_for_rejection}
+                      </div>
+                    )}
+                  </>
+                ); })()
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {modalMode === 'edit' && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Edit {activeTab === 'services' ? 'Service' : 'Clinic Service'}</h2>
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {activeTab === 'services' ? (
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  const errors = validateServiceForm();
+                  setFormErrors(errors);
+                  if (Object.keys(errors).length > 0) return;
+                  setServices(services.map(s => s.uuid === selectedItem.uuid ? { ...s, ...newService } : s));
+                  closeModal();
+                  showToast('Service updated successfully!', 'success');
+                }} className="space-y-5">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Service Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.name ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.name}
+                      onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
+                      placeholder="e.g. Dermatology"
+                    />
+                    {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
+                  </div>
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
+                    <textarea
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.description ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.description}
+                      onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
+                      placeholder="Describe the service..."
+                      rows={3}
+                    />
+                    {formErrors.description && <p className="text-xs text-red-500 mt-1">{formErrors.description}</p>}
+                  </div>
+                  {/* Tags */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Tags <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.tags ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newService.tags}
+                      onChange={e => setNewService(s => ({ ...s, tags: e.target.value }))}
+                      placeholder="e.g. skin,dermatology,allergy"
+                    />
+                    {formErrors.tags && <p className="text-xs text-red-500 mt-1">{formErrors.tags}</p>}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  const errors = validateClinicServiceForm();
+                  setFormErrors(errors);
+                  if (Object.keys(errors).length > 0) return;
+                  setClinicServices(clinicServices.map(cs => cs.uuid === selectedItem.uuid ? {
+                    ...cs,
+                    ...newClinicService,
+                    rank: parseInt(newClinicService.rank),
+                    service_name: getServiceName(newClinicService.service),
+                    is_video_call: newClinicService.is_video_call,
+                    is_home_visit: newClinicService.is_home_service,
+                    is_physical_visit: newClinicService.is_clinic_visit,
+                  } : cs));
+                  closeModal();
+                  showToast('Clinic service updated successfully!', 'success');
+                }} className="space-y-5">
+                  {/* Clinic */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Clinic <span className="text-red-500">*</span></label>
+                    <select
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.clinic ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.clinic}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic: e.target.value }))}
+                    >
+                      <option value="">Select Clinic</option>
+                      {sampleClinics.map(clinic => (
+                        <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
+                      ))}
+                    </select>
+                    {formErrors.clinic && <p className="text-xs text-red-500 mt-1">{formErrors.clinic}</p>}
+                  </div>
+                  {/* Service */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
+                    <select
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.service ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.service}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, service: e.target.value }))}
+                    >
+                      <option value="">Select Service</option>
+                      {services.map(service => (
+                        <option key={service.uuid} value={service.uuid}>{service.name}</option>
+                      ))}
+                    </select>
+                    {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
+                  </div>
+                  {/* Clinic Provided Name (optional) */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                      value={newClinicService.clinic_provided_name}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
+                      placeholder="(Optional) Custom name for this service at the clinic"
+                    />
+                  </div>
+                  {/* Rank */}
+                  <div>
+                    <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                      value={newClinicService.rank}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
+                      min={1}
+                      placeholder="e.g. 1"
+                    />
+                    {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
+                  </div>
+                  {/* Facility Toggles */}
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
+                      /> Video Call
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_clinic_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
+                      /> Physical Visit
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newClinicService.is_home_service}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
+                      /> Home Visit
+                    </label>
+                  </div>
+                  {/* Charges - show fields as per toggles */}
+                  {newClinicService.is_video_call && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_video_call}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
+                          placeholder="e.g. 400"
+                        />
+                        {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_video_call}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
+                          placeholder="e.g. 800"
+                        />
+                        {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {newClinicService.is_clinic_visit && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_physical_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
+                          placeholder="e.g. 200"
+                        />
+                        {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_physical_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
+                          placeholder="e.g. 500"
+                        />
+                        {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {newClinicService.is_home_service && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.consultation_charge_home_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
+                          placeholder="e.g. 200"
+                        />
+                        {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                          value={newClinicService.treatment_charge_home_visit}
+                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
+                          placeholder="e.g. 600"
+                        />
+                        {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2 mt-6">
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                      onClick={closeModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {modalMode === 'delete' && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[95vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Confirm Delete</h2>
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <p className="text-slate-700 text-lg">Are you sure you want to delete this {activeTab === 'services' ? 'service' : 'clinic service'}?</p>
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-red-600 to-pink-600 text-white font-semibold shadow hover:from-red-700 hover:to-pink-700 transition-all duration-200"
+                  onClick={handleDelete}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Rank Modal */}
+      {modalMode === 'edit-rank' && selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[95vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Rank</h2>
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <label className="block text-sm font-semibold mb-1">Rank</label>
+              <input
+                type="number"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                value={rankEditValue}
+                onChange={e => setRankEditValue(e.target.value)}
+                min={1}
+              />
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  onClick={handleSaveRank}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default ServiceManagement;

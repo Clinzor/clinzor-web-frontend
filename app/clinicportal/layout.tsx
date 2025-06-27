@@ -18,7 +18,7 @@ import ClinzorSidebar from "@/components/clinicportal/layout/clinicsidebar";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Box sx={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
+    <Box sx={{ display: "flex", height: "100dvh", overflow: { xs: "auto", md: "hidden" } }}>
       <ClinzorSidebar />
       <Box
         component="main"

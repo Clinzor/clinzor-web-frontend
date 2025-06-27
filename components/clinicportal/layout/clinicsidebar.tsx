@@ -11,7 +11,8 @@ import {
   X,
   ChevronLeft,
   LogOut,
-  Settings
+  Settings,
+  Tag
 } from 'lucide-react';
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -110,13 +111,14 @@ export default function ClinicSidebar() {
 
   // Menu items configuration
   const menuItems = [
-    { icon: <Home size={20} strokeWidth={1.5} />, label: 'Dashboard', href: '/clinicportal/dashboard' },
+    { icon: <Home size={20} strokeWidth={1.5} />, label: 'Dashboard', href: '/clinicportal' },
     { icon: <User size={20} strokeWidth={1.5} />, label: 'Profile Settings', href: '/clinicportal/profile' },
     { icon: <Clock size={20} strokeWidth={1.5} />, label: 'Slot Management', href: '/clinicportal/slotmanagement' },
     { icon: <DollarSign size={20} strokeWidth={1.5} />, label: 'Dues to Clinzor', href: '/clinicportal/dues' },
     { icon: <BookOpen size={20} strokeWidth={1.5} />, label: 'Booking Management', href: '/clinicportal/bookings' },
     { icon: <AlignLeft size={20} strokeWidth={1.5} />, label: 'Service Management', href: '/clinicportal/servicemanagement' },
     { icon: <Users size={20} strokeWidth={1.5} />, label: 'Doctor Management', href: '/clinicportal/doctors' },
+    { icon: <Tag size={20} strokeWidth={1.5} />, label: 'Offers', href: '/clinicportal/offers' },
   ];
 
   const handleItemClick = (href: string) => {
@@ -275,7 +277,7 @@ export default function ClinicSidebar() {
       {/* Mobile sidebar - slides in from left */}
       <AnimatePresence>
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 z-40">
+          <div className="md:hidden fixed inset-0 z-50">
             <motion.div 
               className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm" 
               initial={{ opacity: 0 }}
@@ -284,7 +286,7 @@ export default function ClinicSidebar() {
               onClick={() => setMobileOpen(false)}
             />
             <motion.div 
-              className="relative w-72 h-full bg-white shadow-xl flex flex-col"
+              className="relative w-72 h-full bg-white shadow-xl flex flex-col z-50"
               initial={{ x: "-100%" }}
               animate={{ x: "0%" }}
               exit={{ x: "-100%" }}
@@ -299,7 +301,7 @@ export default function ClinicSidebar() {
       {/* Desktop sidebar - collapsible */}
       <div className="hidden md:block relative h-screen">
         <motion.div 
-          className={`h-full bg-white border-r border-gray-100 shadow-sm flex flex-col`}
+          className={`h-full bg-white border-r border-gray-100 shadow-sm flex flex-col z-30`}
           initial={false}
           animate={{ 
             width: collapsed ? "5rem" : "16rem"
