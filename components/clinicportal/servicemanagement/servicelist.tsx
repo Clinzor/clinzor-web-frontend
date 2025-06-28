@@ -61,12 +61,6 @@ interface ClinicService {
   reason_for_rejection: string | null;
 }
 
-interface NewService {
-  name: string;
-  description: string;
-  tags: string;
-}
-
 interface NewClinicService {
   clinic: string;
   service: string;
@@ -81,6 +75,8 @@ interface NewClinicService {
   is_home_service: boolean;
   is_clinic_visit: boolean;
   clinic_provided_name: string;
+  image: string;
+  description: string;
 }
 
 // Sample data
@@ -181,24 +177,22 @@ const ServiceManagement: React.FC = () => {
   const [services, setServices] = useState<Service[]>(sampleServices);
   const [clinicServices, setClinicServices] = useState<ClinicService[]>(sampleClinicServices);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<'services' | 'clinic-services'>('services');
+  const [activeTab, setActiveTab] = useState<'clinic-services'>('clinic-services');
   const itemsPerPage = 6;
 
-  // Filter states
+  // Search state
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [clinicFilter, setClinicFilter] = useState('');
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Service | ClinicService | null>(null);
+  const [showServiceSearchModal, setShowServiceSearchModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ClinicService | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'delete' | 'edit-rank' | null>(null);
   
-  const [newService, setNewService] = useState<NewService>({
-    name: '',
-    description: '',
-    tags: ''
-  });
+  // Service search states
+  const [serviceSearchTerm, setServiceSearchTerm] = useState('');
+  const [allServices, setAllServices] = useState<Service[]>([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
 
   const [newClinicService, setNewClinicService] = useState<NewClinicService>({
     clinic: '',
@@ -213,7 +207,9 @@ const ServiceManagement: React.FC = () => {
     is_video_call: false,
     is_home_service: false,
     is_clinic_visit: true,
-    clinic_provided_name: ''
+    clinic_provided_name: '',
+    image: '',
+    description: ''
   });
 
   // Validation state
@@ -268,51 +264,95 @@ const ServiceManagement: React.FC = () => {
     return services.find(s => s.uuid === serviceId)?.name || 'Unknown Service';
   };
 
-  // Filtering logic
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.tags.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter ? service.status === statusFilter : true;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // Mock data for all services from backend
+  const mockAllServices: Service[] = [
+    {
+      uuid: "d7afe788-af8b-4fd4-b65b-bab700df841a",
+      created_by: "admin@gmail.com",
+      name: "Cardiology",
+      description: "Specialist in diagnosing and treating heart and blood vessel conditions.",
+      tags: "heart,cardiology,blood pressure,ECG,chest pain",
+      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    },
+    {
+      uuid: "661d42bc-4393-49a3-ab8f-c24b6ab17c38",
+      created_by: "admin@gmail.com",
+      name: "Neurology",
+      description: "Specialist in diagnosing and treating nervous system disorders.",
+      tags: "brain,neurology,headache,seizure,stroke",
+      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    },
+    {
+      uuid: "62111833-4927-4060-acdf-f2d857e9d688",
+      created_by: "admin@gmail.com",
+      name: "Dermatology",
+      description: "Specialist in diagnosing and treating skin conditions.",
+      tags: "skin,dermatology,acne,eczema,psoriasis",
+      image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    },
+    {
+      uuid: "5bfffdfc-0af4-4d17-8d0c-08466e2315e5",
+      created_by: "admin@gmail.com",
+      name: "Orthopedics",
+      description: "Specialist in diagnosing and treating bone and joint conditions.",
+      tags: "bones,joints,orthopedics,fracture,arthritis",
+      image: "https://images.unsplash.com/photo-1559757172-9b3c5a9c0b5a?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    },
+    {
+      uuid: "7c8e9f0a-1b2c-3d4e-5f6g-7h8i9j0k1l2m",
+      created_by: "admin@gmail.com",
+      name: "Pediatrics",
+      description: "Specialist in diagnosing and treating children's health conditions.",
+      tags: "children,pediatrics,childcare,development",
+      image: "https://images.unsplash.com/photo-1559757173-9b3c5a9c0b5b?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    },
+    {
+      uuid: "8d9e0f1b-2c3d-4e5f-6g7h-8i9j0k1l2m3n",
+      created_by: "admin@gmail.com",
+      name: "Psychiatry",
+      description: "Specialist in diagnosing and treating mental health conditions.",
+      tags: "mental health,psychiatry,depression,anxiety,therapy",
+      image: "https://images.unsplash.com/photo-1559757174-9b3c5a9c0b5c?w=400&h=400&fit=crop",
+      status: "APPROVED"
+    }
+  ];
 
+  // Filtering logic
   const filteredClinicServices = clinicServices.filter(clinicService => {
-    const matchesSearch = clinicService.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (clinicService.clinic_provided_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesStatus = statusFilter ? clinicService.status === statusFilter : true;
-    const matchesClinic = clinicFilter ? clinicService.clinic === clinicFilter : true;
+    // Only show approved services
+    if (clinicService.status !== 'APPROVED') {
+      return false;
+    }
     
-    return matchesSearch && matchesStatus && matchesClinic;
+    // Apply search filter
+    const matchesSearch = clinicService.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (clinicService.clinic_provided_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         clinicService.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         getClinicName(clinicService.clinic).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesSearch;
   });
 
   // Pagination logic
-  const currentData = activeTab === 'services' ? filteredServices : filteredClinicServices;
+  const currentData = filteredClinicServices;
   const totalPages = Math.ceil(currentData.length / itemsPerPage);
   const paginatedData = currentData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Statistics
-  const totalServices = services.length;
-  const approvedServices = services.filter(s => s.status === 'APPROVED').length;
-  const pendingServices = services.filter(s => s.status === 'PENDING').length;
-  const rejectedServices = services.filter(s => s.status === 'REJECTED').length;
-
   const totalClinicServices = clinicServices.length;
   const approvedClinicServices = clinicServices.filter(cs => cs.status === 'APPROVED').length;
+  const pendingClinicServices = clinicServices.filter(cs => cs.status === 'PENDING').length;
+  const rejectedClinicServices = clinicServices.filter(cs => cs.status === 'REJECTED').length;
 
   // Validation functions
-  const validateServiceForm = () => {
-    const errors: { [key: string]: string } = {};
-    if (!newService.name.trim()) errors.name = 'Service name is required.';
-    if (!newService.description.trim()) errors.description = 'Description is required.';
-    if (!newService.tags.trim()) errors.tags = 'Tags are required.';
-    return errors;
-  };
-
   const validateClinicServiceForm = () => {
     const errors: { [key: string]: string } = {};
-    if (!newClinicService.clinic) errors.clinic = 'Clinic is required.';
+    // Remove clinic validation since we're removing the dropdown
     if (!newClinicService.service) errors.service = 'Service is required.';
     if (!newClinicService.rank || isNaN(Number(newClinicService.rank))) errors.rank = 'Valid rank is required.';
     
@@ -334,25 +374,6 @@ const ServiceManagement: React.FC = () => {
   };
 
   // CRUD operations
-  const handleCreateService = () => {
-    const errors = validateServiceForm();
-    setFormErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    const service: Service = {
-      uuid: `service-${Date.now()}`,
-      ...newService,
-      status: 'PENDING',
-      image: null,
-      created_by: 'admin@clinic.com'
-    };
-    
-    setServices([service, ...services]);
-    resetServiceForm();
-    setShowCreateModal(false);
-    showToast('Service added successfully!', 'success');
-  };
-
   const handleCreateClinicService = () => {
     const errors = validateClinicServiceForm();
     setFormErrors(errors);
@@ -376,8 +397,8 @@ const ServiceManagement: React.FC = () => {
       is_video_call: newClinicService.is_video_call,
       is_home_visit: newClinicService.is_home_service,
       is_physical_visit: newClinicService.is_clinic_visit,
-      image: null,
-      description: null,
+      image: newClinicService.image || null,
+      description: newClinicService.description || null,
       reason_for_rejection: null
     };
     
@@ -390,36 +411,23 @@ const ServiceManagement: React.FC = () => {
   const handleDelete = () => {
     if (!selectedItem) return;
     
-    if (activeTab === 'services') {
-      setServices(services.filter(s => s.uuid !== selectedItem.uuid));
-      showToast('Service deleted successfully!', 'success');
-    } else {
-      setClinicServices(clinicServices.filter(cs => cs.uuid !== selectedItem.uuid));
-      showToast('Clinic service deleted successfully!', 'success');
-    }
+    setClinicServices(clinicServices.filter(cs => cs.uuid !== selectedItem.uuid));
+    showToast('Clinic service deleted successfully!', 'success');
     closeModal();
   };
 
   // Modal handlers
-  const handleView = (item: Service | ClinicService) => {
+  const handleView = (item: ClinicService) => {
     setSelectedItem(item);
     setModalMode('view');
   };
 
-  const handleEdit = (item: Service | ClinicService) => {
+  const handleEdit = (item: ClinicService) => {
     setSelectedItem(item);
-    if (activeTab === 'services') {
-      const service = item as Service;
-      setNewService({
-        name: service.name,
-        description: service.description,
-        tags: service.tags
-      });
-    }
     setModalMode('edit');
   };
 
-  const handleDeleteConfirm = (item: Service | ClinicService) => {
+  const handleDeleteConfirm = (item: ClinicService) => {
     setSelectedItem(item);
     setModalMode('delete');
   };
@@ -427,22 +435,9 @@ const ServiceManagement: React.FC = () => {
   const closeModal = () => {
     setModalMode(null);
     setSelectedItem(null);
-    resetForms();
+    resetClinicServiceForm();
     setFormErrors({});
     setShowCreateModal(false);
-  };
-
-  const resetForms = () => {
-    resetServiceForm();
-    resetClinicServiceForm();
-  };
-
-  const resetServiceForm = () => {
-    setNewService({
-      name: '',
-      description: '',
-      tags: ''
-    });
   };
 
   const resetClinicServiceForm = () => {
@@ -459,14 +454,10 @@ const ServiceManagement: React.FC = () => {
       is_video_call: false,
       is_home_service: false,
       is_clinic_visit: true,
-      clinic_provided_name: ''
+      clinic_provided_name: '',
+      image: '',
+      description: ''
     });
-  };
-
-  const resetFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('');
-    setClinicFilter('');
   };
 
   // Add state for rank editing
@@ -488,6 +479,27 @@ const ServiceManagement: React.FC = () => {
     showToast('Rank updated successfully!', 'success');
     closeModal();
   };
+
+  // Service search functions
+  const handleOpenServiceSearch = () => {
+    setAllServices(mockAllServices);
+    setShowServiceSearchModal(true);
+  };
+
+  const handleSelectService = (service: Service) => {
+    setNewClinicService(prev => ({
+      ...prev,
+      service: service.uuid
+    }));
+    setShowServiceSearchModal(false);
+    setServiceSearchTerm('');
+  };
+
+  const filteredAllServices = allServices.filter(service =>
+    service.name.toLowerCase().includes(serviceSearchTerm.toLowerCase()) ||
+    service.description.toLowerCase().includes(serviceSearchTerm.toLowerCase()) ||
+    service.tags.toLowerCase().includes(serviceSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
@@ -519,12 +531,8 @@ const ServiceManagement: React.FC = () => {
                     <Settings className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs text-blue-600 font-medium">
-                      {activeTab === 'services' ? 'Total Services' : 'Clinic Services'}
-                    </p>
-                    <p className="text-lg font-bold text-blue-700">
-                      {activeTab === 'services' ? totalServices : totalClinicServices}
-                    </p>
+                    <p className="text-xs text-blue-600 font-medium">Clinic Services</p>
+                    <p className="text-lg font-bold text-blue-700">{totalClinicServices}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
@@ -533,9 +541,7 @@ const ServiceManagement: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-emerald-600 font-medium">Approved</p>
-                    <p className="text-lg font-bold text-emerald-700">
-                      {activeTab === 'services' ? approvedServices : approvedClinicServices}
-                    </p>
+                    <p className="text-lg font-bold text-emerald-700">{approvedClinicServices}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
@@ -544,25 +550,13 @@ const ServiceManagement: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-amber-600 font-medium">Pending</p>
-                    <p className="text-lg font-bold text-amber-700">
-                      {activeTab === 'services' ? pendingServices : clinicServices.filter(cs => cs.status === 'PENDING').length}
-                    </p>
+                    <p className="text-lg font-bold text-amber-700">{pendingClinicServices}</p>
                   </div>
                 </div>
               </div>
             </div>
             
             {/* Show Add button only for the active tab */}
-            {activeTab === 'services' && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-              <Plus className="w-5 h-5 mr-2 relative" />
-                <span className="relative">Add Service</span>
-            </button>
-            )}
             {activeTab === 'clinic-services' && (
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -578,90 +572,17 @@ const ServiceManagement: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="bg-white/80 border border-slate-200 rounded-2xl p-2 inline-flex">
-            <button
-              onClick={() => {setActiveTab('services'); setCurrentPage(1);}}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                activeTab === 'services'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              Services
-            </button>
-            <button
-              onClick={() => {setActiveTab('clinic-services'); setCurrentPage(1);}}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                activeTab === 'clinic-services'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              Clinic Services
-            </button>
-          </div>
-        </div>
-
-        {/* Filters Section */}
+        {/* Search Bar */}
         <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
-            {/* Search Bar */}
-            <div className="xl:col-span-1">
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Search</label>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={`Search ${activeTab === 'services' ? 'services' : 'clinic services'}...`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
-              >
-                <option value="">All Status</option>
-                <option value="APPROVED">Approved</option>
-                <option value="PENDING">Pending</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
-
-            {/* Clinic Filter (only for clinic services) */}
-            {activeTab === 'clinic-services' && (
-              <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic</label>
-                <select
-                  value={clinicFilter}
-                  onChange={(e) => setClinicFilter(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
-                >
-                  <option value="">All Clinics</option>
-                  {sampleClinics.map(clinic => (
-                    <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              onClick={resetFilters}
-              className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
-            >
-              Reset Filters
-            </button>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search clinic services by name, description, or clinic..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+            />
           </div>
         </div>
 
@@ -673,172 +594,105 @@ const ServiceManagement: React.FC = () => {
               <Settings className="relative w-16 h-16 text-slate-400 mx-auto mb-6" />
             </div>
             <h3 className="text-2xl font-bold text-slate-900 mb-3">
-              No {activeTab === 'services' ? 'services' : 'clinic services'} found
+              No clinic services found
             </h3>
             <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">
-              Try adjusting your search terms or add your first {activeTab === 'services' ? 'service' : 'clinic service'}
+              Try adjusting your search terms or add your first clinic service
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Add Your First {activeTab === 'services' ? 'Service' : 'Clinic Service'}
+              Add Your First Clinic Service
             </button>
           </div>
         ) : (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {activeTab === 'services' 
-              ? (paginatedData as Service[]).map((service) => {
-                  const statusConfig = getStatusConfig(service.status);
-                  const StatusIcon = statusConfig.icon;
-                  const ServiceIcon = getServiceIcon(service.name);
-                  
-                  return (
-                    <div key={service.uuid} className="group relative">
-                      <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
-                        <div className="p-6">
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                                  <ServiceIcon className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
-                                    {service.name}
-                                  </h3>
-                                  <p className="text-sm text-slate-600">
-                                    {service.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
-                                <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
-                                <StatusIcon className="w-4 h-4" />
-                                <span>{service.status}</span>
-                              </div>
+            {paginatedData.map((clinicService) => {
+              const statusConfig = getStatusConfig(clinicService.status);
+              const StatusIcon = statusConfig.icon;
+              const ServiceIcon = getServiceIcon(clinicService.service_name);
+              return (
+                <div key={clinicService.uuid} className="group relative">
+                  <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
+                    <div className="p-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                              <ServiceIcon className="w-6 h-6 text-white" />
                             </div>
-                          </div>
-                          {/* Description */}
-                          <div className="mb-4">
-                            <p className="text-slate-700 text-sm line-clamp-3">
-                              {service.description}
-                            </p>
-                          </div>
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {service.tags.split(',').map((tag, idx) => (
-                              <span key={idx} className="inline-block px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium">
-                                #{tag.trim()}
-                              </span>
-                            ))}
-                          </div>
-                          {/* Actions */}
-                          <div className="flex items-center justify-between">
-                            <button onClick={() => handleView(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                              <Eye className="w-4 h-4 mr-1" /> View
-                            </button>
-                            <div className="flex space-x-2">
-                              <button onClick={() => handleEdit(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
-                                <Edit3 className="w-4 h-4 mr-1" /> Edit
-                              </button>
-                              <button onClick={() => handleDeleteConfirm(service)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
-                                <Trash2 className="w-4 h-4 mr-1" /> Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              : (paginatedData as ClinicService[]).map((clinicService) => {
-                  const statusConfig = getStatusConfig(clinicService.status);
-                  const StatusIcon = statusConfig.icon;
-                  const ServiceIcon = getServiceIcon(clinicService.service_name);
-                  return (
-                    <div key={clinicService.uuid} className="group relative">
-                      <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
-                        <div className="p-6">
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                                  <ServiceIcon className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
-                                    {clinicService.clinic_provided_name || clinicService.service_name}
-                                  </h3>
-                                  <p className="text-sm text-slate-600">
-                                    {getClinicName(clinicService.clinic)}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
-                                <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
-                                <StatusIcon className="w-4 h-4" />
-                                <span>{clinicService.status}</span>
-                              </div>
-                            </div>
-                          </div>
-                          {/* Description */}
-                          {clinicService.description && (
-                            <div className="mb-4">
-                              <p className="text-slate-700 text-sm line-clamp-3">
-                                {clinicService.description}
+                            <div>
+                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                {clinicService.clinic_provided_name || clinicService.service_name}
+                              </h3>
+                              <p className="text-sm text-slate-600">
+                                {getClinicName(clinicService.clinic)}
                               </p>
                             </div>
-                          )}
-                          {/* Charges */}
-                          <div className="mb-4">
-                            <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-                              {clinicService.is_video_call && (
-                                <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
-                                  <Video className="w-4 h-4 mr-1 text-blue-500" />
-                                  Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
-                                </span>
-                              )}
-                              {clinicService.is_physical_visit && (
-                                <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
-                                  <Home className="w-4 h-4 mr-1 text-green-500" />
-                                  Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
-                                </span>
-                              )}
-                              {clinicService.is_home_visit && (
-                                <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
-                                  <Building className="w-4 h-4 mr-1 text-amber-500" />
-                                  Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
-                                </span>
-                              )}
-                            </div>
                           </div>
-                          {/* Actions */}
-                          <div className="flex items-center justify-between">
-                            <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                              <Eye className="w-4 h-4 mr-1" /> View
-                            </button>
-                            <div className="flex space-x-2">
-                              <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
-                                <Edit3 className="w-4 h-4 mr-1" /> Edit
-                              </button>
-                              <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
-                                <Trash2 className="w-4 h-4 mr-1" /> Delete
-                              </button>
-                              <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                                <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
-                              </button>
-                            </div>
+                          <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
+                            <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                            <StatusIcon className="w-4 h-4" />
+                            <span>{clinicService.status}</span>
                           </div>
                         </div>
                       </div>
+                      {/* Description */}
+                      {clinicService.description && (
+                        <div className="mb-4">
+                          <p className="text-slate-700 text-sm line-clamp-3">
+                            {clinicService.description}
+                          </p>
+                        </div>
+                      )}
+                      {/* Charges */}
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                          {clinicService.is_video_call && (
+                            <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
+                              <Video className="w-4 h-4 mr-1 text-blue-500" />
+                              Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                            </span>
+                          )}
+                          {clinicService.is_physical_visit && (
+                            <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                              <Home className="w-4 h-4 mr-1 text-green-500" />
+                              Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
+                            </span>
+                          )}
+                          {clinicService.is_home_visit && (
+                            <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
+                              <Building className="w-4 h-4 mr-1 text-amber-500" />
+                              Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex items-center justify-between">
+                        <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                          <Eye className="w-4 h-4 mr-1" /> View
+                        </button>
+                        <div className="flex space-x-2">
+                          <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
+                            <Edit3 className="w-4 h-4 mr-1" /> Edit
+                          </button>
+                          <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                          </button>
+                          <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                            <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  );
-                })
-            }
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
         {/* Pagination */}
@@ -873,14 +727,14 @@ const ServiceManagement: React.FC = () => {
         )}
       </div>
 
-      {/* Modal for Add Service or Add Clinic Service */}
+      {/* Modal for Add Clinic Service */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                {activeTab === 'services' ? 'Add Service' : 'Add Clinic Service'}
+                Add Clinic Service
               </h2>
               <button
                 onClick={closeModal}
@@ -892,236 +746,199 @@ const ServiceManagement: React.FC = () => {
             </div>
             {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {activeTab === 'services' ? (
-                <form onSubmit={e => { e.preventDefault(); handleCreateService(); }} className="space-y-5">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Service Name <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.name ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.name}
-                      onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
-                      placeholder="e.g. Dermatology"
-                    />
-                    {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
-                  </div>
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
-                    <textarea
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.description ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.description}
-                      onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
-                      placeholder="Describe the service..."
-                      rows={3}
-                    />
-                    {formErrors.description && <p className="text-xs text-red-500 mt-1">{formErrors.description}</p>}
-                  </div>
-                  {/* Tags */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Tags <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.tags ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.tags}
-                      onChange={e => setNewService(s => ({ ...s, tags: e.target.value }))}
-                      placeholder="e.g. skin,dermatology,allergy"
-                    />
-                    {formErrors.tags && <p className="text-xs text-red-500 mt-1">{formErrors.tags}</p>}
-                  </div>
-                  <div className="flex justify-end gap-2 mt-6">
+              <form onSubmit={e => { e.preventDefault(); handleCreateClinicService(); }} className="space-y-5">
+                {/* Service */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
+                      {newClinicService.service ? getServiceName(newClinicService.service) : 'No service selected'}
+                    </div>
                     <button
                       type="button"
-                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
-                      onClick={closeModal}
+                      onClick={handleOpenServiceSearch}
+                      className="px-4 py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2"
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                    >
-                      Add Service
+                      <Search className="w-4 h-4" />
+                      Search
                     </button>
                   </div>
-                </form>
-              ) : (
-                <form onSubmit={e => { e.preventDefault(); handleCreateClinicService(); }} className="space-y-5">
-                  {/* Clinic */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Clinic <span className="text-red-500">*</span></label>
-                    <select
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.clinic ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.clinic}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic: e.target.value }))}
-                    >
-                      <option value="">Select Clinic</option>
-                      {sampleClinics.map(clinic => (
-                        <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
-                      ))}
-                    </select>
-                    {formErrors.clinic && <p className="text-xs text-red-500 mt-1">{formErrors.clinic}</p>}
-                  </div>
-                  {/* Service */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
-                    <select
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.service ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.service}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, service: e.target.value }))}
-                    >
-                      <option value="">Select Service</option>
-                      {services.map(service => (
-                        <option key={service.uuid} value={service.uuid}>{service.name}</option>
-                      ))}
-                    </select>
-                    {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
-                  </div>
-                  {/* Clinic Provided Name (optional) */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
+                </div>
+                {/* Clinic Provided Name (optional) */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    value={newClinicService.clinic_provided_name}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
+                    placeholder="(Optional) Custom name for this service at the clinic"
+                  />
+                </div>
+                
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Description</label>
+                  <textarea
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    value={newClinicService.description}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, description: e.target.value }))}
+                    placeholder="Describe this clinic service..."
+                    rows={3}
+                  />
+                </div>
+                
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // In a real app, you would upload the file to a server and get back a URL
+                        // For now, we'll create a local URL for preview
+                        const imageUrl = URL.createObjectURL(file);
+                        setNewClinicService(cs => ({ ...cs, image: imageUrl }));
+                      }
+                    }}
+                  />
+                </div>
+                {/* Rank */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                    value={newClinicService.rank}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
+                    min={1}
+                    placeholder="e.g. 1"
+                  />
+                  {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
+                </div>
+                {/* Facility Toggles */}
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
                     <input
-                      type="text"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
-                      value={newClinicService.clinic_provided_name}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
-                      placeholder="(Optional) Custom name for this service at the clinic"
-                    />
-                  </div>
-                  {/* Rank */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                      type="checkbox"
+                      checked={newClinicService.is_video_call}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
+                    /> Video Call
+                  </label>
+                  <label className="flex items-center gap-2">
                     <input
-                      type="number"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.rank}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
-                      min={1}
-                      placeholder="e.g. 1"
-                    />
-                    {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
-                  </div>
-                  {/* Facility Toggles */}
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
+                      type="checkbox"
+                      checked={newClinicService.is_clinic_visit}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
+                    /> Physical Visit
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newClinicService.is_home_service}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
+                    /> Home Visit
+                  </label>
+                </div>
+                {/* Charges - show fields as per toggles */}
+                {newClinicService.is_video_call && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_video_call}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
-                      /> Video Call
-                    </label>
-                    <label className="flex items-center gap-2">
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 400"
+                      />
+                      {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_clinic_visit}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
-                      /> Physical Visit
-                    </label>
-                    <label className="flex items-center gap-2">
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 800"
+                      />
+                      {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
+                    </div>
+                  </div>
+                )}
+                {newClinicService.is_clinic_visit && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_home_service}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
-                      /> Home Visit
-                    </label>
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_physical_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                      {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_physical_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 500"
+                      />
+                      {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
+                    </div>
                   </div>
-                  {/* Charges - show fields as per toggles */}
-                  {newClinicService.is_video_call && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_video_call}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
-                          placeholder="e.g. 400"
-                        />
-                        {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_video_call}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
-                          placeholder="e.g. 800"
-                        />
-                        {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
-                      </div>
+                )}
+                {newClinicService.is_home_service && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_home_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                      {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
                     </div>
-                  )}
-                  {newClinicService.is_clinic_visit && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_physical_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
-                          placeholder="e.g. 200"
-                        />
-                        {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_physical_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
-                          placeholder="e.g. 500"
-                        />
-                        {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
-                      </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_home_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 600"
+                      />
+                      {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
                     </div>
-                  )}
-                  {newClinicService.is_home_service && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_home_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
-                          placeholder="e.g. 200"
-                        />
-                        {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_home_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
-                          placeholder="e.g. 600"
-                        />
-                        {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button
-                      type="button"
-                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                    >
-                      Add Clinic Service
-                    </button>
                   </div>
-                </form>
-              )}
+                )}
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  >
+                    Add Clinic Service
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1132,83 +949,44 @@ const ServiceManagement: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">View {activeTab === 'services' ? 'Service' : 'Clinic Service'}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">View Clinic Service</h2>
               <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-4">
-              {activeTab === 'services' ? (
-                (() => { const service = selectedItem as Service; return (
-                  <>
-                    {/* Image */}
-                    <div className="flex justify-center mb-4">
-                      {service.image ? (
-                        <img src={service.image} alt={service.name} className="w-28 h-28 object-cover rounded-xl border" />
-                      ) : (
-                        <div className="w-28 h-28 bg-slate-200 flex items-center justify-center rounded-xl border text-slate-400">No Image</div>
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Name:</span> {service.name}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Description:</span> {service.description}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Tags:</span> {service.tags}
-                    </div>
-                  </>
-                ); })()
-              ) : (
-                (() => { const clinicService = selectedItem as ClinicService & { default_image?: string };
-                  // Prefer image, then default_image, else placeholder
-                  const imageUrl = clinicService.image || (clinicService as any).default_image || null;
-                  return (
-                  <>
-                    {/* Image */}
-                    <div className="flex justify-center mb-4">
-                      {imageUrl ? (
-                        <img src={imageUrl} alt={clinicService.clinic_provided_name || clinicService.service_name} className="w-28 h-28 object-cover rounded-xl border" />
-                      ) : (
-                        <div className="w-28 h-28 bg-slate-200 flex items-center justify-center rounded-xl border text-slate-400">No Image</div>
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Service:</span> {getServiceName(clinicService.service)}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Clinic Provided Name:</span> {clinicService.clinic_provided_name || '-'}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Rank:</span> {clinicService.rank}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Description:</span> {clinicService.description || '-'}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Facilities:</span>
-                      <ul className="list-disc ml-6">
-                        {clinicService.is_video_call && <li>Video Call</li>}
-                        {clinicService.is_physical_visit && <li>Physical Visit</li>}
-                        {clinicService.is_home_visit && <li>Home Visit</li>}
-                      </ul>
-                    </div>
-                    <div>
-                      <span className="font-semibold">Charges:</span>
-                      <ul className="list-disc ml-6">
-                        {clinicService.is_video_call && <li>Consultation (Video): ₹{clinicService.consultation_charge_video_call}, Treatment (Video): ₹{clinicService.treatment_charge_video_call}</li>}
-                        {clinicService.is_physical_visit && <li>Consultation (Physical): ₹{clinicService.consultation_charge_physical_visit}, Treatment (Physical): ₹{clinicService.treatment_charge_physical_visit}</li>}
-                        {clinicService.is_home_visit && <li>Consultation (Home): ₹{clinicService.consultation_charge_home_visit}, Treatment (Home): ₹{clinicService.treatment_charge_home_visit}</li>}
-                      </ul>
-                    </div>
-                    {clinicService.reason_for_rejection && (
-                      <div>
-                        <span className="font-semibold text-red-500">Reason for Rejection:</span> {clinicService.reason_for_rejection}
-                      </div>
-                    )}
-                  </>
-                ); })()
+              <div>
+                <span className="font-semibold">Service:</span> {getServiceName(selectedItem.service)}
+              </div>
+              <div>
+                <span className="font-semibold">Clinic Provided Name:</span> {selectedItem.clinic_provided_name || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Rank:</span> {selectedItem.rank}
+              </div>
+              <div>
+                <span className="font-semibold">Description:</span> {selectedItem.description || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Facilities:</span>
+                <ul className="list-disc ml-6">
+                  {selectedItem.is_video_call && <li>Video Call</li>}
+                  {selectedItem.is_physical_visit && <li>Physical Visit</li>}
+                  {selectedItem.is_home_visit && <li>Home Visit</li>}
+                </ul>
+              </div>
+              <div>
+                <span className="font-semibold">Charges:</span>
+                <ul className="list-disc ml-6">
+                  {selectedItem.is_video_call && <li>Consultation (Video): ₹{selectedItem.consultation_charge_video_call}, Treatment (Video): ₹{selectedItem.treatment_charge_video_call}</li>}
+                  {selectedItem.is_physical_visit && <li>Consultation (Physical): ₹{selectedItem.consultation_charge_physical_visit}, Treatment (Physical): ₹{selectedItem.treatment_charge_physical_visit}</li>}
+                  {selectedItem.is_home_visit && <li>Consultation (Home): ₹{selectedItem.consultation_charge_home_visit}, Treatment (Home): ₹{selectedItem.treatment_charge_home_visit}</li>}
+                </ul>
+              </div>
+              {selectedItem.reason_for_rejection && (
+                <div>
+                  <span className="font-semibold text-red-500">Reason for Rejection:</span> {selectedItem.reason_for_rejection}
+                </div>
               )}
             </div>
           </div>
@@ -1220,266 +998,221 @@ const ServiceManagement: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Edit {activeTab === 'services' ? 'Service' : 'Clinic Service'}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Edit Clinic Service</h2>
               <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-6">
-              {activeTab === 'services' ? (
-                <form onSubmit={e => {
-                  e.preventDefault();
-                  const errors = validateServiceForm();
-                  setFormErrors(errors);
-                  if (Object.keys(errors).length > 0) return;
-                  setServices(services.map(s => s.uuid === selectedItem.uuid ? { ...s, ...newService } : s));
-                  closeModal();
-                  showToast('Service updated successfully!', 'success');
-                }} className="space-y-5">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Service Name <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.name ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.name}
-                      onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
-                      placeholder="e.g. Dermatology"
-                    />
-                    {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
-                  </div>
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
-                    <textarea
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.description ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.description}
-                      onChange={e => setNewService(s => ({ ...s, description: e.target.value }))}
-                      placeholder="Describe the service..."
-                      rows={3}
-                    />
-                    {formErrors.description && <p className="text-xs text-red-500 mt-1">{formErrors.description}</p>}
-                  </div>
-                  {/* Tags */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Tags <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.tags ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newService.tags}
-                      onChange={e => setNewService(s => ({ ...s, tags: e.target.value }))}
-                      placeholder="e.g. skin,dermatology,allergy"
-                    />
-                    {formErrors.tags && <p className="text-xs text-red-500 mt-1">{formErrors.tags}</p>}
-                  </div>
-                  <div className="flex justify-end gap-2 mt-6">
+              <form onSubmit={e => {
+                e.preventDefault();
+                const errors = validateClinicServiceForm();
+                setFormErrors(errors);
+                if (Object.keys(errors).length > 0) return;
+                setClinicServices(clinicServices.map(cs => cs.uuid === selectedItem.uuid ? {
+                  ...cs,
+                  ...newClinicService,
+                  rank: parseInt(newClinicService.rank),
+                  service_name: getServiceName(newClinicService.service),
+                  is_video_call: newClinicService.is_video_call,
+                  is_home_visit: newClinicService.is_home_service,
+                  is_physical_visit: newClinicService.is_clinic_visit,
+                  image: newClinicService.image || null,
+                  description: newClinicService.description || null,
+                } : cs));
+                closeModal();
+                showToast('Clinic service updated successfully!', 'success');
+              }} className="space-y-5">
+                {/* Service */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
+                      {newClinicService.service ? getServiceName(newClinicService.service) : 'No service selected'}
+                    </div>
                     <button
                       type="button"
-                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
-                      onClick={closeModal}
+                      onClick={handleOpenServiceSearch}
+                      className="px-4 py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2"
                     >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                    >
-                      Save Changes
+                      <Search className="w-4 h-4" />
+                      Search
                     </button>
                   </div>
-                </form>
-              ) : (
-                <form onSubmit={e => {
-                  e.preventDefault();
-                  const errors = validateClinicServiceForm();
-                  setFormErrors(errors);
-                  if (Object.keys(errors).length > 0) return;
-                  setClinicServices(clinicServices.map(cs => cs.uuid === selectedItem.uuid ? {
-                    ...cs,
-                    ...newClinicService,
-                    rank: parseInt(newClinicService.rank),
-                    service_name: getServiceName(newClinicService.service),
-                    is_video_call: newClinicService.is_video_call,
-                    is_home_visit: newClinicService.is_home_service,
-                    is_physical_visit: newClinicService.is_clinic_visit,
-                  } : cs));
-                  closeModal();
-                  showToast('Clinic service updated successfully!', 'success');
-                }} className="space-y-5">
-                  {/* Clinic */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Clinic <span className="text-red-500">*</span></label>
-                    <select
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.clinic ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.clinic}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic: e.target.value }))}
-                    >
-                      <option value="">Select Clinic</option>
-                      {sampleClinics.map(clinic => (
-                        <option key={clinic.uuid} value={clinic.uuid}>{clinic.name}</option>
-                      ))}
-                    </select>
-                    {formErrors.clinic && <p className="text-xs text-red-500 mt-1">{formErrors.clinic}</p>}
-                  </div>
-                  {/* Service */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
-                    <select
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.service ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.service}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, service: e.target.value }))}
-                    >
-                      <option value="">Select Service</option>
-                      {services.map(service => (
-                        <option key={service.uuid} value={service.uuid}>{service.name}</option>
-                      ))}
-                    </select>
-                    {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
-                  </div>
-                  {/* Clinic Provided Name (optional) */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
+                </div>
+                {/* Clinic Provided Name (optional) */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    value={newClinicService.clinic_provided_name}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
+                    placeholder="(Optional) Custom name for this service at the clinic"
+                  />
+                </div>
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Description</label>
+                  <textarea
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    value={newClinicService.description}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, description: e.target.value }))}
+                    placeholder="Describe this clinic service..."
+                    rows={3}
+                  />
+                </div>
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // In a real app, you would upload the file to a server and get back a URL
+                        // For now, we'll create a local URL for preview
+                        const imageUrl = URL.createObjectURL(file);
+                        setNewClinicService(cs => ({ ...cs, image: imageUrl }));
+                      }
+                    }}
+                  />
+                </div>
+                {/* Rank */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                    value={newClinicService.rank}
+                    onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
+                    min={1}
+                    placeholder="e.g. 1"
+                  />
+                  {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
+                </div>
+                {/* Facility Toggles */}
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
                     <input
-                      type="text"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
-                      value={newClinicService.clinic_provided_name}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
-                      placeholder="(Optional) Custom name for this service at the clinic"
-                    />
-                  </div>
-                  {/* Rank */}
-                  <div>
-                    <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                      type="checkbox"
+                      checked={newClinicService.is_video_call}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
+                    /> Video Call
+                  </label>
+                  <label className="flex items-center gap-2">
                     <input
-                      type="number"
-                      className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                      value={newClinicService.rank}
-                      onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
-                      min={1}
-                      placeholder="e.g. 1"
-                    />
-                    {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
-                  </div>
-                  {/* Facility Toggles */}
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
+                      type="checkbox"
+                      checked={newClinicService.is_clinic_visit}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
+                    /> Physical Visit
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newClinicService.is_home_service}
+                      onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
+                    /> Home Visit
+                  </label>
+                </div>
+                {/* Charges - show fields as per toggles */}
+                {newClinicService.is_video_call && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_video_call}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
-                      /> Video Call
-                    </label>
-                    <label className="flex items-center gap-2">
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 400"
+                      />
+                      {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_clinic_visit}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
-                      /> Physical Visit
-                    </label>
-                    <label className="flex items-center gap-2">
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_video_call}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 800"
+                      />
+                      {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
+                    </div>
+                  </div>
+                )}
+                {newClinicService.is_clinic_visit && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
-                        type="checkbox"
-                        checked={newClinicService.is_home_service}
-                        onChange={e => setNewClinicService(cs => ({ ...cs, is_home_service: e.target.checked }))}
-                      /> Home Visit
-                    </label>
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_physical_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                      {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_physical_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 500"
+                      />
+                      {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
+                    </div>
                   </div>
-                  {/* Charges - show fields as per toggles */}
-                  {newClinicService.is_video_call && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_video_call}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
-                          placeholder="e.g. 400"
-                        />
-                        {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_video_call}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
-                          placeholder="e.g. 800"
-                        />
-                        {formErrors.treatment_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_video_call}</p>}
-                      </div>
+                )}
+                {newClinicService.is_home_service && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.consultation_charge_home_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                      {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
                     </div>
-                  )}
-                  {newClinicService.is_clinic_visit && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_physical_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
-                          placeholder="e.g. 200"
-                        />
-                        {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_physical_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
-                          placeholder="e.g. 500"
-                        />
-                        {formErrors.treatment_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_physical_visit}</p>}
-                      </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        value={newClinicService.treatment_charge_home_visit}
+                        onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 600"
+                      />
+                      {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
                     </div>
-                  )}
-                  {newClinicService.is_home_service && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.consultation_charge_home_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
-                          placeholder="e.g. 200"
-                        />
-                        {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
-                        <input
-                          type="number"
-                          className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
-                          value={newClinicService.treatment_charge_home_visit}
-                          onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
-                          placeholder="e.g. 600"
-                        />
-                        {formErrors.treatment_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.treatment_charge_home_visit}</p>}
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button
-                      type="button"
-                      className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
-                      onClick={closeModal}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                    >
-                      Save Changes
-                    </button>
                   </div>
-                </form>
-              )}
+                )}
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                    onClick={closeModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1496,7 +1229,7 @@ const ServiceManagement: React.FC = () => {
               </button>
             </div>
             <div className="p-6 space-y-6">
-              <p className="text-slate-700 text-lg">Are you sure you want to delete this {activeTab === 'services' ? 'service' : 'clinic service'}?</p>
+              <p className="text-slate-700 text-lg">Are you sure you want to delete this clinic service?</p>
               <div className="flex justify-end gap-2 mt-6">
                 <button
                   type="button"
@@ -1553,6 +1286,120 @@ const ServiceManagement: React.FC = () => {
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Search Modal */}
+      {showServiceSearchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Search Services</h2>
+              <button
+                onClick={() => setShowServiceSearchModal(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search services by name, description, or tags..."
+                  value={serviceSearchTerm}
+                  onChange={(e) => setServiceSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                />
+              </div>
+            </div>
+
+            {/* Services Grid */}
+            <div className="p-6">
+              {filteredAllServices.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No services found</h3>
+                  <p className="text-slate-500">Try adjusting your search terms</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredAllServices.map((service) => {
+                    const ServiceIcon = getServiceIcon(service.name);
+                    return (
+                      <div
+                        key={service.uuid}
+                        onClick={() => handleSelectService(service)}
+                        className="group cursor-pointer bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-lg transition-all duration-200"
+                      >
+                        {/* Service Image */}
+                        <div className="relative mb-4">
+                          {service.image ? (
+                            <img
+                              src={service.image}
+                              alt={service.name}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-full h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                              <ServiceIcon className="w-8 h-8 text-blue-500" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2">
+                            <div className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                              {service.status}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Service Info */}
+                        <div>
+                          <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                            {service.name}
+                          </h3>
+                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                            {service.description}
+                          </p>
+                          
+                          {/* Tags */}
+                          <div className="flex flex-wrap gap-1">
+                            {service.tags.split(',').slice(0, 3).map((tag, idx) => (
+                              <span key={idx} className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
+                                #{tag.trim()}
+                              </span>
+                            ))}
+                            {service.tags.split(',').length > 3 && (
+                              <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
+                                +{service.tags.split(',').length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Select Button */}
+                        <div className="mt-4 pt-4 border-t border-slate-100">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectService(service);
+                            }}
+                            className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-semibold"
+                          >
+                            Select Service
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
