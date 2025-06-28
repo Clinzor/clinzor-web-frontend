@@ -24,7 +24,8 @@ import {
   Tag,
   FileText,
   Image as ImageIcon,
-  XCircle
+  XCircle,
+  Building2
 } from 'lucide-react';
 
 // Types
@@ -186,6 +187,7 @@ const ServiceManagement: React.FC = () => {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showServiceSearchModal, setShowServiceSearchModal] = useState(false);
+  const [showRequestServiceModal, setShowRequestServiceModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ClinicService | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'delete' | 'edit-rank' | null>(null);
   
@@ -193,6 +195,16 @@ const ServiceManagement: React.FC = () => {
   const [serviceSearchTerm, setServiceSearchTerm] = useState('');
   const [allServices, setAllServices] = useState<Service[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(false);
+
+  // Service request states
+  const [serviceRequest, setServiceRequest] = useState({
+    name: '',
+    image: '',
+    description: '',
+    type: '',
+    rates: '',
+    additionalInfo: ''
+  });
 
   const [newClinicService, setNewClinicService] = useState<NewClinicService>({
     clinic: '',
@@ -495,6 +507,25 @@ const ServiceManagement: React.FC = () => {
     setServiceSearchTerm('');
   };
 
+  const handleRequestService = () => {
+    // In a real app, this would send the request to the backend
+    console.log('Service Request:', serviceRequest);
+    showToast('Service request submitted successfully! We will review and add it soon.', 'success');
+    setShowRequestServiceModal(false);
+    resetServiceRequest();
+  };
+
+  const resetServiceRequest = () => {
+    setServiceRequest({
+      name: '',
+      image: '',
+      description: '',
+      type: '',
+      rates: '',
+      additionalInfo: ''
+    });
+  };
+
   const filteredAllServices = allServices.filter(service =>
     service.name.toLowerCase().includes(serviceSearchTerm.toLowerCase()) ||
     service.description.toLowerCase().includes(serviceSearchTerm.toLowerCase()) ||
@@ -514,11 +545,11 @@ const ServiceManagement: React.FC = () => {
       )}
       {/* Header */}
       <div className="backdrop-blur-xl bg-white/80 border-b border-slate-200/60 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 lg:py-0 lg:h-20">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-8">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
                   Service Management
                 </h1>
                 <p className="text-sm text-slate-500 mt-1">Manage services and clinic service offerings</p>
@@ -557,7 +588,15 @@ const ServiceManagement: React.FC = () => {
             </div>
             
             {/* Show Add button only for the active tab */}
-            {activeTab === 'clinic-services' && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowRequestServiceModal(true)}
+                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                <Plus className="w-5 h-5 mr-2 relative" />
+                <span className="relative">Request Service</span>
+              </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
@@ -566,125 +605,136 @@ const ServiceManagement: React.FC = () => {
                 <Plus className="w-5 h-5 mr-2 relative" />
                 <span className="relative">Add Clinic Service</span>
               </button>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Search Bar */}
-        <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-6 mb-8">
+        <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search clinic services by name, description, or clinic..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400 text-sm sm:text-base"
             />
           </div>
         </div>
 
         {/* Content Grid */}
         {currentData.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-12 sm:py-20">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-              <Settings className="relative w-16 h-16 text-slate-400 mx-auto mb-6" />
+              <Settings className="relative w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4 sm:mb-6" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-3">
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">
               No clinic services found
             </h3>
-            <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">
+            <p className="text-slate-500 text-base sm:text-lg mb-6 sm:mb-8 max-w-md mx-auto px-4">
               Try adjusting your search terms or add your first clinic service
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
+              className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold text-sm sm:text-base"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
               Add Your First Clinic Service
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             {paginatedData.map((clinicService) => {
               const statusConfig = getStatusConfig(clinicService.status);
               const StatusIcon = statusConfig.icon;
               const ServiceIcon = getServiceIcon(clinicService.service_name);
               return (
                 <div key={clinicService.uuid} className="group relative">
-                  <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
-                    <div className="p-6">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-6">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                              <ServiceIcon className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
-                                {clinicService.clinic_provided_name || clinicService.service_name}
-                              </h3>
-                              <p className="text-sm text-slate-600">
-                                {getClinicName(clinicService.clinic)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
-                            <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
-                            <StatusIcon className="w-4 h-4" />
-                            <span>{clinicService.status}</span>
-                          </div>
+                  <div className="relative bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+                    {/* Status Badge */}
+                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
+                      <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium ${statusConfig.color} space-x-2`}>
+                        <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                        <statusConfig.icon className="w-4 h-4" />
+                        <span>{clinicService.status}</span>
+                      </span>
+                    </div>
+
+                    {/* Service Image */}
+                    <div className="relative h-32 sm:h-40 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                      {clinicService.image ? (
+                        <img
+                          src={clinicService.image}
+                          alt={clinicService.service_name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Settings className="w-8 h-8 sm:w-12 sm:h-12 text-slate-400" />
                         </div>
-                      </div>
-                      {/* Description */}
-                      {clinicService.description && (
-                        <div className="mb-4">
-                          <p className="text-slate-700 text-sm line-clamp-3">
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 sm:p-6">
+                      <div className="flex items-start justify-between mb-3 sm:mb-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2 truncate">
+                            {clinicService.service_name}
+                          </h3>
+                          <p className="text-sm sm:text-base text-slate-600 mb-2 sm:mb-3 line-clamp-2">
                             {clinicService.description}
                           </p>
                         </div>
-                      )}
-                      {/* Charges */}
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-                          {clinicService.is_video_call && (
-                            <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
-                              <Video className="w-4 h-4 mr-1 text-blue-500" />
-                              Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
-                            </span>
-                          )}
-                          {clinicService.is_physical_visit && (
-                            <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
-                              <Home className="w-4 h-4 mr-1 text-green-500" />
-                              Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
-                            </span>
-                          )}
-                          {clinicService.is_home_visit && (
-                            <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
-                              <Building className="w-4 h-4 mr-1 text-amber-500" />
-                              Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
-                            </span>
-                          )}
-                        </div>
                       </div>
-                      {/* Actions */}
+
+                      {/* Service Type */}
+                      <div className="flex items-center mb-3 sm:mb-4">
+                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2" />
+                        <span className="text-sm sm:text-base text-slate-600 font-medium">
+                          {clinicService.service_name}
+                        </span>
+                      </div>
+
+                      {/* Clinic Info */}
+                      <div className="flex items-center mb-4 sm:mb-6">
+                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2" />
+                        <span className="text-sm sm:text-base text-slate-600 font-medium">
+                          {getClinicName(clinicService.clinic)}
+                        </span>
+                      </div>
+
+                      {/* Price and Actions */}
                       <div className="flex items-center justify-between">
-                        <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                          <Eye className="w-4 h-4 mr-1" /> View
-                        </button>
-                        <div className="flex space-x-2">
-                          <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
-                            <Edit3 className="w-4 h-4 mr-1" /> Edit
+                        <div className="flex items-center">
+                          <span className="text-lg sm:text-xl font-bold text-slate-900">
+                            ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                          </span>
+                          <span className="text-sm sm:text-base text-slate-500 ml-1">/session</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleView(clinicService)}
+                            className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          >
+                            <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
-                          <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                          <button
+                            onClick={() => handleDeleteConfirm(clinicService)}
+                            className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          >
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
-                          <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                            <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
+                          <button
+                            onClick={() => handleEditRank(clinicService)}
+                            className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          >
+                            <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         </div>
                       </div>
@@ -697,12 +747,15 @@ const ServiceManagement: React.FC = () => {
         )}
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center mt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-slate-200">
+            <div className="text-sm sm:text-base text-slate-600">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, currentData.length)} of {currentData.length} results
+            </div>
             <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-2 sm:px-3 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 &lt;
               </button>
@@ -710,7 +763,11 @@ const ServiceManagement: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => setCurrentPage(idx + 1)}
-                  className={`relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium ${currentPage === idx + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700 hover:bg-slate-50'}`}
+                  className={`relative inline-flex items-center px-3 sm:px-4 py-2 border border-slate-300 bg-white text-sm font-medium ${
+                    currentPage === idx + 1 
+                      ? 'text-blue-600 font-bold bg-blue-50' 
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
                   {idx + 1}
                 </button>
@@ -718,7 +775,7 @@ const ServiceManagement: React.FC = () => {
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-2 sm:px-3 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 &gt;
               </button>
@@ -732,8 +789,8 @@ const ServiceManagement: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                 Add Clinic Service
               </h2>
               <button
@@ -745,22 +802,71 @@ const ServiceManagement: React.FC = () => {
               </button>
             </div>
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              <form onSubmit={e => { e.preventDefault(); handleCreateClinicService(); }} className="space-y-5">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <form onSubmit={e => { e.preventDefault(); handleCreateClinicService(); }} className="space-y-4 sm:space-y-5">
                 {/* Service */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
-                  <div className="flex gap-2">
-                    <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
-                      {newClinicService.service ? getServiceName(newClinicService.service) : 'No service selected'}
-                    </div>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Service <span className="text-red-500">*</span></label>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+                    {newClinicService.service ? (
+                      <div className="flex-1">
+                        {/* Selected Service Card */}
+                        <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4">
+                          <div className="flex items-start space-x-3 sm:space-x-4">
+                            {/* Service Image */}
+                            <div className="flex-shrink-0">
+                              {(() => {
+                                const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
+                                return selectedService?.image ? (
+                                  <img
+                                    src={selectedService.image}
+                                    alt={selectedService.name}
+                                    className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                                    <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Service Info */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">
+                                {getServiceName(newClinicService.service)}
+                              </h4>
+                              <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
+                                {(() => {
+                                  const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
+                                  return selectedService?.description || 'No description available';
+                                })()}
+                              </p>
+                            </div>
+                            
+                            {/* Change Button */}
+                            <button
+                              type="button"
+                              onClick={handleOpenServiceSearch}
+                              className="flex-shrink-0 px-2 sm:px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200"
+                            >
+                              Change
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 flex items-center justify-center text-sm sm:text-base">
+                        No service selected
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={handleOpenServiceSearch}
-                      className="px-4 py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2"
+                      className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2 text-sm sm:text-base"
                     >
                       <Search className="w-4 h-4" />
-                      Search
+                      {newClinicService.service ? 'Change' : 'Search'}
                     </button>
                   </div>
                   {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
@@ -1027,16 +1133,65 @@ const ServiceManagement: React.FC = () => {
                 <div>
                   <label className="block text-sm font-semibold mb-1">Service <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
-                    <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
-                      {newClinicService.service ? getServiceName(newClinicService.service) : 'No service selected'}
-                    </div>
+                    {newClinicService.service ? (
+                      <div className="flex-1">
+                        {/* Selected Service Card */}
+                        <div className="bg-white border border-slate-200 rounded-xl p-4">
+                          <div className="flex items-start space-x-4">
+                            {/* Service Image */}
+                            <div className="flex-shrink-0">
+                              {(() => {
+                                const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
+                                return selectedService?.image ? (
+                                  <img
+                                    src={selectedService.image}
+                                    alt={selectedService.name}
+                                    className="w-16 h-16 object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+                                    <Activity className="w-8 h-8 text-blue-500" />
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Service Info */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-slate-900 mb-1">
+                                {getServiceName(newClinicService.service)}
+                              </h4>
+                              <p className="text-sm text-slate-600 line-clamp-2">
+                                {(() => {
+                                  const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
+                                  return selectedService?.description || 'No description available';
+                                })()}
+                              </p>
+                            </div>
+                            
+                            {/* Change Button */}
+                            <button
+                              type="button"
+                              onClick={handleOpenServiceSearch}
+                              className="flex-shrink-0 px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200"
+                            >
+                              Change
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 flex items-center justify-center">
+                        No service selected
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={handleOpenServiceSearch}
                       className="px-4 py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2"
                     >
                       <Search className="w-4 h-4" />
-                      Search
+                      {newClinicService.service ? 'Change' : 'Search'}
                     </button>
                   </div>
                   {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
@@ -1298,13 +1453,25 @@ const ServiceManagement: React.FC = () => {
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">Search Services</h2>
-              <button
-                onClick={() => setShowServiceSearchModal(false)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setShowServiceSearchModal(false);
+                    setShowRequestServiceModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-semibold flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Request Service
+                </button>
+                <button
+                  onClick={() => setShowServiceSearchModal(false)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             {/* Search Bar */}
@@ -1327,7 +1494,17 @@ const ServiceManagement: React.FC = () => {
                 <div className="text-center py-12">
                   <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No services found</h3>
-                  <p className="text-slate-500">Try adjusting your search terms</p>
+                  <p className="text-slate-500 mb-6">Try adjusting your search terms or request a new service</p>
+                  <button
+                    onClick={() => {
+                      setShowServiceSearchModal(false);
+                      setShowRequestServiceModal(true);
+                    }}
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Request a Service
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1400,6 +1577,141 @@ const ServiceManagement: React.FC = () => {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request a Service Modal */}
+      {showRequestServiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Request a Service</h2>
+              <button
+                onClick={() => {
+                  setShowRequestServiceModal(false);
+                  resetServiceRequest();
+                }}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              <form onSubmit={e => { e.preventDefault(); handleRequestService(); }} className="space-y-5">
+                {/* Name of Service */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Name of Service <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={serviceRequest.name}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g. Dermatology, Cardiology"
+                  />
+                </div>
+
+                {/* Image */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const imageUrl = URL.createObjectURL(file);
+                        setServiceRequest(prev => ({ ...prev, image: imageUrl }));
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={serviceRequest.description}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe the service in detail..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Type of Service */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Type of Service <span className="text-red-500">*</span></label>
+                  <select
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={serviceRequest.type}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, type: e.target.value }))}
+                  >
+                    <option value="">Select Service Type</option>
+                    <option value="medical">Medical</option>
+                    <option value="surgical">Surgical</option>
+                    <option value="diagnostic">Diagnostic</option>
+                    <option value="therapeutic">Therapeutic</option>
+                    <option value="preventive">Preventive</option>
+                    <option value="rehabilitative">Rehabilitative</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {/* Rates of Services */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Rates of Services <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={serviceRequest.rates}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, rates: e.target.value }))}
+                    placeholder="Describe the pricing structure, consultation fees, treatment costs..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Additional Information */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Additional Information</label>
+                  <textarea
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    value={serviceRequest.additionalInfo}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, additionalInfo: e.target.value }))}
+                    placeholder="Any additional details, requirements, or special considerations..."
+                    rows={2}
+                  />
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRequestServiceModal(false);
+                      resetServiceRequest();
+                    }}
+                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                  >
+                    Submit Request
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
