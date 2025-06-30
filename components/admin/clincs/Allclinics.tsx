@@ -1,5 +1,34 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Clock, Calendar, Phone, Mail, Filter, MoreHorizontal, Eye, Edit2, Trash2, Plus, Download, X, Check, AlertCircle, ExternalLink, Menu, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Building2, 
+  Search, 
+  Filter, 
+  MoreVertical, 
+  Eye, 
+  Edit, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Download, 
+  Plus,
+  MapPin,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  DollarSign,
+  RefreshCw,
+  Settings,
+  X,
+  ChevronDown,
+  ExternalLink,
+  Globe,
+  Building,
+  Lock,
+  Check
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 interface Clinic {
   id: number;
@@ -8,7 +37,7 @@ interface Clinic {
   city: string;
   pincode: string;
   status: 'Approved' | 'Draft' | 'Pending' | 'Rejected';
-  paymentStatus: 'Paid' | 'No Dues' | 'Pending' | 'Overdue';
+  paymentStatus: 'Paid' | 'Pending' | 'No Dues' | 'Overdue';
   dueAmount: string;
   hours: string;
   workingDays: string[];
@@ -16,22 +45,11 @@ interface Clinic {
   email: string;
   isActive: boolean;
   mapLink?: string;
-}
-
-interface NewClinic {
-  name: string;
-  address: string;
-  city: string;
-  map_link: string;
-  coordinates: string;
-  opening_time: string;
-  closing_time: string;
-  days: string[];
-}
-
-interface Notification {
-  message: string;
-  type: 'success' | 'error';
+  gpsCoordinates?: string;
+  openingTime?: string;
+  closingTime?: string;
+  submissionDate: string;
+  documents: string[];
 }
 
 interface ModalProps {
@@ -39,10 +57,217 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
 }
 
-const clinicData: Clinic[] = [
+interface NotificationProps {
+  type: 'success' | 'error' | 'warning';
+  message: string;
+  onClose: () => void;
+}
+
+type ModernModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  size?: 'sm' | 'lg';
+  children: React.ReactNode;
+};
+
+const ModernModal = ({ isOpen, onClose, title, size = "lg", children }: ModernModalProps) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-2xl shadow-2xl ${size === 'lg' ? 'max-w-4xl w-full' : 'max-w-md w-full'} max-h-[90vh] overflow-y-auto`}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type TimePickerProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+};
+
+const TimePicker = ({ value, onChange, placeholder = "Select time" }: TimePickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const generateTimeOptions = () => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute of [0, 30]) {
+        const time24 = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const time12 = `${hour12}:${minute.toString().padStart(2, '0')} ${ampm}`;
+        times.push({ value: time24, label: time12 });
+      }
+    }
+    return times;
+  };
+  const timeOptions = generateTimeOptions();
+  const selectedTime = timeOptions.find(t => t.value === value);
+  return (
+    <div className="relative">
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:border-blue-400 transition-all bg-white"
+      >
+        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+        <span className={selectedTime ? "text-gray-900" : "text-gray-400"}>
+          {selectedTime ? selectedTime.label : placeholder}
+        </span>
+      </div>
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+          {timeOptions.map((time) => (
+            <div
+              key={time.value}
+              onClick={() => {
+                onChange(time.value);
+                setIsOpen(false);
+              }}
+              className={`px-4 py-2 cursor-pointer hover:bg-blue-50 transition-colors ${
+                value === time.value ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-700'
+              }`}
+            >
+              {time.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+type InputFieldProps = {
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  required?: boolean;
+  error?: string;
+  icon?: React.ElementType;
+};
+
+function InputField({ label, type = "text", value, onChange, placeholder, required = false, error, icon: Icon }: InputFieldProps) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative">
+        {Icon && <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />}
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          className={`w-full ${Icon ? 'pl-10' : 'pl-4'} pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+            error ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
+          }`}
+          placeholder={placeholder}
+          required={required}
+        />
+      </div>
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+const Notification = ({ type, message, onClose }: NotificationProps) => {
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5 text-green-400" />;
+      case 'error':
+        return <XCircle className="h-5 w-5 text-red-400" />;
+      case 'warning':
+        return <AlertCircle className="h-5 w-5 text-yellow-400" />;
+    }
+  };
+
+  const getBgColor = () => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-50';
+      case 'error':
+        return 'bg-red-50';
+      case 'warning':
+        return 'bg-yellow-50';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${getBgColor()} border border-gray-200`}
+    >
+      <div className="flex items-center">
+        {getIcon()}
+        <p className="ml-3 text-sm font-medium text-gray-900">{message}</p>
+        <button
+          onClick={onClose}
+          className="ml-4 text-gray-400 hover:text-gray-500"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+const StatusBadge = ({ status }: { status: Clinic['status'] }) => {
+  const statusConfig = {
+    Approved: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
+    Draft: { color: 'bg-gray-100 text-gray-700', icon: Edit },
+    Pending: { color: 'bg-yellow-100 text-yellow-700', icon: Clock },
+    Rejected: { color: 'bg-red-100 text-red-700', icon: XCircle }
+  };
+  
+  const config = statusConfig[status];
+  const Icon = config.icon;
+  
+  return (
+    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <Icon size={12} className="mr-1" />
+      {status}
+    </span>
+  );
+};
+
+const PaymentStatusBadge = ({ status }: { status: Clinic['paymentStatus'] }) => {
+  const statusConfig = {
+    'Paid': { color: 'bg-green-100 text-green-700' },
+    'Pending': { color: 'bg-yellow-100 text-yellow-700' },
+    'No Dues': { color: 'bg-blue-100 text-blue-700' },
+    'Overdue': { color: 'bg-red-100 text-red-700' }
+  };
+  
+  const config = statusConfig[status];
+  
+  return (
+    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      {status}
+    </span>
+  );
+};
+
+// Mock data array similar to PendingClinics
+const allClinicsMockData: Clinic[] = [
   {
     id: 1,
     name: 'Greater Kailash Hospital',
@@ -57,7 +282,11 @@ const clinicData: Clinic[] = [
     phone: '+91 98765 43210',
     email: 'contact@greaterkailash.com',
     isActive: false,
-    mapLink: 'https://www.google.com/maps/place/Greater+Kailash+Hospital'
+    mapLink: 'https://www.google.com/maps/place/Greater+Kailash+Hospital',
+    openingTime: '10:00',
+    closingTime: '17:00',
+    submissionDate: '2025-06-28',
+    documents: ['doc1.pdf', 'doc2.pdf']
   },
   {
     id: 2,
@@ -72,7 +301,11 @@ const clinicData: Clinic[] = [
     workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Sun'],
     phone: '+91 98765 43211',
     email: 'contact@getwell.com',
-    isActive: false
+    isActive: false,
+    openingTime: '10:00',
+    closingTime: '18:30',
+    submissionDate: '2025-06-27',
+    documents: ['doc3.pdf']
   },
   {
     id: 3,
@@ -87,7 +320,11 @@ const clinicData: Clinic[] = [
     workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     phone: '+91 98765 43212',
     email: 'info@sunshine.com',
-    isActive: true
+    isActive: true,
+    openingTime: '09:00',
+    closingTime: '20:00',
+    submissionDate: '2025-06-26',
+    documents: []
   },
   {
     id: 4,
@@ -102,840 +339,880 @@ const clinicData: Clinic[] = [
     workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     phone: '+91 98765 43213',
     email: 'admin@citycare.com',
-    isActive: false
+    isActive: false,
+    openingTime: '10:00',
+    closingTime: '19:00',
+    submissionDate: '2025-06-25',
+    documents: ['doc4.pdf']
+  },
+  {
+    id: 5,
+    name: 'Apollo Clinic',
+    address: 'MG Road, Mumbai',
+    city: 'Mumbai',
+    pincode: '400001',
+    status: 'Approved',
+    paymentStatus: 'Paid',
+    dueAmount: '₹0',
+    hours: '8:00 AM - 4:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    phone: '+91 90000 11111',
+    email: 'info@apollomumbai.com',
+    isActive: true,
+    openingTime: '08:00',
+    closingTime: '16:00',
+    submissionDate: '2025-06-24',
+    documents: []
+  },
+  {
+    id: 6,
+    name: 'Fortis Health',
+    address: 'Sector 62, Noida',
+    city: 'Noida',
+    pincode: '201301',
+    status: 'Rejected',
+    paymentStatus: 'Overdue',
+    dueAmount: '₹5,000',
+    hours: '9:00 AM - 5:00 PM',
+    workingDays: ['Mon', 'Wed', 'Fri'],
+    phone: '+91 90000 22222',
+    email: 'contact@fortisnoida.com',
+    isActive: false,
+    openingTime: '09:00',
+    closingTime: '17:00',
+    submissionDate: '2025-06-23',
+    documents: ['doc5.pdf']
+  },
+  {
+    id: 7,
+    name: 'Care Plus Clinic',
+    address: 'Park Street, Kolkata',
+    city: 'Kolkata',
+    pincode: '700016',
+    status: 'Draft',
+    paymentStatus: 'Pending',
+    dueAmount: '₹1,200',
+    hours: '11:00 AM - 7:00 PM',
+    workingDays: ['Tue', 'Thu', 'Sat'],
+    phone: '+91 90000 33333',
+    email: 'careplus@kolkata.com',
+    isActive: false,
+    openingTime: '11:00',
+    closingTime: '19:00',
+    submissionDate: '2025-06-22',
+    documents: []
+  },
+  {
+    id: 8,
+    name: 'Medicover Hospitals',
+    address: 'Banjara Hills, Hyderabad',
+    city: 'Hyderabad',
+    pincode: '500034',
+    status: 'Pending',
+    paymentStatus: 'No Dues',
+    dueAmount: '₹0',
+    hours: '7:00 AM - 3:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    phone: '+91 90000 44444',
+    email: 'info@medicoverhyd.com',
+    isActive: false,
+    openingTime: '07:00',
+    closingTime: '15:00',
+    submissionDate: '2025-06-21',
+    documents: ['doc6.pdf']
+  },
+  {
+    id: 9,
+    name: 'Rainbow Children Hospital',
+    address: 'Jayanagar, Bangalore',
+    city: 'Bangalore',
+    pincode: '560041',
+    status: 'Approved',
+    paymentStatus: 'Paid',
+    dueAmount: '₹0',
+    hours: '6:00 AM - 2:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    phone: '+91 90000 55555',
+    email: 'contact@rainbowblr.com',
+    isActive: true,
+    openingTime: '06:00',
+    closingTime: '14:00',
+    submissionDate: '2025-06-20',
+    documents: []
+  },
+  {
+    id: 10,
+    name: 'Aster Clinic',
+    address: 'Ernakulam, Kochi',
+    city: 'Kochi',
+    pincode: '682016',
+    status: 'Draft',
+    paymentStatus: 'No Dues',
+    dueAmount: '₹0',
+    hours: '10:00 AM - 6:00 PM',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    phone: '+91 90000 66666',
+    email: 'aster@kochi.com',
+    isActive: false,
+    openingTime: '10:00',
+    closingTime: '18:00',
+    submissionDate: '2025-06-19',
+    documents: []
   }
 ];
 
-const statusColors = {
-  'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Draft': 'bg-slate-50 text-slate-700 border-slate-200',
-  'Pending': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Rejected': 'bg-rose-50 text-rose-700 border-rose-200'
-};
+export default function ClinicManagement() {
+  const [clinics, setClinics] = useState<Clinic[]>(allClinicsMockData);
 
-const paymentStatusColors = {
-  'Paid': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'No Dues': 'bg-blue-50 text-blue-700 border-blue-200',
-  'Pending': 'bg-amber-50 text-amber-700 border-amber-200',
-  'Overdue': 'bg-rose-50 text-rose-700 border-rose-200'
-};
-
-const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
-  if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl'
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-2 sm:px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75 backdrop-blur-sm" onClick={onClose}></div>
-        <div className={`inline-block w-full ${sizeClasses[size]} p-4 sm:p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl mx-2 sm:mx-4`}>
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 truncate pr-4">{title}</h3>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Mobile Card Component for Clinic Display
-const ClinicCard = ({ clinic, onView, onDelete, onApprove, onReject, onSelect, isSelected, onToggleActive }: {
-  clinic: Clinic;
-  onView: (clinic: Clinic) => void;
-  onDelete: (clinic: Clinic) => void;
-  onApprove: (id: number) => void;
-  onReject: (id: number) => void;
-  onSelect: (id: number) => void;
-  isSelected: boolean;
-  onToggleActive: (id: number, value: boolean) => void;
-}) => {
-  const [showActions, setShowActions] = useState(false);
-
-  return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 p-4 mb-4 hover:shadow-xl transition-all">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onSelect(clinic.id)}
-            className="w-5 h-5 text-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 border-2 border-gray-300 flex-shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-gray-900 truncate text-lg">{clinic.name}</h3>
-            <p className="text-sm text-gray-600 truncate">{clinic.city}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowActions(!showActions)}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-          aria-label="Show actions"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="space-y-2 mb-3">
-        <div className="flex gap-2 flex-wrap">
-          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[clinic.status]}`}>
-            {clinic.status}
-          </span>
-          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border ${paymentStatusColors[clinic.paymentStatus]}`}>
-            {clinic.paymentStatus}
-          </span>
-        </div>
-        
-        <div className="text-sm text-gray-600 space-y-1">
-          <p className="truncate"><MapPin className="w-4 h-4 inline mr-1" />{clinic.address}</p>
-          <p><Clock className="w-4 h-4 inline mr-1" />{clinic.hours}</p>
-          <p><Calendar className="w-4 h-4 inline mr-1" />{clinic.workingDays.join(', ')}</p>
-        </div>
-
-        {clinic.dueAmount !== '₹0' && (
-          <div className="flex items-center gap-1 text-red-600 font-semibold text-sm">
-            <AlertCircle className="w-4 h-4" />
-            <span>Due: {clinic.dueAmount}</span>
-          </div>
-        )}
-      </div>
-
-      {showActions && (
-        <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
-          <button
-            onClick={() => onView(clinic)}
-            className="flex items-center justify-center gap-1 p-2 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
-            aria-label="View Clinic"
-            title="View Clinic"
-          >
-            <Eye className="w-5 h-5" />
-          </button>
-          {clinic.status !== 'Approved' && clinic.status !== 'Rejected' && (
-            <>
-              <button
-                onClick={() => onApprove(clinic.id)}
-                className="flex items-center justify-center gap-1 p-2 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all"
-                aria-label="Approve Clinic"
-                title="Approve Clinic"
-              >
-                <Check className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => onReject(clinic.id)}
-                className="flex items-center justify-center gap-1 p-2 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all"
-                aria-label="Reject Clinic"
-                title="Reject Clinic"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => onDelete(clinic)}
-            className="flex items-center justify-center gap-1 p-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition-all"
-            aria-label="Delete Clinic"
-            title="Delete Clinic"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-          {clinic.mapLink && (
-            <button
-              onClick={() => window.open(clinic.mapLink, '_blank')}
-              className="flex items-center justify-center gap-1 p-2 rounded-full bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all"
-              aria-label="View on Map"
-              title="View on Map"
-            >
-              <ExternalLink className="w-5 h-5" />
-            </button>
-          )}
-          <button
-            onClick={() => onToggleActive(clinic.id, !clinic.isActive)}
-            className={`flex items-center justify-center gap-1 p-2 rounded-full ${clinic.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'} hover:bg-emerald-200 transition-all`}
-            aria-label="Toggle Active"
-            title={clinic.isActive ? 'Set Inactive' : 'Set Active'}
-          >
-            <Check className="w-5 h-5" />
-            <span className="text-xs font-medium">{clinic.isActive ? 'Active' : 'Inactive'}</span>
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default function AppleClinicTable() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedClinics, setSelectedClinics] = useState<number[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [clinics, setClinics] = useState<Clinic[]>(clinicData);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
-  const [notification, setNotification] = useState<Notification | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [newClinic, setNewClinic] = useState<NewClinic>({
-    name: '',
-    address: '',
-    city: '',
-    map_link: '',
-    coordinates: '',
-    opening_time: '',
-    closing_time: '',
-    days: []
-  });
-
-  // Pagination state
+  const [filteredClinics, setFilteredClinics] = useState<Clinic[]>(clinics);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<Clinic['status'] | 'ALL'>('ALL');
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<Clinic['paymentStatus'] | 'ALL'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const clinicsPerPage = isMobile ? 10 : 5;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'warning';
+    message: string;
+  } | null>(null);
 
-  const filteredClinics = clinics.filter(clinic => {
-    const matchesSearch = clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         clinic.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         clinic.city.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = selectedStatus === 'all' || 
-                         clinic.status.toLowerCase() === selectedStatus.toLowerCase();
-    
-    return matchesSearch && matchesStatus;
+  // Add Clinic Form State
+  const [newClinic, setNewClinic] = useState({
+    name: '',
+    city: '',
+    email: '',
+    password: '',
+    address: '',
+    mapLink: '',
+    gpsCoordinates: '',
+    openingTime: '',
+    closingTime: '',
+    workingDays: [] as string[]
   });
 
-  const totalPages = Math.ceil(filteredClinics.length / clinicsPerPage);
-  const paginatedClinics = filteredClinics.slice((currentPage - 1) * clinicsPerPage, currentPage * clinicsPerPage);
+  // Add state for confirmation modals
+  const [confirmModal, setConfirmModal] = useState<{ type: 'active' | 'inactive' | 'delete'; clinic: Clinic | null } | null>(null);
 
-  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+  const workingDayOptions = [
+    { value: 'Mon', label: 'Monday' },
+    { value: 'Tue', label: 'Tuesday' },
+    { value: 'Wed', label: 'Wednesday' },
+    { value: 'Thu', label: 'Thursday' },
+    { value: 'Fri', label: 'Friday' },
+    { value: 'Sat', label: 'Saturday' },
+    { value: 'Sun', label: 'Sunday' }
+  ];
+
+  // Filter clinics
+  useEffect(() => {
+    let filtered = [...clinics];
+    
+    if (searchQuery) {
+      filtered = filtered.filter(clinic => 
+        clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        clinic.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        clinic.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        clinic.phone.includes(searchQuery)
+      );
+    }
+    
+    if (selectedStatus !== 'ALL') {
+      filtered = filtered.filter(clinic => clinic.status === selectedStatus);
+    }
+    
+    if (selectedPaymentStatus !== 'ALL') {
+      filtered = filtered.filter(clinic => clinic.paymentStatus === selectedPaymentStatus);
+    }
+    
+    setFilteredClinics(filtered);
+    setCurrentPage(1);
+  }, [clinics, searchQuery, selectedStatus, selectedPaymentStatus]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedClinics = filteredClinics.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleView = (clinic: Clinic) => {
+    setSelectedClinic(clinic);
+    setIsViewModalOpen(true);
   };
 
-  const handleSelectClinic = (id: number) => {
-    setSelectedClinics(prev => 
-      prev.includes(id) 
-        ? prev.filter(clinicId => clinicId !== id)
-        : [...prev, id]
-    );
+  const handleWorkingDayToggle = (day: string) => {
+    setNewClinic(prev => ({
+      ...prev,
+      workingDays: prev.workingDays.includes(day)
+        ? prev.workingDays.filter(d => d !== day)
+        : [...prev.workingDays, day]
+    }));
   };
 
-  const handleSelectAll = () => {
-    setSelectedClinics(
-      selectedClinics.length === filteredClinics.length 
-        ? [] 
-        : filteredClinics.map(clinic => clinic.id)
-    );
+  const handleSelectAllDays = () => {
+    setNewClinic(prev => ({
+      ...prev,
+      workingDays: workingDayOptions.map(day => day.value)
+    }));
+  };
+
+  const handleSelectWeekdays = () => {
+    setNewClinic(prev => ({
+      ...prev,
+      workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    }));
+  };
+
+  const handleClearAllDays = () => {
+    setNewClinic(prev => ({
+      ...prev,
+      workingDays: []
+    }));
   };
 
   const handleAddClinic = () => {
+    if (!newClinic.name || !newClinic.city || !newClinic.email || !newClinic.password) {
+      setNotification({
+        type: 'error',
+        message: 'Please fill in all required fields'
+      });
+      return;
+    }
+
+    if (newClinic.workingDays.length === 0) {
+      setNotification({
+        type: 'error',
+        message: 'Please select at least one working day'
+      });
+      return;
+    }
+
+    const openingTime = newClinic.openingTime ? 
+      new Date(`2000-01-01T${newClinic.openingTime}`).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      }) : '';
+    
+    const closingTime = newClinic.closingTime ? 
+      new Date(`2000-01-01T${newClinic.closingTime}`).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      }) : '';
+
     const clinic: Clinic = {
       id: Date.now(),
       name: newClinic.name,
-      address: newClinic.address,
+      address: newClinic.address || `${newClinic.city}, India`,
       city: newClinic.city,
-      pincode: '',
-      status: 'Draft' as const,
-      paymentStatus: 'No Dues' as const,
+      pincode: '000000',
+      status: 'Draft',
+      paymentStatus: 'No Dues',
       dueAmount: '₹0',
-      hours: `${newClinic.opening_time} - ${newClinic.closing_time}`,
-      workingDays: newClinic.days.map(day => day.charAt(0).toUpperCase() + day.slice(1, 3)),
-      phone: '',
-      email: '',
+      hours: openingTime && closingTime ? `${openingTime} - ${closingTime}` : '',
+      workingDays: newClinic.workingDays,
+      phone: '+91 00000 00000',
+      email: newClinic.email,
       isActive: false,
-      mapLink: newClinic.map_link
+      mapLink: newClinic.mapLink,
+      gpsCoordinates: newClinic.gpsCoordinates,
+      openingTime: newClinic.openingTime,
+      closingTime: newClinic.closingTime,
+      submissionDate: new Date().toISOString().split('T')[0],
+      documents: []
     };
+
     setClinics(prev => [...prev, clinic]);
     setNewClinic({
       name: '',
-      address: '',
       city: '',
-      map_link: '',
-      coordinates: '',
-      opening_time: '',
-      closing_time: '',
-      days: []
+      email: '',
+      password: '',
+      address: '',
+      mapLink: '',
+      gpsCoordinates: '',
+      openingTime: '',
+      closingTime: '',
+      workingDays: []
     });
-    setShowAddModal(false);
-    showNotification('Clinic added successfully!');
+    setIsAddModalOpen(false);
+    setNotification({
+      type: 'success',
+      message: 'Clinic added successfully'
+    });
   };
 
-  const handleViewClinic = (clinic: Clinic) => {
-    setSelectedClinic(clinic);
-    setShowViewModal(true);
+  const stats = {
+    total: clinics.length,
+    approved: clinics.filter(c => c.status === 'Approved').length,
+    pending: clinics.filter(c => c.status === 'Pending').length,
+    active: clinics.filter(c => c.isActive).length
   };
 
-  const handleDeleteClinic = (clinic: Clinic) => {
-    setSelectedClinic(clinic);
-    setShowDeleteModal(true);
-  };
+  function handleApprove(clinic: Clinic) {
+    setClinics(prev => prev.map(c => c.id === clinic.id ? { ...c, status: 'Approved' } : c));
+    setNotification({ type: 'success', message: `Clinic "${clinic.name}" approved!` });
+  }
 
-  const confirmDelete = () => {
-    setClinics(prev => prev.filter(c => c.id !== selectedClinic?.id));
-    setShowDeleteModal(false);
-    setSelectedClinic(null);
-    showNotification('Clinic deleted successfully!', 'success');
-  };
+  function handleReject(clinic: Clinic) {
+    setClinics(prev => prev.map(c => c.id === clinic.id ? { ...c, status: 'Rejected' } : c));
+    setNotification({ type: 'error', message: `Clinic "${clinic.name}" rejected.` });
+  }
 
-  const handleBulkDelete = () => {
-    setClinics(prev => prev.filter(c => !selectedClinics.includes(c.id)));
-    setSelectedClinics([]);
-    showNotification(`${selectedClinics.length} clinics deleted successfully!`);
-  };
+  function handleToggleActive(clinic: Clinic) {
+    setClinics(prev => prev.map(c => c.id === clinic.id ? { ...c, isActive: !c.isActive } : c));
+    setNotification({ type: 'success', message: `Clinic "${clinic.name}" is now ${clinic.isActive ? 'inactive' : 'active'}.` });
+  }
 
-  const handleExport = () => {
-    const data = selectedClinics.length > 0 
-      ? clinics.filter(c => selectedClinics.includes(c.id))
-      : filteredClinics;
-    
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Address,City,Status,Payment Status,Phone,Email\n" +
-      data.map(c => `${c.name},"${c.address}",${c.city},${c.status},${c.paymentStatus},${c.phone},${c.email}`).join('\n');
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "clinics.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('Data exported successfully!');
-  };
-
-  const handleAddClinicSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!newClinic.name || !newClinic.address || !newClinic.city) {
-      showNotification('Please fill all required fields', 'error');
-      return;
-    }
-    handleAddClinic();
-  };
-
-  const approveOrRejectClinic = async (clinicId: number, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: status === 'APPROVED' ? 'Approved' : 'Rejected' } : c));
-      showNotification(`Clinic ${status === 'APPROVED' ? 'approved' : 'rejected'} successfully!`);
-    } catch (err) {
-      showNotification('Failed to update clinic status', 'error');
-    }
-  };
-
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
-  // PATCH Clinic Active Toggle
-  const handleToggleActive = (id: number, value: boolean) => {
-    setClinics(prev => prev.map(c => c.id === id ? { ...c, isActive: value } : c));
-    showNotification(`Clinic set to ${value ? 'Active' : 'Inactive'}`);
-  };
+  function handleDeleteClinic(clinic: Clinic) {
+    setClinics(prev => prev.filter(c => c.id !== clinic.id));
+    setNotification({ type: 'success', message: `Clinic "${clinic.name}" deleted.` });
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-3 sm:p-4 rounded-xl shadow-lg border transform transition-all duration-300 max-w-sm ${
-          notification.type === 'success' 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-            : 'bg-rose-50 border-rose-200 text-rose-800'
-        }`}>
-          <div className="flex items-center gap-2">
-            {notification.type === 'success' ? <Check className="w-4 sm:w-5 h-4 sm:h-5" /> : <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5" />}
-            <span className="font-medium text-sm sm:text-base">{notification.message}</span>
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div 
+          className="flex flex-col md:flex-row md:items-center justify-between mb-8 bg-white rounded-xl shadow-lg p-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <Building2 className="mr-3 text-blue-600" size={32} />
+              Clinic Management
+            </h1>
+            <p className="text-gray-600 mt-1">Manage and monitor clinic registrations</p>
           </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4 sm:py-6">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent truncate">
-                Clinic Management
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">{filteredClinics.length} clinics found</p>
-            </div>
+          
+          <div className="flex items-center gap-4 mt-4 md:mt-0">
             <button 
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center gap-2 text-sm sm:text-base"
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Clinic</span>
-              <span className="sm:hidden">Add</span>
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={16} />
+              Add New Clinic
             </button>
           </div>
+        </motion.div>
+        
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <motion.div 
+            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Clinics</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Building2 size={24} className="text-blue-600" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Approved</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle size={24} className="text-green-600" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pending</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+              </div>
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <Clock size={24} className="text-yellow-600" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <CheckCircle size={24} className="text-purple-600" />
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 p-4 sm:p-6">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search clinics..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur transition-all text-sm sm:text-base"
-                />
-              </div>
-
-              <div className="flex gap-2 sm:gap-4">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="flex-1 sm:w-48 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur text-sm sm:text-base"
-                >
-                  <option value="all">All Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="draft">Draft</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-
-                <button
-                  onClick={handleExport}
-                  className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl hover:bg-white/80 transition-all backdrop-blur text-sm sm:text-base"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
-                </button>
-              </div>
+        
+        {/* Filters and Search */}
+        <motion.div 
+          className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-gray-100 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-2 sm:gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, city, email, or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as Clinic['status'] | 'ALL')}
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">All Status</option>
+                <option value="Approved">Approved</option>
+                <option value="Draft">Draft</option>
+                <option value="Pending">Pending</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+            
+            {/* Payment Status Filter */}
+            <div className="relative">
+              <select
+                value={selectedPaymentStatus}
+                onChange={(e) => setSelectedPaymentStatus(e.target.value as Clinic['paymentStatus'] | 'ALL')}
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">All Payments</option>
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="No Dues">No Dues</option>
+                <option value="Overdue">Overdue</option>
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
+        </motion.div>
+
+        {/* Results Count */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-gray-600">
+            Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredClinics.length)} of {filteredClinics.length} clinics
+          </p>
         </div>
 
-        {/* Selection Actions */}
-        {selectedClinics.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50 rounded-2xl p-4 mt-4 backdrop-blur-xl">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-blue-900">
-                {selectedClinics.length} clinic{selectedClinics.length > 1 ? 's' : ''} selected
-              </span>
-              <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-                <button 
-                  onClick={handleExport}
-                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm hover:bg-blue-50 transition-all font-medium"
-                >
-                  Export Selected
-                </button>
-                <button 
-                  onClick={handleBulkDelete}
-                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-sm hover:from-red-600 hover:to-red-700 transition-all font-medium"
-                >
-                  Delete Selected
-                </button>
+        {/* Clinics List - Card Style for All Screens */}
+        <div className="mb-8 space-y-4">
+          {paginatedClinics.map((clinic, index) => (
+            <motion.div
+              key={clinic.id}
+              className="bg-white rounded-xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-shadow"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                {/* Clinic Info */}
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{clinic.name}</h3>
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <MapPin size={14} />
+                        {clinic.address}, {clinic.city} - {clinic.pincode}
+                      </p>
+                    </div>
+                    <StatusBadge status={clinic.status} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail size={14} />
+                      <span>{clinic.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone size={14} />
+                      <span>{clinic.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock size={14} />
+                      <span>{clinic.hours}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar size={14} />
+                      <span>{clinic.workingDays.join(', ')}</span>
+                    </div>
+                  </div>
+                  {clinic.submissionDate && (
+                    <div className="text-xs text-gray-500">
+                      Submitted on: {new Date(clinic.submissionDate).toLocaleDateString()}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 text-xs text-gray-700 mt-2">
+                    <PaymentStatusBadge status={clinic.paymentStatus} />
+                    {clinic.dueAmount !== '₹0' && <span className="text-rose-600">Due: {clinic.dueAmount}</span>}
+                  </div>
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-3 flex-wrap mt-4 lg:mt-0">
+                  <Link href={`/admin/allclinics/${clinic.id}`} legacyBehavior>
+                    <a
+                      className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                      aria-label="Review details"
+                    >
+                      <Eye size={16} />
+                      <span className="hidden sm:inline">Review</span>
+                    </a>
+                  </Link>
+                  {clinic.status !== 'Approved' && (
+                    <button
+                      onClick={() => handleApprove(clinic)}
+                      className="flex items-center gap-2 px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                    >
+                      <Check size={16} />
+                      <span className="hidden sm:inline">Approve</span>
+                    </button>
+                  )}
+                  {clinic.status !== 'Rejected' && (
+                    <button
+                      onClick={() => handleReject(clinic)}
+                      className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                    >
+                      <X size={16} />
+                      <span className="hidden sm:inline">Reject</span>
+                    </button>
+                  )}
+                  {clinic.isActive ? (
+                    <button
+                      onClick={() => setConfirmModal({ type: 'inactive', clinic })}
+                      className="flex items-center gap-2 px-4 py-2 text-yellow-700 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
+                    >
+                      <XCircle size={16} />
+                      <span className="hidden sm:inline">Deactivate</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmModal({ type: 'active', clinic })}
+                      className="flex items-center gap-2 px-4 py-2 text-emerald-700 bg-emerald-100 rounded-lg hover:bg-emerald-200 transition-colors font-medium"
+                    >
+                      <CheckCircle size={16} />
+                      <span className="hidden sm:inline">Activate</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setConfirmModal({ type: 'delete', clinic })}
+                    className="flex items-center gap-2 px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  >
+                    <X size={16} />
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Clinic Display - Mobile Cards or Desktop Table */}
-        {isMobile ? (
-          <div className="mt-6 space-y-4">
-            {paginatedClinics.length > 0 ? (
-              paginatedClinics.map((clinic) => (
-                <ClinicCard
-                  key={clinic.id}
-                  clinic={clinic}
-                  onView={handleViewClinic}
-                  onDelete={handleDeleteClinic}
-                  onApprove={(id) => approveOrRejectClinic(id, 'APPROVED')}
-                  onReject={(id) => approveOrRejectClinic(id, 'REJECTED')}
-                  onSelect={handleSelectClinic}
-                  isSelected={selectedClinics.includes(clinic.id)}
-                  onToggleActive={handleToggleActive}
-                />
-              ))
-            ) : (
-              <div className="text-center py-12 bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50">
-                <Search className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No clinics found</h3>
-                <p className="text-gray-500 mb-6 px-4">Try adjusting your search or filters to find what you're looking for.</p>
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 w-full max-w-xs mx-auto"
-                >
-                  Add Your First Clinic
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Desktop Table */
-          <div className="mt-6 overflow-x-auto rounded-2xl shadow-lg border border-gray-200/50 bg-white/70 backdrop-blur-xl">
-            <div className="min-w-[700px]">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-white/90">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={selectedClinics.length === filteredClinics.length && filteredClinics.length > 0}
-                        onChange={handleSelectAll}
-                        className="w-5 h-5 text-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 border-2 border-gray-300"
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Payment</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Address</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Hours</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Days</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Active</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedClinics.map((clinic) => (
-                    <tr key={clinic.id} className="hover:bg-blue-50/40 transition-all">
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedClinics.includes(clinic.id)}
-                          onChange={() => handleSelectClinic(clinic.id)}
-                          className="w-5 h-5 text-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 border-2 border-gray-300"
-                        />
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{clinic.name}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColors[clinic.status]}`}>{clinic.status}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${paymentStatusColors[clinic.paymentStatus]}`}>{clinic.paymentStatus}</span>
-                        {clinic.dueAmount !== '₹0' && (
-                          <span className="text-xs text-red-600 font-semibold">
-                            (Due: {clinic.dueAmount})
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">{clinic.address}</td>
-                      <td className="px-4 py-3">{clinic.hours}</td>
-                      <td className="px-4 py-3">{clinic.workingDays.join(', ')}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleToggleActive(clinic.id, !clinic.isActive)}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-full border ${clinic.isActive ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-500 border-gray-200'} hover:bg-emerald-200 transition-all`}
-                          aria-label="Toggle Active"
-                          title={clinic.isActive ? 'Set Inactive' : 'Set Active'}
-                        >
-                          <Check className="w-4 h-4" />
-                          <span className="text-xs font-medium">{clinic.isActive ? 'Active' : 'Inactive'}</span>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleViewClinic(clinic)}
-                            className="flex items-center justify-center p-2 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all min-w-[40px] min-h-[40px]"
-                            aria-label="View Clinic"
-                            title="View Clinic"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          {clinic.status !== 'Approved' && clinic.status !== 'Rejected' && (
-                            <>
-                              <button
-                                onClick={() => approveOrRejectClinic(clinic.id, 'APPROVED')}
-                                className="flex items-center justify-center p-2 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all min-w-[40px] min-h-[40px]"
-                                aria-label="Approve Clinic"
-                                title="Approve Clinic"
-                              >
-                                <Check className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => approveOrRejectClinic(clinic.id, 'REJECTED')}
-                                className="flex items-center justify-center p-2 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 transition-all min-w-[40px] min-h-[40px]"
-                                aria-label="Reject Clinic"
-                                title="Reject Clinic"
-                              >
-                                <X className="w-5 h-5" />
-                              </button>
-                            </>
-                          )}
-                          <button
-                            onClick={() => handleDeleteClinic(clinic)}
-                            className="flex items-center justify-center p-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 transition-all min-w-[40px] min-h-[40px]"
-                            aria-label="Delete Clinic"
-                            title="Delete Clinic"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                          {clinic.mapLink && (
-                            <button
-                              onClick={() => window.open(clinic.mapLink, '_blank')}
-                              className="flex items-center justify-center p-2 rounded-full bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all min-w-[40px] min-h-[40px]"
-                              aria-label="View on Map"
-                              title="View on Map"
-                            >
-                              <ExternalLink className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          ))}
+        </div>
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-6">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-gray-700 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+          <motion.div 
+            className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center gap-2">
               <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`px-3 py-1 rounded-lg border ${currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200'} font-medium`}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === 1 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
               >
-                {page}
+                Previous
               </button>
-            ))}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded-lg border border-gray-200 bg-white text-gray-700 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+            <div className="text-sm text-gray-500">
+              Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredClinics.length)} of {filteredClinics.length} clinics
+            </div>
+          </motion.div>
         )}
 
         {/* Add Clinic Modal */}
-        <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Clinic" size="lg">
-          <form className="space-y-6" onSubmit={handleAddClinicSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Clinic Name</label>
-                <input
-                  type="text"
-                  value={newClinic.name}
-                  onChange={(e) => setNewClinic({...newClinic, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter clinic name"
-                  autoFocus={showAddModal}
-                />
+        {isAddModalOpen && (
+          <ModernModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add New Clinic" size="lg">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleAddClinic();
+              }}
+              className="space-y-6"
+            >
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Building className="w-5 h-5" />
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField
+                    label="Clinic Name"
+                    value={newClinic.name}
+                    onChange={e => setNewClinic({ ...newClinic, name: e.target.value })}
+                    placeholder="Enter clinic name"
+                    required
+                    icon={Building}
+                  />
+                  <InputField
+                    label="City"
+                    value={newClinic.city}
+                    onChange={e => setNewClinic({ ...newClinic, city: e.target.value })}
+                    placeholder="Enter city"
+                    required
+                    icon={MapPin}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
-                <input
-                  type="text"
-                  value={newClinic.city}
-                  onChange={(e) => setNewClinic({...newClinic, city: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter city"
-                />
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  Contact & Access
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InputField
+                    label="Email"
+                    type="email"
+                    value={newClinic.email}
+                    onChange={e => setNewClinic({ ...newClinic, email: e.target.value })}
+                    placeholder="Enter clinic email"
+                    required
+                    icon={Mail}
+                  />
+                  <InputField
+                    label="Temporary Password"
+                    type="password"
+                    value={newClinic.password}
+                    onChange={e => setNewClinic({ ...newClinic, password: e.target.value })}
+                    placeholder="Enter temporary password (min 6 chars)"
+                    required
+                    icon={Lock}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 block mt-2">This email and password will be used as the clinic's login credentials.</span>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-              <textarea
-                value={newClinic.address}
-                onChange={(e) => setNewClinic({...newClinic, address: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                placeholder="Enter full address"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Map Link</label>
-                <input
-                  type="url"
-                  value={newClinic.map_link}
-                  onChange={(e) => setNewClinic({...newClinic, map_link: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://maps.google.com/..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Coordinates</label>
-                <input
-                  type="text"
-                  value={newClinic.coordinates}
-                  onChange={(e) => setNewClinic({...newClinic, coordinates: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="POINT(longitude latitude)"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Opening Time</label>
-                <input
-                  type="time"
-                  value={newClinic.opening_time}
-                  onChange={(e) => setNewClinic({...newClinic, opening_time: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Closing Time</label>
-                <input
-                  type="time"
-                  value={newClinic.closing_time}
-                  onChange={(e) => setNewClinic({...newClinic, closing_time: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Working Days</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                  <label key={day} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newClinic.days.includes(day)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setNewClinic({...newClinic, days: [...newClinic.days, day]});
-                        } else {
-                          setNewClinic({...newClinic, days: newClinic.days.filter(d => d !== day)});
-                        }
-                      }}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Location Details
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                    <textarea
+                      value={newClinic.address}
+                      onChange={e => setNewClinic({ ...newClinic, address: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      rows={3}
+                      placeholder="Enter full address"
                     />
-                    <span className="text-sm text-gray-700 capitalize">{day}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-4 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold"
-              >
-                Add Clinic
-              </button>
-            </div>
-          </form>
-        </Modal>
-        {/* View Clinic Modal */}
-        <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title="Clinic Details" size="lg">
-          {selectedClinic && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedClinic.name}</h3>
-                <div className="flex gap-3">
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${statusColors[selectedClinic.status]}`}>{selectedClinic.status}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${paymentStatusColors[selectedClinic.paymentStatus]}`}>{selectedClinic.paymentStatus}</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField
+                      label="Google Maps Link"
+                      type="url"
+                      value={newClinic.mapLink}
+                      onChange={e => setNewClinic({ ...newClinic, mapLink: e.target.value })}
+                      placeholder="https://maps.google.com/..."
+                    />
+                    <InputField
+                      label="Coordinates"
+                      value={newClinic.gpsCoordinates}
+                      onChange={e => setNewClinic({ ...newClinic, gpsCoordinates: e.target.value })}
+                      placeholder="POINT(longitude latitude)"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Working Hours
+                </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Address</label>
-                    <p className="text-gray-600">{selectedClinic.address}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Opening Time <span className="text-red-500">*</span>
+                      </label>
+                      <TimePicker
+                        value={newClinic.openingTime}
+                        onChange={value => setNewClinic({ ...newClinic, openingTime: value })}
+                        placeholder="Select opening time"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Closing Time <span className="text-red-500">*</span>
+                      </label>
+                      <TimePicker
+                        value={newClinic.closingTime}
+                        onChange={value => setNewClinic({ ...newClinic, closingTime: value })}
+                        placeholder="Select closing time"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Working Hours</label>
-                    <p className="text-gray-600">{selectedClinic.hours}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Working Days</label>
-                    <p className="text-gray-600">{selectedClinic.workingDays.join(', ')}</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
-                    <p className="text-gray-600">{selectedClinic.phone}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                    <p className="text-gray-600">{selectedClinic.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Due Amount</label>
-                    <p className="text-gray-600 font-semibold">{selectedClinic.dueAmount}</p>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Working Days <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {workingDayOptions.map(day => (
+                        <label key={day.value} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newClinic.workingDays.includes(day.value)}
+                            onChange={() => handleWorkingDayToggle(day.value)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{day.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button type="button" className="text-xs text-blue-600 underline" onClick={handleSelectAllDays}>All</button>
+                      <button type="button" className="text-xs text-blue-600 underline" onClick={handleSelectWeekdays}>Weekdays</button>
+                      <button type="button" className="text-xs text-blue-600 underline" onClick={handleClearAllDays}>Clear</button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-4 pt-4">
+              <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
                 <button
-                  onClick={() => setShowViewModal(false)}
-                  className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
-                >
-                  Close
-                </button>
-                {selectedClinic.mapLink && (
-                  <button
-                    onClick={() => window.open(selectedClinic.mapLink, '_blank')}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all font-semibold flex items-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View on Map
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </Modal>
-        {/* Delete Confirmation Modal */}
-        <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Clinic" size="sm">
-          {selectedClinic && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete {selectedClinic.name}?</h3>
-                <p className="text-gray-500">This action cannot be undone. All data associated with this clinic will be permanently deleted.</p>
-              </div>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={confirmDelete}
-                  className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-semibold"
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold"
                 >
-                  Delete Clinic
+                  Add Clinic
                 </button>
               </div>
-            </div>
+            </form>
+          </ModernModal>
+        )}
+
+        {/* Notification */}
+        <AnimatePresence>
+          {notification && (
+            <Notification
+              type={notification.type}
+              message={notification.message}
+              onClose={() => setNotification(null)}
+            />
           )}
-        </Modal>
+        </AnimatePresence>
+
+        {/* Confirmation Modal */}
+        {confirmModal && confirmModal.clinic && (
+          <ModernModal
+            isOpen={!!confirmModal}
+            onClose={() => setConfirmModal(null)}
+            title={
+              confirmModal.type === 'delete'
+                ? 'Delete Clinic'
+                : confirmModal.type === 'active'
+                ? 'Activate Clinic'
+                : 'Deactivate Clinic'
+            }
+            size="sm"
+          >
+            <div className="space-y-4">
+              <p className="text-gray-700 text-base">
+                {confirmModal.type === 'delete' && `Are you sure you want to delete "${confirmModal.clinic.name}"? This action cannot be undone.`}
+                {confirmModal.type === 'active' && `Are you sure you want to activate "${confirmModal.clinic.name}"?`}
+                {confirmModal.type === 'inactive' && `Are you sure you want to deactivate "${confirmModal.clinic.name}"?`}
+              </p>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setConfirmModal(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all"
+                >Cancel</button>
+                {confirmModal.type === 'delete' && (
+                  <button
+                    onClick={() => { handleDeleteClinic(confirmModal.clinic!); setConfirmModal(null); }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                  >Delete</button>
+                )}
+                {confirmModal.type === 'active' && (
+                  <button
+                    onClick={() => { handleToggleActive(confirmModal.clinic!); setConfirmModal(null); }}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
+                  >Activate</button>
+                )}
+                {confirmModal.type === 'inactive' && (
+                  <button
+                    onClick={() => { handleToggleActive(confirmModal.clinic!); setConfirmModal(null); }}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all"
+                  >Deactivate</button>
+                )}
+              </div>
+            </div>
+          </ModernModal>
+        )}
       </div>
     </div>
   );

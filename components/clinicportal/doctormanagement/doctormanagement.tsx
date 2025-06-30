@@ -38,6 +38,9 @@ interface Doctor {
   status: 'APPROVED' | 'PENDING' | 'REJECTED';
   profile_pic: string | null;
   reason_for_rejection: string | null;
+  education?: string;
+  govt_verification_docs?: { name: string; url?: string }[];
+  additional_info?: string;
 }
 
 interface NewDoctor {
@@ -49,6 +52,10 @@ interface NewDoctor {
   experience: string;
   phone_number: string;
   email: string;
+  education?: string;
+  additional_info?: string;
+  profile_pic_file?: File | null;
+  govt_verification_doc_files?: File[];
 }
 
 // Sample clinic services data
@@ -74,7 +81,13 @@ const sampleDoctors: Doctor[] = [
     email: "sarah.johnson@clinic.com",
     status: "APPROVED",
     profile_pic: null,
-    reason_for_rejection: null
+    reason_for_rejection: null,
+    education: "MBBS, MD",
+    govt_verification_docs: [
+      { name: "govt-id-image.jpg", url: "https://via.placeholder.com/300x200.png?text=Govt+ID+Image" },
+      { name: "govt-certificate.pdf", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+    ],
+    additional_info: "More about experience, specialization, etc."
   },
   {
     uuid: "ff4c16b8-f781-4cde-b2fc-3b9e896c81f5",
@@ -89,7 +102,12 @@ const sampleDoctors: Doctor[] = [
     email: "michael.chen@clinic.com",
     status: "APPROVED",
     profile_pic: null,
-    reason_for_rejection: null
+    reason_for_rejection: null,
+    education: "MBBS, MD",
+    govt_verification_docs: [
+      { name: "govt-id-image2.jpg", url: "https://via.placeholder.com/300x200.png?text=Govt+ID+2" }
+    ],
+    additional_info: "More about experience, specialization, etc."
   },
   {
     uuid: "8f9de2cb-e687-4a99-b0e1-c676e8ccc4f6",
@@ -104,7 +122,12 @@ const sampleDoctors: Doctor[] = [
     email: "priya.sharma@clinic.com",
     status: "PENDING",
     profile_pic: null,
-    reason_for_rejection: null
+    reason_for_rejection: null,
+    education: "MBBS, MD",
+    govt_verification_docs: [
+      { name: "govt-certificate.pdf", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+    ],
+    additional_info: "More about experience, specialization, etc."
   },
   {
     uuid: "6f322c0e-00e4-4b66-b4e9-eec0dd620130",
@@ -119,9 +142,17 @@ const sampleDoctors: Doctor[] = [
     email: "ramesh.kumar@clinic.com",
     status: "REJECTED",
     profile_pic: null,
-    reason_for_rejection: "Incomplete documentation"
+    reason_for_rejection: "Incomplete documentation",
+    education: "MBBS, MD",
+    govt_verification_docs: [
+      { name: "govt-id-image3.jpg", url: "https://via.placeholder.com/300x200.png?text=Govt+ID+3" },
+      { name: "govt-certificate2.pdf", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+    ],
+    additional_info: "More about experience, specialization, etc."
   }
 ];
+
+const MAX_GOVT_DOC_FILES = 5;
 
 const DoctorManagement: React.FC = () => {
   // State management
@@ -149,11 +180,22 @@ const DoctorManagement: React.FC = () => {
     specializaton: '',
     experience: '',
     phone_number: '',
-    email: ''
+    email: '',
+    education: '',
+    additional_info: '',
+    profile_pic_file: null,
+    govt_verification_doc_files: [],
   });
 
   // Validation state
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
+  // Image upload error state
+  const [imageError, setImageError] = useState<string>('');
+  const [govtDocError, setGovtDocError] = useState<string>('');
+  const [govtDocHelper, setGovtDocHelper] = useState<string>('You can upload up to 5 files.');
+
+  // Preview state
+  const [previewDoc, setPreviewDoc] = useState<{ url: string; type: string; name: string } | null>(null);
 
   // Helper functions
   const getStatusConfig = (status: string) => {
@@ -226,6 +268,19 @@ const DoctorManagement: React.FC = () => {
     if (!newDoctor.phone_number.trim() || !/^\d{10}$/.test(newDoctor.phone_number)) errors.phone_number = 'Valid 10-digit phone number is required.';
     if (!newDoctor.email.trim() || !/^\S+@\S+\.\S+$/.test(newDoctor.email)) errors.email = 'Valid email is required.';
     if (!newDoctor.clinic_service) errors.clinic_service = 'Clinic service is required.';
+    if (!newDoctor.education || !newDoctor.education.trim()) errors.education = 'Education is required.';
+    // Validate image file type and size if present
+    if (newDoctor.profile_pic_file) {
+      const file = newDoctor.profile_pic_file;
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        errors.profile_pic_file = 'Only JPG, PNG, or WEBP images are allowed.';
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        errors.profile_pic_file = 'Image size must be less than 2MB.';
+      }
+    }
+    // profile_pic_file and govt_verification_doc_files are optional
     return errors;
   };
 
@@ -251,9 +306,12 @@ const DoctorManagement: React.FC = () => {
       ...newDoctor,
       experience: newDoctor.experience ? parseInt(newDoctor.experience) : null,
       status: 'PENDING',
-      profile_pic: null,
+      profile_pic: newDoctor.profile_pic_file ? URL.createObjectURL(newDoctor.profile_pic_file) : null,
       reason_for_rejection: null,
-      created_by: 'admin@clinic.com'
+      created_by: 'admin@clinic.com',
+      education: newDoctor.education || '',
+      govt_verification_docs: (newDoctor.govt_verification_doc_files || []).map(file => ({ name: file.name, url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined })),
+      additional_info: newDoctor.additional_info || '',
     };
     
     setDoctors([doctor, ...doctors]);
@@ -265,7 +323,17 @@ const DoctorManagement: React.FC = () => {
     if (!selectedDoctor) return;
     setDoctors(doctors.map(d =>
       d.uuid === selectedDoctor.uuid
-        ? { ...d, ...newDoctor, experience: newDoctor.experience ? parseInt(newDoctor.experience) : null }
+        ? {
+            ...d,
+            ...newDoctor,
+            experience: newDoctor.experience ? parseInt(newDoctor.experience) : null,
+            profile_pic: newDoctor.profile_pic_file ? URL.createObjectURL(newDoctor.profile_pic_file) : d.profile_pic,
+            education: newDoctor.education || '',
+            govt_verification_docs: (newDoctor.govt_verification_doc_files || []).length > 0
+              ? (newDoctor.govt_verification_doc_files || []).map(file => ({ name: file.name, url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined }))
+              : d.govt_verification_docs,
+            additional_info: newDoctor.additional_info || '',
+          }
         : d
     ));
     closeModal();
@@ -293,7 +361,11 @@ const DoctorManagement: React.FC = () => {
       specializaton: doctor.specializaton,
       experience: doctor.experience?.toString() || '',
       phone_number: doctor.phone_number,
-      email: doctor.email || ''
+      email: doctor.email || '',
+      education: doctor.education || '',
+      additional_info: doctor.additional_info || '',
+      profile_pic_file: null,
+      govt_verification_doc_files: [],
     });
     setModalMode('edit');
   };
@@ -306,6 +378,7 @@ const DoctorManagement: React.FC = () => {
   const closeModal = () => {
     setModalMode(null);
     setSelectedDoctor(null);
+    setShowCreateModal(false);
     resetForm();
   };
 
@@ -318,8 +391,15 @@ const DoctorManagement: React.FC = () => {
       specializaton: '',
       experience: '',
       phone_number: '',
-      email: ''
+      email: '',
+      education: '',
+      additional_info: '',
+      profile_pic_file: null,
+      govt_verification_doc_files: [],
     });
+    setImageError('');
+    setGovtDocError('');
+    setGovtDocHelper('');
   };
 
   const resetFilters = () => {
@@ -329,6 +409,45 @@ const DoctorManagement: React.FC = () => {
     setGenderFilter('');
     setSpecializationFilter('');
   };
+
+  // Image file handler for Doctor Image upload
+  function handleImageFile(file: File) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setImageError('Only JPG, PNG, or WEBP images are allowed.');
+      setNewDoctor(prev => ({ ...prev, profile_pic_file: null }));
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setImageError('Image size must be less than 2MB.');
+      setNewDoctor(prev => ({ ...prev, profile_pic_file: null }));
+      return;
+    }
+    setImageError('');
+    setNewDoctor(prev => ({ ...prev, profile_pic_file: file }));
+  }
+
+  function handleGovtDocFile(file: File) {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setGovtDocError('Only PDF, JPG, PNG, or WEBP files are allowed.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setGovtDocError('File size must be less than 2MB.');
+      return;
+    }
+    setGovtDocError('');
+    setGovtDocHelper('');
+    setNewDoctor(prev => {
+      const currentFiles = prev.govt_verification_doc_files || [];
+      if (currentFiles.length >= MAX_GOVT_DOC_FILES) {
+        setGovtDocError(`You can only upload up to ${MAX_GOVT_DOC_FILES} files.`);
+        return prev;
+      }
+      return { ...prev, govt_verification_doc_files: [...currentFiles, file] };
+    });
+  }
 
   return (
     <>
@@ -670,49 +789,136 @@ const DoctorManagement: React.FC = () => {
                     <p className="text-slate-500">View doctor information</p>
                   </div>
                   {selectedDoctor && (
-                    <div className="grid gap-4">
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Name</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.name}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Date of Birth</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.dob || 'N/A'}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Gender</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 capitalize">{selectedDoctor.gender}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Specialization</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 capitalize">{selectedDoctor.specializaton}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Experience</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.experience ? `${selectedDoctor.experience} years` : 'N/A'}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Phone Number</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.phone_number}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Email</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.email || 'N/A'}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic Service</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{getServiceName(selectedDoctor.clinic_service)}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Status</label>
-                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 capitalize">{selectedDoctor.status}</div>
-                      </div>
-                      {selectedDoctor.status === 'REJECTED' && selectedDoctor.reason_for_rejection && (
+                    <div className="space-y-8">
+                      {/* Summary Card */}
+                      <div className="flex items-center gap-6 bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-4">
                         <div>
-                          <label className="text-xs font-semibold text-red-600 mb-1 ml-1 block">Rejection Reason</label>
-                          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700">{selectedDoctor.reason_for_rejection}</div>
+                          {selectedDoctor.profile_pic ? (
+                            <img src={selectedDoctor.profile_pic} alt={selectedDoctor.name} className="h-20 w-20 object-cover rounded-xl border border-slate-200" />
+                          ) : (
+                            <div className="h-20 w-20 flex items-center justify-center rounded-xl bg-slate-200 text-slate-400 text-3xl font-bold">{selectedDoctor.name.charAt(0)}</div>
+                          )}
                         </div>
-                      )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="text-2xl font-bold text-slate-900">{selectedDoctor.name}</span>
+                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border ${getStatusConfig(selectedDoctor.status).color}`} title={selectedDoctor.status.charAt(0) + selectedDoctor.status.slice(1).toLowerCase()}>
+                              {React.createElement(getStatusConfig(selectedDoctor.status).icon, { className: 'w-3 h-3 mr-1' })}
+                              {selectedDoctor.status}
+                            </span>
+                          </div>
+                          <div className="text-blue-700 font-semibold text-lg capitalize">{selectedDoctor.specializaton}</div>
+                          <div className="text-slate-600 text-sm">{selectedDoctor.experience ? `${selectedDoctor.experience} years experience` : 'Experience: N/A'}</div>
+                        </div>
+                      </div>
+                      {/* Section: Personal Info */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Personal Information</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Date of Birth</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.dob || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Gender</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 capitalize flex items-center gap-2"><span>{selectedDoctor.gender}</span></div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Section: Contact Info */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Contact Information</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Phone Number</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 flex items-center gap-2"><Phone className="w-4 h-4 text-blue-400" />{selectedDoctor.phone_number}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Email</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 flex items-center gap-2"><Mail className="w-4 h-4 text-blue-400" />{selectedDoctor.email || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Section: Professional Info */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Professional Information</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Specialization</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 capitalize">{selectedDoctor.specializaton}</div>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Experience</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.experience ? `${selectedDoctor.experience} years` : 'N/A'}</div>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Education</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{selectedDoctor.education || 'N/A'}</div>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic Service</label>
+                            <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">{getServiceName(selectedDoctor.clinic_service)}</div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Section: Status & Rejection Reason */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Status</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border ${getStatusConfig(selectedDoctor.status).color}`} title={selectedDoctor.status.charAt(0) + selectedDoctor.status.slice(1).toLowerCase()}>
+                            {React.createElement(getStatusConfig(selectedDoctor.status).icon, { className: 'w-3 h-3 mr-1' })}
+                            {selectedDoctor.status}
+                          </span>
+                        </div>
+                        {selectedDoctor.status === 'REJECTED' && selectedDoctor.reason_for_rejection && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-xs text-red-600 font-medium">Rejection Reason:</p>
+                            <p className="text-sm text-red-700">{selectedDoctor.reason_for_rejection}</p>
+                          </div>
+                        )}
+                      </div>
+                      {/* Section: Verification Documents */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Verification Documents</h3>
+                        <p className="text-xs text-blue-700 mb-2">Uploaded government-issued documents for identity and credential verification.</p>
+                        {selectedDoctor.govt_verification_docs && selectedDoctor.govt_verification_docs.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedDoctor.govt_verification_docs.map((doc, idx) => (
+                              <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                {doc.url ? (
+                                  <>
+                                    <img src={doc.url} alt={doc.name} className="h-10 w-10 object-cover rounded border border-slate-200" />
+                                    <button
+                                      type="button"
+                                      className="text-xs text-blue-600 hover:underline ml-2"
+                                      title="View document"
+                                      onClick={() => setPreviewDoc({ url: doc.url!, type: doc.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image', name: doc.name })}
+                                    >View</button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-6 h-6 text-red-500 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                                    <span className="text-blue-700 font-semibold text-sm">{doc.name}</span>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-blue-600 hover:underline ml-2"
+                                      title="View document"
+                                      onClick={() => setPreviewDoc({ url: '', type: 'pdf', name: doc.name })}
+                                    >View</button>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400">Not provided</div>
+                        )}
+                      </div>
+                      {/* Section: Additional Info */}
+                      <div>
+                        <h3 className="text-blue-700 font-semibold text-lg mb-2">Additional Info</h3>
+                        <div className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 whitespace-pre-line">{selectedDoctor.additional_info || 'N/A'}</div>
+                      </div>
                     </div>
                   )}
                 </>
@@ -735,6 +941,58 @@ const DoctorManagement: React.FC = () => {
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-blue-700 mb-2">Personal Information</h3>
                       <div className="grid gap-4 md:grid-cols-2">
+                        {/* Doctor Image Upload */}
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Doctor Image <span className='text-slate-400'>(JPG, PNG, WEBP, &lt;2MB)</span></label>
+                          <div
+                            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 transition-all duration-200 cursor-pointer ${newDoctor.profile_pic_file ? 'border-blue-400 bg-blue-50/30' : 'border-slate-200 bg-white/80'} hover:border-blue-400`}
+                            onClick={() => document.getElementById('doctor-image-upload')?.click()}
+                            onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                            onDrop={e => {
+                              e.preventDefault();
+                              const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                              if (file) handleImageFile(file);
+                            }}
+                            style={{ minHeight: '120px' }}
+                          >
+                            {newDoctor.profile_pic_file ? (
+                              <div className="flex flex-col items-center w-full">
+                                <img
+                                  src={URL.createObjectURL(newDoctor.profile_pic_file)}
+                                  alt="Preview"
+                                  className="h-28 w-28 object-cover rounded-lg border border-slate-200 shadow mb-2"
+                                />
+                                <button
+                                  type="button"
+                                  className="text-xs text-red-600 hover:underline mt-1"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setNewDoctor({ ...newDoctor, profile_pic_file: null });
+                                    setImageError('');
+                                  }}
+                                >Remove Image</button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-slate-400 text-sm mb-2">Drag & drop or click to upload</span>
+                                <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-blue-700 transition">Select Image</span>
+                              </>
+                            )}
+                            <input
+                              id="doctor-image-upload"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/jpg"
+                              className="hidden"
+                              onChange={e => {
+                                const file = e.target.files && e.target.files[0];
+                                if (file) handleImageFile(file);
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-400 block mt-1">Accepted: JPG, PNG, WEBP. Max size: 2MB.</span>
+                          {(formErrors.profile_pic_file || imageError) && <p className="text-xs text-red-500 mt-1">{formErrors.profile_pic_file || imageError}</p>}
+                        </div>
+                        {/* Name */}
                         <div>
                           <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Name *</label>
                           <input
@@ -774,6 +1032,18 @@ const DoctorManagement: React.FC = () => {
                             <option value="OTHER">Other</option>
                           </select>
                           {formErrors.gender && <p className="text-xs text-red-500 mt-1">{formErrors.gender}</p>}
+                        </div>
+                        {/* Education */}
+                        <div>
+                          <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Education *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. MBBS, MD, BPT, MPT"
+                            value={newDoctor.education}
+                            onChange={e => setNewDoctor({ ...newDoctor, education: e.target.value })}
+                            className={`w-full px-4 py-3 bg-white/80 border ${formErrors.education ? 'border-red-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400`}
+                          />
+                          {formErrors.education && <p className="text-xs text-red-500 mt-1">{formErrors.education}</p>}
                         </div>
                       </div>
                     </div>
@@ -848,6 +1118,112 @@ const DoctorManagement: React.FC = () => {
                           </select>
                           {formErrors.clinic_service && <p className="text-xs text-red-500 mt-1">{formErrors.clinic_service}</p>}
                         </div>
+                        {/* Govt. Verification Document Upload */}
+                        <div className="md:col-span-2">
+                          <div className="mb-2 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01" /></svg>
+                              <span className="font-semibold text-blue-700">Why upload Govt. Verification Documents?</span>
+                            </div>
+                            <span className="text-xs text-blue-700">These documents are required to verify the identity and credentials of the doctor. Please upload clear scans or photos of official documents.</span>
+                            <ul className="list-disc list-inside text-xs text-blue-700 mt-1">
+                              <li>Aadhaar Card</li>
+                              <li>PAN Card</li>
+                              <li>Medical License</li>
+                              <li>Other government-issued ID</li>
+                              <li>Degree/Certificate</li>
+                            </ul>
+                            <div className="flex items-center gap-2 mt-2">
+                              <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                              <span className="text-xs text-blue-500">Accepted: PDF, JPG, PNG, WEBP. Max size: 2MB. Up to 5 files.</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              <span className="text-xs text-green-700">Your documents are securely stored and only used for verification purposes.</span>
+                            </div>
+                          </div>
+                          <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Govt. Verification Document (optional) <span className='text-slate-400'>(PDF, JPG, PNG, WEBP, &lt;2MB, up to 5 files)</span></label>
+                          <div
+                            className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-4 transition-all duration-200 cursor-pointer ${newDoctor.govt_verification_doc_files && newDoctor.govt_verification_doc_files.length > 0 ? 'border-blue-400 bg-blue-50/30' : 'border-slate-200 bg-white/80'} hover:border-blue-400`}
+                            onClick={() => document.getElementById('govt-doc-upload')?.click()}
+                            onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                            onDrop={e => {
+                              e.preventDefault();
+                              const files = Array.from(e.dataTransfer.files);
+                              files.forEach(file => handleGovtDocFile(file));
+                            }}
+                            style={{ minHeight: '100px', borderStyle: 'dashed', position: 'relative' }}
+                          >
+                            <span className="absolute top-2 right-4 text-xs text-slate-400">{newDoctor.govt_verification_doc_files?.length || 0}/{MAX_GOVT_DOC_FILES}</span>
+                            {newDoctor.govt_verification_doc_files && newDoctor.govt_verification_doc_files.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                                {newDoctor.govt_verification_doc_files.map((file, idx) => (
+                                  <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                    {file.type === 'application/pdf' ? (
+                                      <span className="inline-flex items-center"><svg className="w-6 h-6 text-red-500 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>PDF</span>
+                                    ) : (
+                                      <img
+                                        src={URL.createObjectURL(file)}
+                                        alt="Preview"
+                                        className="h-10 w-10 object-cover rounded border border-slate-200"
+                                      />
+                                    )}
+                                    <span className="truncate text-xs font-medium text-slate-700 max-w-[100px]">{file.name}</span>
+                                    <button
+                                      type="button"
+                                      className="text-xs text-red-600 hover:underline ml-2"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setNewDoctor(prev => ({
+                                          ...prev,
+                                          govt_verification_doc_files: prev.govt_verification_doc_files?.filter((_, i) => i !== idx) || [],
+                                        }));
+                                      }}
+                                    >Remove</button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-slate-400 text-sm mb-2">Drag & drop or click to upload</span>
+                                <span className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-blue-700 transition">Select Files</span>
+                              </>
+                            )}
+                            <input
+                              id="govt-doc-upload"
+                              type="file"
+                              accept="application/pdf,image/jpeg,image/png,image/webp,image/jpg"
+                              className="hidden"
+                              multiple
+                              onChange={e => {
+                                const files = e.target.files ? Array.from(e.target.files) : [];
+                                files.forEach(file => handleGovtDocFile(file));
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className={`mt-3 w-full px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 ${newDoctor.govt_verification_doc_files && newDoctor.govt_verification_doc_files.length >= MAX_GOVT_DOC_FILES ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            onClick={() => document.getElementById('govt-doc-upload')?.click()}
+                            disabled={!!(newDoctor.govt_verification_doc_files && newDoctor.govt_verification_doc_files.length >= MAX_GOVT_DOC_FILES)}
+                            title={newDoctor.govt_verification_doc_files && newDoctor.govt_verification_doc_files.length >= MAX_GOVT_DOC_FILES ? `Maximum ${MAX_GOVT_DOC_FILES} files allowed` : 'Upload more documents'}
+                          >
+                            Upload Documents
+                          </button>
+                          <span className="text-xs text-slate-400 block mt-1">Accepted: PDF, JPG, PNG, WEBP. Max size: 2MB. You can upload up to 5 files.</span>
+                          {govtDocError && <p className="text-xs text-red-500 mt-1">{govtDocError}</p>}
+                          {govtDocHelper && !govtDocError && <p className="text-xs text-slate-400 mt-1">{govtDocHelper}</p>}
+                        </div>
+                        {/* Additional Info */}
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Additional Info</label>
+                          <textarea
+                            placeholder="e.g. More about experience, specialization, etc."
+                            value={newDoctor.additional_info}
+                            onChange={e => setNewDoctor({ ...newDoctor, additional_info: e.target.value })}
+                            className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400 min-h-[60px]"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3">
@@ -905,6 +1281,37 @@ const DoctorManagement: React.FC = () => {
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Extra View Modal for Govt. Docs */}
+      {previewDoc && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-auto relative">
+            <button
+              onClick={() => setPreviewDoc(null)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition"
+              aria-label="Close preview"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className="p-6 flex flex-col items-center">
+              <div className="mb-4 text-center">
+                <span className="font-bold text-lg text-slate-800">{previewDoc.name}</span>
+              </div>
+              {previewDoc.type === 'image' && previewDoc.url && (
+                <img src={previewDoc.url} alt={previewDoc.name} className="max-h-[60vh] rounded-xl border border-slate-200" />
+              )}
+              {previewDoc.type === 'pdf' && previewDoc.url && (
+                <iframe src={previewDoc.url} title={previewDoc.name} className="w-full h-[60vh] rounded-xl border border-slate-200" />
+              )}
+              {previewDoc.type === 'pdf' && !previewDoc.url && (
+                <div className="w-full h-[60vh] flex items-center justify-center">
+                  <span className="text-slate-500">PDF preview not available. <br/> <a href={`/path/to/pdf/${previewDoc.name}`} download className="text-blue-600 underline">Download</a></span>
+                </div>
+              )}
             </div>
           </div>
         </div>

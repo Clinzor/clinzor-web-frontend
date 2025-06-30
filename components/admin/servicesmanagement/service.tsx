@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, Eye, X, Check, Search, Tag, Heart, Stethoscope, Brain, User, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit3, Trash2, Eye, X, Check, Search, Tag, Heart, Stethoscope, Brain, User, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 
 type ServiceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -9,6 +9,7 @@ interface Service {
   description: string;
   tags: string;
   status: ServiceStatus;
+  image?: string;
 }
 
 const MedicalServicesApp: React.FC = () => {
@@ -18,49 +19,56 @@ const MedicalServicesApp: React.FC = () => {
       name: "cardiologist",
       description: "Specialist in diagnosing and treating heart and blood vessel conditions.",
       tags: "heart,cardiology,blood pressure,ECG,chest pain",
-      status: "PENDING"
+      status: "PENDING",
+      image: undefined
     },
     {
       uuid: "661d42bc-4393-49a3-ab8f-c24b6ab17c38",
       name: "heart speciality",
       description: "Focus on the diagnosis, treatment, and management of heart and blood vessel conditions",
       tags: "heart",
-      status: "APPROVED"
+      status: "APPROVED",
+      image: undefined
     },
     {
       uuid: "62111833-4927-4060-acdf-f2d857e9d688",
       name: "neurologist",
       description: "Specialist in diagnosing and treating neurological disorders and brain conditions.",
       tags: "brain,neurology,headache,seizures,memory",
-      status: "REJECTED"
+      status: "REJECTED",
+      image: undefined
     },
     {
       uuid: "5bfffdfc-0af4-4d17-8d0c-08466e2315e5",
       name: "physician",
       description: "General practitioner providing comprehensive healthcare and preventive medicine.",
       tags: "general,healthcare,checkup,prevention,medicine",
-      status: "PENDING"
+      status: "PENDING",
+      image: undefined
     },
     {
       uuid: "1234567890",
       name: "dermatologist",
       description: "Specialist in diagnosing and treating skin, hair, and nail conditions.",
       tags: "skin,dermatology,acne,eczema,hair",
-      status: "APPROVED"
+      status: "APPROVED",
+      image: undefined
     },
     {
       uuid: "0987654321",
       name: "orthopedic surgeon",
       description: "Specialist in treating musculoskeletal system disorders and injuries.",
       tags: "bones,joints,surgery,fractures,sports",
-      status: "PENDING"
+      status: "PENDING",
+      image: undefined
     },
     {
       uuid: "1122334455",
       name: "pediatrician",
       description: "Medical doctor specializing in the care of infants, children, and adolescents.",
       tags: "children,pediatrics,vaccination,growth,development",
-      status: "APPROVED"
+      status: "APPROVED",
+      image: undefined
     }
   ]);
 
@@ -71,10 +79,16 @@ const MedicalServicesApp: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | ServiceStatus>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    tags: string;
+    image: string;
+  }>({
     name: '',
     description: '',
-    tags: ''
+    tags: '',
+    image: '',
   });
 
   const getServiceIcon = (name: string) => {
@@ -118,7 +132,7 @@ const MedicalServicesApp: React.FC = () => {
       const newService: Service = {
         uuid: Date.now().toString(),
         ...formData,
-        status: 'PENDING'
+        status: 'PENDING',
       };
       setServices([...services, newService]);
     }
@@ -126,7 +140,7 @@ const MedicalServicesApp: React.FC = () => {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', tags: '' });
+    setFormData({ name: '', description: '', tags: '', image: '' });
     setIsFormOpen(false);
     setEditingService(null);
   };
@@ -135,7 +149,8 @@ const MedicalServicesApp: React.FC = () => {
     setFormData({
       name: service.name,
       description: service.description,
-      tags: service.tags
+      tags: service.tags,
+      image: service.image || '',
     });
     setEditingService(service);
     setIsFormOpen(true);
@@ -177,11 +192,31 @@ const MedicalServicesApp: React.FC = () => {
       ALL: services.length,
       PENDING: services.filter((s) => s.status === 'PENDING').length,
       APPROVED: services.filter((s) => s.status === 'APPROVED').length,
-      REJECTED: services.filter((s) => s.status === 'REJECTED').length
+      REJECTED: services.filter((s) => s.status === 'REJECTED').length,
     };
   };
 
   const statusCounts = getStatusCounts();
+
+  const statusLabels: Record<string, string> = {
+    ALL: 'Total Services',
+    PENDING: 'Requested Services',
+    APPROVED: 'Newly Added Services',
+    REJECTED: 'Rejected'
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'APPROVED':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'REJECTED':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'PENDING':
+        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+      default:
+        return <Stethoscope className="w-5 h-5 text-blue-600" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -215,17 +250,20 @@ const MedicalServicesApp: React.FC = () => {
           {Object.entries(statusCounts).map(([status, count]) => (
             <div
               key={status}
-              onClick={() => setStatusFilter(status as 'ALL' | ServiceStatus)}
-              className={`p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
-                statusFilter === status
-                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                  : 'border-gray-100 bg-white hover:border-gray-200'
+              onClick={status === 'ALL' ? undefined : () => setStatusFilter(status as 'ALL' | ServiceStatus)}
+              className={`p-4 sm:p-6 rounded-xl border-2 ${
+                status === 'ALL'
+                  ? 'bg-gray-50 border-gray-100 cursor-default'
+                  : 'cursor-pointer transition-all hover:shadow-md ' + (statusFilter === status
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-100 bg-white hover:border-gray-200')
               }`}
+              style={status === 'ALL' ? { pointerEvents: 'none', opacity: 0.85 } : {}}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-600">
-                    {status === 'ALL' ? 'Total Services' : status.charAt(0) + status.slice(1).toLowerCase()}
+                    {statusLabels[status]}
                   </p>
                   <p className="text-xl sm:text-3xl font-bold text-gray-900">{count}</p>
                 </div>
@@ -234,10 +272,7 @@ const MedicalServicesApp: React.FC = () => {
                   status === 'REJECTED' ? 'bg-red-100' :
                   status === 'PENDING' ? 'bg-yellow-100' : 'bg-blue-100'
                 }`}>
-                  {status === 'APPROVED' ? <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /> :
-                   status === 'REJECTED' ? <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" /> :
-                   status === 'PENDING' ? <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" /> :
-                   <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />}
+                  {getStatusIcon(status)}
                 </div>
               </div>
             </div>
@@ -263,13 +298,24 @@ const MedicalServicesApp: React.FC = () => {
           {currentServices.map((service) => (
             <div key={service.uuid} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <div className="p-4 sm:p-6">
+                {service.image && (
+                  <div className="mb-4 relative w-full h-48 rounded-lg overflow-hidden">
+                    <img 
+                      src={service.image} 
+                      alt={service.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
                     {getServiceIcon(service.name)}
                     <div>
                       <h3 className="font-semibold text-gray-900 capitalize text-base sm:text-lg">{service.name}</h3>
                       <span className={`text-xs px-3 py-1 rounded-full border font-medium ${getStatusColor(service.status)}`}>
-                        {service.status}
+                        {service.status === 'PENDING' ? 'Requested' : 
+                         service.status === 'APPROVED' ? 'Newly Added' : 
+                         service.status}
                       </span>
                     </div>
                   </div>
@@ -288,7 +334,7 @@ const MedicalServicesApp: React.FC = () => {
                 </div>
                 {/* Action Buttons */}
                 <div className="space-y-2 sm:space-y-3">
-                  {/* Approve/Reject Buttons */}
+                  {/* Accept/Reject Buttons for Requested Services */}
                   {service.status === 'PENDING' && (
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <button
@@ -296,14 +342,14 @@ const MedicalServicesApp: React.FC = () => {
                         className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center space-x-1"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        <span>Approve</span>
+                        <span>Accept Service</span>
                       </button>
                       <button
                         onClick={() => handleStatusChange(service.uuid, 'REJECTED')}
                         className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center space-x-1"
                       >
                         <XCircle className="w-4 h-4" />
-                        <span>Reject</span>
+                        <span>Reject Service</span>
                       </button>
                     </div>
                   )}
@@ -330,7 +376,7 @@ const MedicalServicesApp: React.FC = () => {
                         onClick={() => handleStatusChange(service.uuid, 'PENDING')}
                         className="flex-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                       >
-                        Mark as Pending
+                        Mark as Requested
                       </button>
                     </div>
                   )}
@@ -452,7 +498,11 @@ const MedicalServicesApp: React.FC = () => {
                   {editingService ? 'Edit Service' : 'Add New Service'}
                 </h2>
                 <button
-                  onClick={resetForm}
+                  onClick={() => {
+                    setFormData({ name: '', description: '', tags: '', image: '' });
+                    setIsFormOpen(false);
+                    setEditingService(null);
+                  }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-400" />
@@ -495,9 +545,52 @@ const MedicalServicesApp: React.FC = () => {
                     placeholder="heart, cardiology, blood pressure"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Service Image
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setFormData({ ...formData, image: ev.target?.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full px-3 sm:px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                      />
+                    </div>
+                    {formData.image && (
+                      <div className="relative">
+                        <img 
+                          src={formData.image} 
+                          alt="Service Preview" 
+                          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          className="absolute -top-2 -right-2 bg-red-100 rounded-full p-1 hover:bg-red-200 transition-colors"
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-2 sm:pt-4">
                   <button
-                    onClick={resetForm}
+                    onClick={() => {
+                      setFormData({ name: '', description: '', tags: '', image: '' });
+                      setIsFormOpen(false);
+                      setEditingService(null);
+                    }}
                     className="flex-1 px-4 py-2 sm:py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
                   >
                     Cancel
@@ -516,41 +609,49 @@ const MedicalServicesApp: React.FC = () => {
         </div>
       )}
 
-      {/* View Modal */}
+      {/* View Details Modal */}
       {viewingService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-full sm:max-w-md w-full shadow-2xl">
+          <div className="bg-white rounded-2xl w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+            <button
+              onClick={() => setViewingService(null)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 z-10"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
             <div className="p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <div className="flex items-center space-x-3">
-                  {getServiceIcon(viewingService.name)}
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 capitalize">
-                    {viewingService.name}
-                  </h2>
+              {viewingService.image && (
+                <div className="mb-6 relative w-full h-64 rounded-xl overflow-hidden">
+                  <img 
+                    src={viewingService.image} 
+                    alt={viewingService.name} 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <button
-                  onClick={() => setViewingService(null)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-              <div className="space-y-3 sm:space-y-4">
+              )}
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                {getServiceIcon(viewingService.name)}
+                <span>{viewingService.name}</span>
+              </h2>
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</h3>
-                  <span className={`text-xs sm:text-sm px-3 py-1 rounded-full border font-medium ${getStatusColor(viewingService.status)}`}>
-                    {viewingService.status}
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Status</h3>
+                  <span className={`text-sm px-3 py-1 rounded-full border font-medium ${getStatusColor(viewingService.status)}`}>
+                    {viewingService.status === 'PENDING' ? 'Requested' : 
+                     viewingService.status === 'APPROVED' ? 'Newly Added' : 
+                     viewingService.status}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Description</h3>
-                  <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Description</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     {viewingService.description}
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-1 sm:gap-2">
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
                     {viewingService.tags.split(',').map((tag, index) => (
                       <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md flex items-center space-x-1">
                         <Tag className="w-3 h-3" />
@@ -559,17 +660,48 @@ const MedicalServicesApp: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Payment Methods</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Online Payment</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-center text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          Credit/Debit Cards
+                        </li>
+                        <li className="flex items-center text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          UPI
+                        </li>
+                        <li className="flex items-center text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          Net Banking
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Offline Payment</h4>
+                      <ul className="space-y-2">
+                        <li className="flex items-center text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          Cash
+                        </li>
+                        <li className="flex items-center text-sm text-gray-600">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          POS Machine
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-100">
+              <div className="flex justify-end pt-6 mt-6 border-t border-gray-100">
                 <button
-                  onClick={() => {
-                    setViewingService(null);
-                    handleEdit(viewingService);
-                  }}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 sm:py-3 rounded-xl transition-colors font-medium flex items-center justify-center space-x-2"
+                  onClick={() => setViewingService(null)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto"
                 >
-                  <Edit3 className="w-4 h-4" />
-                  <span>Edit Service</span>
+                  Close
                 </button>
               </div>
             </div>

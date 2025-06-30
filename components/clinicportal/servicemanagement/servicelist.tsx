@@ -203,7 +203,18 @@ const ServiceManagement: React.FC = () => {
     description: '',
     type: '',
     rates: '',
-    additionalInfo: ''
+    additionalInfo: '',
+    rank: '1',
+    consultation_charge_video_call: '',
+    consultation_charge_home_visit: '',
+    treatment_charge_video_call: '',
+    treatment_charge_physical_visit: '',
+    consultation_charge_physical_visit: '',
+    treatment_charge_home_visit: '',
+    is_video_call: false,
+    is_home_service: false,
+    is_clinic_visit: true,
+    clinic_provided_name: ''
   });
 
   const [newClinicService, setNewClinicService] = useState<NewClinicService>({
@@ -522,7 +533,18 @@ const ServiceManagement: React.FC = () => {
       description: '',
       type: '',
       rates: '',
-      additionalInfo: ''
+      additionalInfo: '',
+      rank: '1',
+      consultation_charge_video_call: '',
+      consultation_charge_home_visit: '',
+      treatment_charge_video_call: '',
+      treatment_charge_physical_visit: '',
+      consultation_charge_physical_visit: '',
+      treatment_charge_home_visit: '',
+      is_video_call: false,
+      is_home_service: false,
+      is_clinic_visit: true,
+      clinic_provided_name: ''
     });
   };
 
@@ -654,87 +676,86 @@ const ServiceManagement: React.FC = () => {
               const ServiceIcon = getServiceIcon(clinicService.service_name);
               return (
                 <div key={clinicService.uuid} className="group relative">
-                  <div className="relative bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
-                    {/* Status Badge */}
-                    <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
-                      <span className={`inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium ${statusConfig.color} space-x-2`}>
-                        <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
-                        <statusConfig.icon className="w-4 h-4" />
-                        <span>{clinicService.status}</span>
-                      </span>
-                    </div>
-
-                    {/* Service Image */}
-                    <div className="relative h-32 sm:h-40 bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                      {clinicService.image ? (
-                        <img
-                          src={clinicService.image}
-                          alt={clinicService.service_name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Settings className="w-8 h-8 sm:w-12 sm:h-12 text-slate-400" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    </div>
-
-                    {/* Content */}
+                  <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
                     <div className="p-4 sm:p-6">
-                      <div className="flex items-start justify-between mb-3 sm:mb-4">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2 truncate">
-                            {clinicService.service_name}
-                          </h3>
-                          <p className="text-sm sm:text-base text-slate-600 mb-2 sm:mb-3 line-clamp-2">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4 sm:mb-6">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2 sm:mb-3">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
+                              {clinicService.image ? (
+                                <img
+                                  src={clinicService.image}
+                                  alt={clinicService.service_name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                                  <span className="text-slate-400 text-xs font-medium">No Image</span>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                {clinicService.clinic_provided_name || clinicService.service_name}
+                              </h3>
+                              <p className="text-sm text-slate-600">
+                                {getClinicName(clinicService.clinic)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
+                            <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                            <StatusIcon className="w-4 h-4" />
+                            <span>{clinicService.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Description */}
+                      {clinicService.description && (
+                        <div className="mb-4">
+                          <p className="text-slate-700 text-sm line-clamp-3">
                             {clinicService.description}
                           </p>
                         </div>
-                      </div>
-
-                      {/* Service Type */}
-                      <div className="flex items-center mb-3 sm:mb-4">
-                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2" />
-                        <span className="text-sm sm:text-base text-slate-600 font-medium">
-                          {clinicService.service_name}
-                        </span>
-                      </div>
-
-                      {/* Clinic Info */}
-                      <div className="flex items-center mb-4 sm:mb-6">
-                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-2" />
-                        <span className="text-sm sm:text-base text-slate-600 font-medium">
-                          {getClinicName(clinicService.clinic)}
-                        </span>
-                      </div>
-
-                      {/* Price and Actions */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <span className="text-lg sm:text-xl font-bold text-slate-900">
-                            ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
-                          </span>
-                          <span className="text-sm sm:text-base text-slate-500 ml-1">/session</span>
+                      )}
+                      {/* Charges */}
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                          {clinicService.is_video_call && (
+                            <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
+                              <Video className="w-4 h-4 mr-1 text-blue-500" />
+                              Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                            </span>
+                          )}
+                          {clinicService.is_physical_visit && (
+                            <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                              <Home className="w-4 h-4 mr-1 text-green-500" />
+                              Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
+                            </span>
+                          )}
+                          {clinicService.is_home_visit && (
+                            <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
+                              <Building className="w-4 h-4 mr-1 text-amber-500" />
+                              Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleView(clinicService)}
-                            className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </div>
+                      {/* Actions */}
+                      <div className="flex items-center justify-between">
+                        <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                          <Eye className="w-4 h-4 mr-1" /> View
+                        </button>
+                        <div className="flex space-x-2">
+                          <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
+                            <Edit3 className="w-4 h-4 mr-1" /> Edit
                           </button>
-                          <button
-                            onClick={() => handleDeleteConfirm(clinicService)}
-                            className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
                           </button>
-                          <button
-                            onClick={() => handleEditRank(clinicService)}
-                            className="p-1.5 sm:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                            <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
                           </button>
                         </div>
                       </div>
@@ -807,76 +828,108 @@ const ServiceManagement: React.FC = () => {
                 {/* Service */}
                 <div>
                   <label className="block text-sm font-semibold mb-1 sm:mb-2">Service <span className="text-red-500">*</span></label>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+                  <div className="flex flex-col gap-3">
                     {newClinicService.service ? (
                       <div className="flex-1">
                         {/* Selected Service Card */}
-                        <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4">
-                          <div className="flex items-start space-x-3 sm:space-x-4">
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-3 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-6">
                             {/* Service Image */}
-                            <div className="flex-shrink-0">
+                            <div className="flex-shrink-0 mx-auto sm:mx-0">
                               {(() => {
                                 const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
                                 return selectedService?.image ? (
-                                  <img
-                                    src={selectedService.image}
-                                    alt={selectedService.name}
-                                    className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
-                                  />
+                                  <div className="relative">
+                                    <img
+                                      src={selectedService.image}
+                                      alt={selectedService.name}
+                                      className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl shadow-md"
+                                    />
+                                    <div className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                                      Selected
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
-                                    <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
+                                  <div className="relative">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
+                                      <Activity className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                                    </div>
+                                    <div className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                                      Selected
+                                    </div>
                                   </div>
                                 );
                               })()}
                             </div>
                             
                             {/* Service Info */}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">
-                                {getServiceName(newClinicService.service)}
-                              </h4>
-                              <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">
+                            <div className="flex-1 min-w-0 text-center sm:text-left">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-2">
+                                <h4 className="font-bold text-slate-900 text-base sm:text-lg">
+                                  {getServiceName(newClinicService.service)}
+                                </h4>
+                                <button
+                                  type="button"
+                                  onClick={handleOpenServiceSearch}
+                                  className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-semibold shadow-sm w-fit mx-auto sm:mx-0"
+                                >
+                                  Change
+                                </button>
+                              </div>
+                              <p className="text-sm text-slate-600 line-clamp-2 mb-3 leading-relaxed">
                                 {(() => {
                                   const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
                                   return selectedService?.description || 'No description available';
                                 })()}
                               </p>
+                              
+                              {/* Service Tags */}
+                              <div className="flex flex-wrap gap-1 justify-center sm:justify-start">
+                                {(() => {
+                                  const selectedService = mockAllServices.find(s => s.uuid === newClinicService.service);
+                                  return selectedService?.tags.split(',').slice(0, 2).map((tag, idx) => (
+                                    <span key={idx} className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
+                                      #{tag.trim()}
+                                    </span>
+                                  ));
+                                })()}
+                              </div>
                             </div>
-                            
-                            {/* Change Button */}
-                            <button
-                              type="button"
-                              onClick={handleOpenServiceSearch}
-                              className="flex-shrink-0 px-2 sm:px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200"
-                            >
-                              Change
-                            </button>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 flex items-center justify-center text-sm sm:text-base">
-                        No service selected
+                      <div className="flex-1">
+                        <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-8 text-center hover:border-slate-400 transition-colors duration-200">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-200 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <Search className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" />
+                          </div>
+                          <p className="text-slate-500 text-sm sm:text-base font-medium">
+                            No service selected
+                          </p>
+                          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                            Click "Search Services" to browse available options
+                          </p>
+                        </div>
                       </div>
                     )}
                     <button
                       type="button"
                       onClick={handleOpenServiceSearch}
-                      className="px-3 sm:px-4 py-2 sm:py-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-all duration-200 flex items-center gap-2 text-sm sm:text-base"
+                      className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 text-sm font-semibold shadow-lg hover:shadow-xl"
                     >
-                      <Search className="w-4 h-4" />
-                      {newClinicService.service ? 'Change' : 'Search'}
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+                      {newClinicService.service ? 'Change Service' : 'Search Services'}
                     </button>
                   </div>
-                  {formErrors.service && <p className="text-xs text-red-500 mt-1">{formErrors.service}</p>}
+                  {formErrors.service && <p className="text-xs text-red-500 mt-2">{formErrors.service}</p>}
                 </div>
                 {/* Clinic Provided Name (optional) */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Clinic Provided Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
                     value={newClinicService.clinic_provided_name}
                     onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
                     placeholder="(Optional) Custom name for this service at the clinic"
@@ -885,9 +938,9 @@ const ServiceManagement: React.FC = () => {
                 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Description</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Description</label>
                   <textarea
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
                     value={newClinicService.description}
                     onChange={e => setNewClinicService(cs => ({ ...cs, description: e.target.value }))}
                     placeholder="Describe this clinic service..."
@@ -897,11 +950,11 @@ const ServiceManagement: React.FC = () => {
                 
                 {/* Image Upload */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Image</label>
                   <input
                     type="file"
                     accept="image/*"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm sm:text-base"
                     onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -915,10 +968,10 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Rank */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Rank <span className="text-red-500">*</span></label>
                   <input
                     type="number"
-                    className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                     value={newClinicService.rank}
                     onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
                     min={1}
@@ -927,22 +980,22 @@ const ServiceManagement: React.FC = () => {
                   {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
                 </div>
                 {/* Facility Toggles */}
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_video_call}
                       onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
                     /> Video Call
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_clinic_visit}
                       onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
                     /> Physical Visit
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_home_service}
@@ -952,12 +1005,12 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Charges - show fields as per toggles */}
                 {newClinicService.is_video_call && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_video_call}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
                         placeholder="e.g. 400"
@@ -965,10 +1018,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_video_call}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
                         placeholder="e.g. 800"
@@ -978,12 +1031,12 @@ const ServiceManagement: React.FC = () => {
                   </div>
                 )}
                 {newClinicService.is_clinic_visit && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_physical_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
                         placeholder="e.g. 200"
@@ -991,10 +1044,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_physical_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
                         placeholder="e.g. 500"
@@ -1004,12 +1057,12 @@ const ServiceManagement: React.FC = () => {
                   </div>
                 )}
                 {newClinicService.is_home_service && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_home_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
                         placeholder="e.g. 200"
@@ -1017,10 +1070,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_home_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
                         placeholder="e.g. 600"
@@ -1029,17 +1082,17 @@ const ServiceManagement: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div className="flex justify-end gap-2 mt-6">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 mt-4 sm:mt-6">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200 text-sm sm:text-base"
                     onClick={closeModal}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm sm:text-base"
                   >
                     Add Clinic Service
                   </button>
@@ -1198,10 +1251,10 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Clinic Provided Name (optional) */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Clinic Provided Name</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Clinic Provided Name</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
                     value={newClinicService.clinic_provided_name}
                     onChange={e => setNewClinicService(cs => ({ ...cs, clinic_provided_name: e.target.value }))}
                     placeholder="(Optional) Custom name for this service at the clinic"
@@ -1209,9 +1262,9 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Description</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Description</label>
                   <textarea
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
                     value={newClinicService.description}
                     onChange={e => setNewClinicService(cs => ({ ...cs, description: e.target.value }))}
                     placeholder="Describe this clinic service..."
@@ -1220,11 +1273,11 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Image Upload */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Image</label>
                   <input
                     type="file"
                     accept="image/*"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm sm:text-base"
                     onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -1238,10 +1291,10 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Rank */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Rank <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Rank <span className="text-red-500">*</span></label>
                   <input
                     type="number"
-                    className={`w-full px-4 py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.rank ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                     value={newClinicService.rank}
                     onChange={e => setNewClinicService(cs => ({ ...cs, rank: e.target.value }))}
                     min={1}
@@ -1250,22 +1303,22 @@ const ServiceManagement: React.FC = () => {
                   {formErrors.rank && <p className="text-xs text-red-500 mt-1">{formErrors.rank}</p>}
                 </div>
                 {/* Facility Toggles */}
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_video_call}
                       onChange={e => setNewClinicService(cs => ({ ...cs, is_video_call: e.target.checked }))}
                     /> Video Call
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_clinic_visit}
                       onChange={e => setNewClinicService(cs => ({ ...cs, is_clinic_visit: e.target.checked }))}
                     /> Physical Visit
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
                     <input
                       type="checkbox"
                       checked={newClinicService.is_home_service}
@@ -1275,12 +1328,12 @@ const ServiceManagement: React.FC = () => {
                 </div>
                 {/* Charges - show fields as per toggles */}
                 {newClinicService.is_video_call && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_video_call}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_video_call: e.target.value }))}
                         placeholder="e.g. 400"
@@ -1288,10 +1341,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_video_call && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_video_call}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_video_call ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_video_call}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_video_call: e.target.value }))}
                         placeholder="e.g. 800"
@@ -1301,12 +1354,12 @@ const ServiceManagement: React.FC = () => {
                   </div>
                 )}
                 {newClinicService.is_clinic_visit && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_physical_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_physical_visit: e.target.value }))}
                         placeholder="e.g. 200"
@@ -1314,10 +1367,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_physical_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_physical_visit}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_physical_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_physical_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_physical_visit: e.target.value }))}
                         placeholder="e.g. 500"
@@ -1327,12 +1380,12 @@ const ServiceManagement: React.FC = () => {
                   </div>
                 )}
                 {newClinicService.is_home_service && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.consultation_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.consultation_charge_home_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, consultation_charge_home_visit: e.target.value }))}
                         placeholder="e.g. 200"
@@ -1340,10 +1393,10 @@ const ServiceManagement: React.FC = () => {
                       {formErrors.consultation_charge_home_visit && <p className="text-xs text-red-500 mt-1">{formErrors.consultation_charge_home_visit}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold mb-1">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
-                        className={`w-full px-4 py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700`}
+                        className={`w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border ${formErrors.treatment_charge_home_visit ? 'border-red-400' : 'border-slate-200'} bg-white text-slate-700 text-sm sm:text-base`}
                         value={newClinicService.treatment_charge_home_visit}
                         onChange={e => setNewClinicService(cs => ({ ...cs, treatment_charge_home_visit: e.target.value }))}
                         placeholder="e.g. 600"
@@ -1352,17 +1405,17 @@ const ServiceManagement: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <div className="flex justify-end gap-2 mt-6">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-2 mt-4 sm:mt-6">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200 text-sm sm:text-base"
                     onClick={closeModal}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm sm:text-base"
                   >
                     Save Changes
                   </button>
@@ -1449,24 +1502,27 @@ const ServiceManagement: React.FC = () => {
       {/* Service Search Modal */}
       {showServiceSearchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Search Services</h2>
+            <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">Search & Select Services</h2>
+                <p className="text-sm text-gray-600">Browse available services or request a new one</p>
+              </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
                     setShowServiceSearchModal(false);
                     setShowRequestServiceModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-semibold flex items-center gap-2"
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 text-sm font-semibold shadow-lg"
                 >
-                  <Plus className="w-4 h-4" />
-                  Request Service
+                  <Plus className="w-4 h-4 mr-2" />
+                  Request New Service
                 </button>
                 <button
                   onClick={() => setShowServiceSearchModal(false)}
-                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                   aria-label="Close"
                 >
                   <X className="w-5 h-5" />
@@ -1475,106 +1531,157 @@ const ServiceManagement: React.FC = () => {
             </div>
             
             {/* Search Bar */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="relative">
+            <div className="p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="relative max-w-2xl mx-auto">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search services by name, description, or tags..."
+                  placeholder="Search services by name, description, or tags... (e.g., 'cardiology', 'heart', 'skin')"
                   value={serviceSearchTerm}
                   onChange={(e) => setServiceSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                  className="w-full pl-12 pr-4 py-4 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400 text-base shadow-sm"
                 />
+                {serviceSearchTerm && (
+                  <button
+                    onClick={() => setServiceSearchTerm('')}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <div className="mt-3 text-center">
+                <p className="text-sm text-slate-600">
+                  Found <span className="font-semibold text-blue-600">{filteredAllServices.length}</span> services
+                  {serviceSearchTerm && (
+                    <span> matching "<span className="font-medium">{serviceSearchTerm}</span>"</span>
+                  )}
+                </p>
               </div>
             </div>
 
             {/* Services Grid */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {filteredAllServices.length === 0 ? (
-                <div className="text-center py-12">
-                  <Search className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No services found</h3>
-                  <p className="text-slate-500 mb-6">Try adjusting your search terms or request a new service</p>
-                  <button
-                    onClick={() => {
-                      setShowServiceSearchModal(false);
-                      setShowRequestServiceModal(true);
-                    }}
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Request a Service
-                  </button>
+                <div className="text-center py-12 sm:py-16">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+                    <Search className="relative w-16 h-16 text-slate-400 mx-auto" />
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3">No services found</h3>
+                  <p className="text-slate-500 text-base sm:text-lg mb-8 max-w-md mx-auto">
+                    {serviceSearchTerm 
+                      ? `No services match "${serviceSearchTerm}". Try different keywords or request a new service.`
+                      : "No services available. Request a new service to get started."
+                    }
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button
+                      onClick={() => setServiceSearchTerm('')}
+                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 font-semibold"
+                    >
+                      Clear Search
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowServiceSearchModal(false);
+                        setShowRequestServiceModal(true);
+                      }}
+                      className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Request a New Service
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredAllServices.map((service) => {
-                    const ServiceIcon = getServiceIcon(service.name);
-                    return (
-                      <div
-                        key={service.uuid}
-                        onClick={() => handleSelectService(service)}
-                        className="group cursor-pointer bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-lg transition-all duration-200"
+                <div className="space-y-6">
+                  {/* Quick Filters */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm font-medium text-slate-700 mr-2">Quick filters:</span>
+                    {['cardiology', 'dermatology', 'neurology', 'orthopedics'].map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => setServiceSearchTerm(tag)}
+                        className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium capitalize"
                       >
-                        {/* Service Image */}
-                        <div className="relative mb-4">
-                          {service.image ? (
-                            <img
-                              src={service.image}
-                              alt={service.name}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-32 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
-                              <ServiceIcon className="w-8 h-8 text-blue-500" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2">
-                            <div className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                              {service.status}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Service Info */}
-                        <div>
-                          <h3 className="font-semibold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
-                            {service.name}
-                          </h3>
-                          <p className="text-sm text-slate-600 mb-3 line-clamp-2">
-                            {service.description}
-                          </p>
-                          
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-1">
-                            {service.tags.split(',').slice(0, 3).map((tag, idx) => (
-                              <span key={idx} className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
-                                #{tag.trim()}
-                              </span>
-                            ))}
-                            {service.tags.split(',').length > 3 && (
-                              <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
-                                +{service.tags.split(',').length - 3} more
-                              </span>
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Services Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {filteredAllServices.map((service) => {
+                      const ServiceIcon = getServiceIcon(service.name);
+                      return (
+                        <div
+                          key={service.uuid}
+                          onClick={() => handleSelectService(service)}
+                          className="group cursor-pointer bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 hover:border-blue-300 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                        >
+                          {/* Service Image */}
+                          <div className="relative mb-4">
+                            {service.image ? (
+                              <img
+                                src={service.image}
+                                alt={service.name}
+                                className="w-full h-32 sm:h-40 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-32 sm:h-40 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                                <ServiceIcon className="w-12 h-12 text-blue-500" />
+                              </div>
                             )}
+                            <div className="absolute top-3 right-3">
+                              <div className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                                {service.status}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Service Info */}
+                          <div className="space-y-3">
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                                {service.name}
+                              </h3>
+                              <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
+                                {service.description}
+                              </p>
+                            </div>
+                            
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1">
+                              {service.tags.split(',').slice(0, 3).map((tag, idx) => (
+                                <span key={idx} className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
+                                  #{tag.trim()}
+                                </span>
+                              ))}
+                              {service.tags.split(',').length > 3 && (
+                                <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
+                                  +{service.tags.split(',').length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Select Button */}
+                          <div className="mt-4 pt-4 border-t border-slate-100">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectService(service);
+                              }}
+                              className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm font-semibold shadow-lg transform hover:scale-105"
+                            >
+                              Select This Service
+                            </button>
                           </div>
                         </div>
-
-                        {/* Select Button */}
-                        <div className="mt-4 pt-4 border-t border-slate-100">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectService(service);
-                            }}
-                            className="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-semibold"
-                          >
-                            Select Service
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -1602,28 +1709,53 @@ const ServiceManagement: React.FC = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              <form onSubmit={e => { e.preventDefault(); handleRequestService(); }} className="space-y-5">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <form onSubmit={e => { e.preventDefault(); handleRequestService(); }} className="space-y-4 sm:space-y-5">
                 {/* Name of Service */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Name of Service <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Name of Service <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm sm:text-base"
                     value={serviceRequest.name}
                     onChange={e => setServiceRequest(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g. Dermatology, Cardiology"
                   />
                 </div>
 
-                {/* Image */}
+                {/* Clinic Provided Name (optional) */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Image</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Clinic Provided Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                    value={serviceRequest.clinic_provided_name}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, clinic_provided_name: e.target.value }))}
+                    placeholder="(Optional) Custom name for this service at the clinic"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Description <span className="text-red-500">*</span></label>
+                  <textarea
+                    required
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm sm:text-base"
+                    value={serviceRequest.description}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe the service in detail..."
+                    rows={3}
+                  />
+                </div>
+
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Image</label>
                   <input
                     type="file"
                     accept="image/*"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 text-sm sm:text-base"
                     onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -1634,25 +1766,124 @@ const ServiceManagement: React.FC = () => {
                   />
                 </div>
 
-                {/* Description */}
+                {/* Rank */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Description <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                    value={serviceRequest.description}
-                    onChange={e => setServiceRequest(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe the service in detail..."
-                    rows={3}
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Rank <span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                    value={serviceRequest.rank}
+                    onChange={e => setServiceRequest(prev => ({ ...prev, rank: e.target.value }))}
+                    min={1}
+                    placeholder="e.g. 1"
                   />
                 </div>
 
+                {/* Facility Toggles */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
+                    <input
+                      type="checkbox"
+                      checked={serviceRequest.is_video_call}
+                      onChange={e => setServiceRequest(prev => ({ ...prev, is_video_call: e.target.checked }))}
+                    /> Video Call
+                  </label>
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
+                    <input
+                      type="checkbox"
+                      checked={serviceRequest.is_clinic_visit}
+                      onChange={e => setServiceRequest(prev => ({ ...prev, is_clinic_visit: e.target.checked }))}
+                    /> Physical Visit
+                  </label>
+                  <label className="flex items-center gap-2 text-sm sm:text-base">
+                    <input
+                      type="checkbox"
+                      checked={serviceRequest.is_home_service}
+                      onChange={e => setServiceRequest(prev => ({ ...prev, is_home_service: e.target.checked }))}
+                    /> Home Visit
+                  </label>
+                </div>
+
+                {/* Charges - show fields as per toggles */}
+                {serviceRequest.is_video_call && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.consultation_charge_video_call}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, consultation_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Video Call) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.treatment_charge_video_call}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, treatment_charge_video_call: e.target.value }))}
+                        placeholder="e.g. 800"
+                      />
+                    </div>
+                  </div>
+                )}
+                {serviceRequest.is_clinic_visit && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.consultation_charge_physical_visit}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, consultation_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Physical Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.treatment_charge_physical_visit}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, treatment_charge_physical_visit: e.target.value }))}
+                        placeholder="e.g. 500"
+                      />
+                    </div>
+                  </div>
+                )}
+                {serviceRequest.is_home_service && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Consultation Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.consultation_charge_home_visit}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, consultation_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-1 sm:mb-2">Treatment Charge (Home Visit) <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm sm:text-base"
+                        value={serviceRequest.treatment_charge_home_visit}
+                        onChange={e => setServiceRequest(prev => ({ ...prev, treatment_charge_home_visit: e.target.value }))}
+                        placeholder="e.g. 600"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Type of Service */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Type of Service <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Type of Service <span className="text-red-500">*</span></label>
                   <select
                     required
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm sm:text-base"
                     value={serviceRequest.type}
                     onChange={e => setServiceRequest(prev => ({ ...prev, type: e.target.value }))}
                   >
@@ -1667,24 +1898,11 @@ const ServiceManagement: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Rates of Services */}
-                <div>
-                  <label className="block text-sm font-semibold mb-1">Rates of Services <span className="text-red-500">*</span></label>
-                  <textarea
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
-                    value={serviceRequest.rates}
-                    onChange={e => setServiceRequest(prev => ({ ...prev, rates: e.target.value }))}
-                    placeholder="Describe the pricing structure, consultation fees, treatment costs..."
-                    rows={3}
-                  />
-                </div>
-
                 {/* Additional Information */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Additional Information</label>
+                  <label className="block text-sm font-semibold mb-1 sm:mb-2">Additional Information</label>
                   <textarea
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-sm sm:text-base"
                     value={serviceRequest.additionalInfo}
                     onChange={e => setServiceRequest(prev => ({ ...prev, additionalInfo: e.target.value }))}
                     placeholder="Any additional details, requirements, or special considerations..."
@@ -1693,20 +1911,20 @@ const ServiceManagement: React.FC = () => {
                 </div>
 
                 {/* Submit Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => {
                       setShowRequestServiceModal(false);
                       resetServiceRequest();
                     }}
-                    className="px-6 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold border border-slate-300 hover:bg-slate-300 transition-all duration-200 text-sm sm:text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    className="px-4 sm:px-6 py-2 sm:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm sm:text-base"
                   >
                     Submit Request
                   </button>

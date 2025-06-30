@@ -198,7 +198,17 @@ const generateMockData = (dateRange: DateRange): DashboardData => {
       { id: 'TXN002', user: 'Anita Sharma', amount: 800, service: 'General Checkup', date: '2025-06-11', status: 'completed' },
       { id: 'TXN003', user: 'Mohammed Ali', amount: 2200, service: 'Orthopedic Surgery', date: '2025-06-10', status: 'pending' },
       { id: 'TXN004', user: 'Lakshmi Nair', amount: 600, service: 'Dermatology', date: '2025-06-10', status: 'completed' },
-      { id: 'TXN005', user: 'Arjun Pillai', amount: 1200, service: 'Pediatric Care', date: '2025-06-09', status: 'completed' }
+      { id: 'TXN005', user: 'Arjun Pillai', amount: 1200, service: 'Pediatric Care', date: '2025-06-09', status: 'completed' },
+      { id: 'TXN006', user: 'Sonia Mathew', amount: 950, service: 'ENT Consultation', date: '2025-06-12', status: 'completed' },
+      { id: 'TXN007', user: 'Vishnu Menon', amount: 1750, service: 'Cardiology Consultation', date: '2025-06-12', status: 'pending' },
+      { id: 'TXN008', user: 'Priya Das', amount: 1100, service: 'General Checkup', date: '2025-06-12', status: 'completed' },
+      { id: 'TXN009', user: 'Rahul R', amount: 2100, service: 'Orthopedic Surgery', date: '2025-06-11', status: 'completed' },
+      { id: 'TXN010', user: 'Meera S', amount: 700, service: 'Dermatology', date: '2025-06-11', status: 'completed' },
+      { id: 'TXN011', user: 'Anoop K', amount: 1300, service: 'Pediatric Care', date: '2025-06-10', status: 'pending' },
+      { id: 'TXN012', user: 'Jithin Jose', amount: 1600, service: 'ENT Consultation', date: '2025-06-09', status: 'completed' },
+      { id: 'TXN013', user: 'Divya S', amount: 900, service: 'General Checkup', date: '2025-06-08', status: 'completed' },
+      { id: 'TXN014', user: 'Suresh Kumar', amount: 2500, service: 'Cardiology Consultation', date: '2025-06-08', status: 'completed' },
+      { id: 'TXN015', user: 'Neha Thomas', amount: 1050, service: 'Dermatology', date: '2025-06-07', status: 'completed' },
     ],
     campRegistrations: [
       { camp: 'Diabetes Awareness Camp', registrations: 45, date: '2025-06-15', location: 'Kozhikode', status: 'upcoming' },
@@ -258,38 +268,36 @@ const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#6366F1'
 // Custom components
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color, subtitle }) => (
   <motion.div 
-    className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
-    whileHover={{ y: -2 }}
+    className={`bg-transparent border-none shadow-2xl rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 ${color}`}
+    whileHover={{ y: -4, scale: 1.03 }}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <p className="text-sm font-medium text-gray-600">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+        <p className="text-sm font-semibold text-black tracking-wide">{title}</p>
+        <p className="text-3xl font-extrabold text-black mt-1 drop-shadow-sm">{value}</p>
+        {subtitle && <p className="text-xs text-black mt-1 font-medium">{subtitle}</p>}
         {change !== undefined && (
-          <div className={`flex items-center mt-2 text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`flex items-center mt-2 text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
             {change >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
             <span className="ml-1">{Math.abs(change)}%</span>
           </div>
         )}
       </div>
-      <div className={`p-3 rounded-lg ${color}`}>
-        {icon}
-      </div>
+      <div className={`p-3 rounded-xl shadow-lg bg-transparent text-black flex items-center justify-center`}>{icon}</div>
     </div>
   </motion.div>
 );
 
 const ChartCard: React.FC<ChartCardProps> = ({ title, children, action }) => (
   <motion.div 
-    className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+    className="bg-transparent border-none shadow-2xl rounded-2xl p-6 hover:shadow-2xl transition-all duration-300"
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
   >
     <div className="flex items-center justify-between mb-6">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-bold text-black tracking-wide drop-shadow-sm">{title}</h3>
       {action}
     </div>
     {children}
@@ -327,6 +335,14 @@ export default function AdminDashboard() {
   
   if (!data) return <div>Loading...</div>;
   
+  // Helper to get today's date in YYYY-MM-DD
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  // Calculate today's bookings from recentTransactions
+  const todaysBookings = data.recentTransactions.filter(txn => txn.date === todayStr).length;
+
+  // Sort top services by bookings (descending)
+  const topBookedServices = [...data.topServices].sort((a, b) => b.bookings - a.bookings).slice(0, 5);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -382,8 +398,11 @@ export default function AdminDashboard() {
           </div>
         </motion.div>
         
+        {/* Animated Gradient Bar */}
+        <div className="w-full h-2 mb-8 rounded-xl animate-gradient-x bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 blur-[1px] opacity-80" />
+        
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <StatCard
             title="Total Users"
             value={data.totalUsers.toLocaleString()}
@@ -416,6 +435,33 @@ export default function AdminDashboard() {
             color="bg-red-500"
             subtitle="To be collected"
           />
+          <StatCard
+            title="Today's Bookings"
+            value={todaysBookings}
+            icon={<CalendarDays size={24} className="text-white" />}
+            color="bg-yellow-500"
+            subtitle="Bookings today"
+          />
+        </div>
+        
+        {/* Top Booked Services Section */}
+        <div className="mb-8">
+          <ChartCard title="Top Booked Services">
+            <div className="divide-y divide-gray-200">
+              {topBookedServices.map((service, idx) => (
+                <div key={service.service} className="flex items-center justify-between py-3">
+                  <div className="flex items-center">
+                    <span className="font-bold text-xl text-black mr-2">{idx + 1}.</span>
+                    <span className="text-black font-semibold">{service.service}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-black">Bookings: <span className="font-bold">{service.bookings}</span></span>
+                    <span className="text-black">Revenue: <span className="font-bold">₹{service.revenue.toLocaleString()}</span></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
         </div>
         
         {/* Charts Row 1 */}

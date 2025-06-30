@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, Users, Mail, MapPin, Instagram, Building2, Search, Filter, MoreHorizontal, Sparkles, TrendingUp, Eye, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, Users, Mail, MapPin, Instagram, Building2, Search, Filter, MoreHorizontal, Sparkles, TrendingUp, Eye, CheckCircle, Clock, AlertCircle, X } from 'lucide-react';
 
 // Add Camp type
 interface Camp {
@@ -16,19 +16,6 @@ interface Camp {
   status: string;
   priority: string;
   created_at: string;
-}
-
-// Add NewCamp type for form state
-interface NewCamp {
-  org_name: string;
-  hear_about_us: string;
-  association_type: string;
-  expected_participants: string;
-  preferred_date: string;
-  contact_person: string;
-  email: string;
-  additional_info: string;
-  priority: string;
 }
 
 const CampManagement = () => {
@@ -50,54 +37,21 @@ const CampManagement = () => {
     }
   ]);
 
-  const [showAddForm, setShowAddForm] = useState(false);
   const [selectedCamp, setSelectedCamp] = useState<Camp | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const [newCamp, setNewCamp] = useState<NewCamp>({
-    org_name: '',
-    hear_about_us: '',
-    association_type: '',
-    expected_participants: '',
-    preferred_date: '',
-    contact_person: '',
-    email: '',
-    additional_info: '',
-    priority: 'medium'
-  });
-
-  const handleAddCamp = async () => {
-    if (newCamp.org_name && newCamp.contact_person && newCamp.email) {
-      setIsLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const camp: Camp = {
-        uuid: crypto.randomUUID(),
-        created_by: "admin@gmail.com",
-        ...newCamp,
-        expected_participants: parseInt(newCamp.expected_participants) || 0,
-        status: "pending",
-        created_at: new Date().toISOString(),
-        additional_info: newCamp.additional_info ? newCamp.additional_info : null
-      };
-      setCamps([...camps, camp]);
-      setNewCamp({
-        org_name: '',
-        hear_about_us: '',
-        association_type: '',
-        expected_participants: '',
-        preferred_date: '',
-        contact_person: '',
-        email: '',
-        additional_info: '',
-        priority: 'medium'
-      });
-      setShowAddForm(false);
-      setIsLoading(false);
-    }
+  // Approve/Reject handlers
+  const handleApprove = () => {
+    if (!selectedCamp) return;
+    setCamps(prev => prev.map(c => c.uuid === selectedCamp.uuid ? { ...c, status: 'approved' } : c));
+    setSelectedCamp(null);
+  };
+  const handleReject = () => {
+    if (!selectedCamp) return;
+    setCamps(prev => prev.map(c => c.uuid === selectedCamp.uuid ? { ...c, status: 'rejected' } : c));
+    setSelectedCamp(null);
   };
 
   const getStatusConfig = (status: string) => {
@@ -153,12 +107,6 @@ const CampManagement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-yellow-400 to-red-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
-      </div>
-
       {/* Header */}
       <div className="relative backdrop-blur-sm bg-white/80 border-b border-white/20 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -233,16 +181,6 @@ const CampManagement = () => {
               <option value="rejected">Rejected</option>
             </select>
           </div>
-
-          {/* Add Button */}
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 transform hover:-translate-y-0.5 text-base sm:text-lg"
-          >
-            <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-            Add Camp
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
-          </button>
         </div>
 
         {/* Camp Grid */}
@@ -345,160 +283,6 @@ const CampManagement = () => {
         )}
       </div>
 
-      {/* Add Camp Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl w-full max-w-full md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-300 px-2 sm:px-8">
-            <div className="p-4 sm:p-8 border-b border-gray-200/50">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl">
-                  <Plus className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Add New Camp Registration</h2>
-                  <p className="text-gray-600">Fill in the details to register a new camp</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-4 sm:p-8 space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Organization Name</label>
-                  <input
-                    type="text"
-                    value={newCamp.org_name}
-                    onChange={(e) => setNewCamp({...newCamp, org_name: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                    placeholder="Enter organization name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Association Type</label>
-                  <select
-                    value={newCamp.association_type}
-                    onChange={(e) => setNewCamp({...newCamp, association_type: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                  >
-                    <option value="">Select type</option>
-                    <option value="Gym">🏋️ Gym</option>
-                    <option value="School">🏫 School</option>
-                    <option value="Club">⚽ Club</option>
-                    <option value="Community">🏘️ Community</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Contact Person</label>
-                  <input
-                    type="text"
-                    value={newCamp.contact_person}
-                    onChange={(e) => setNewCamp({...newCamp, contact_person: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                    placeholder="Contact person name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Email Address</label>
-                  <input
-                    type="email"
-                    value={newCamp.email}
-                    onChange={(e) => setNewCamp({...newCamp, email: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                    placeholder="contact@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Expected Participants</label>
-                  <input
-                    type="number"
-                    value={newCamp.expected_participants}
-                    onChange={(e) => setNewCamp({...newCamp, expected_participants: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                    placeholder="50"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Preferred Date</label>
-                  <input
-                    type="date"
-                    value={newCamp.preferred_date}
-                    onChange={(e) => setNewCamp({...newCamp, preferred_date: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">Priority Level</label>
-                  <select
-                    value={newCamp.priority}
-                    onChange={(e) => setNewCamp({...newCamp, priority: e.target.value})}
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                  >
-                    <option value="low">🟢 Low Priority</option>
-                    <option value="medium">🟡 Medium Priority</option>
-                    <option value="high">🔴 High Priority</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">How did you hear about us?</label>
-                <input
-                  type="text"
-                  value={newCamp.hear_about_us}
-                  onChange={(e) => setNewCamp({...newCamp, hear_about_us: e.target.value})}
-                  className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300"
-                  placeholder="e.g., on instagram, through friend, website"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Additional Information</label>
-                <textarea
-                  value={newCamp.additional_info ?? ''}
-                  onChange={(e) => setNewCamp({...newCamp, additional_info: e.target.value})}
-                  rows={4}
-                  className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300 resize-none"
-                  placeholder="Any additional notes or special requirements..."
-                />
-              </div>
-            </div>
-
-            <div className="p-8 border-t border-gray-200/50 flex justify-end space-x-4">
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-2xl transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddCamp}
-                disabled={isLoading}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                    Adding...
-                  </div>
-                ) : (
-                  'Add Camp'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Camp Detail Modal */}
       {selectedCamp && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
@@ -518,7 +302,7 @@ const CampManagement = () => {
                   onClick={() => setSelectedCamp(null)}
                   className="p-2 hover:bg-gray-100 rounded-xl transition-colors duration-200 text-gray-500 hover:text-gray-700"
                 >
-                  <MoreHorizontal className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -540,6 +324,18 @@ const CampManagement = () => {
                         <span className="inline-flex items-center px-3 py-1 bg-white rounded-xl text-sm font-medium text-gray-700 shadow-sm">
                           {selectedCamp.association_type}
                         </span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500 mb-1">UUID</span>
+                        <span className="text-xs font-mono text-gray-700">{selectedCamp.uuid}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500 mb-1">Created By</span>
+                        <span className="text-sm text-gray-700">{selectedCamp.created_by}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500 mb-1">Created At</span>
+                        <span className="text-sm text-gray-700">{new Date(selectedCamp.created_at).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -591,7 +387,7 @@ const CampManagement = () => {
                 </div>
               </div>
 
-              {selectedCamp.hear_about_us && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                     <MapPin className="w-5 h-5 mr-2 text-indigo-600" />
@@ -602,15 +398,41 @@ const CampManagement = () => {
                     <span className="ml-2 capitalize">{selectedCamp.hear_about_us}</span>
                   </div>
                 </div>
-              )}
-
-              {selectedCamp.additional_info && (
                 <div className="bg-gradient-to-r from-gray-50 to-slate-100 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                     <AlertCircle className="w-5 h-5 mr-2 text-gray-600" />
                     Additional Information
                   </h3>
-                  <div className="text-gray-700 text-base">{selectedCamp.additional_info}</div>
+                  <div className="text-gray-700 text-base">{selectedCamp.additional_info || '-'}</div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                  <CheckCircle className="w-5 h-5 mr-2 text-emerald-600" />
+                  Status
+                </h3>
+                <div className="inline-flex items-center px-4 py-2 rounded-xl font-bold text-black text-sm"
+                  style={{ background: getStatusConfig(selectedCamp.status).color }}>
+                  {selectedCamp.status.toUpperCase()}
+                </div>
+              </div>
+
+              {/* Approve/Reject Buttons */}
+              {selectedCamp.status === 'pending' && (
+                <div className="flex justify-end gap-4 pb-6 pr-6">
+                  <button
+                    onClick={handleReject}
+                    className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-red-500 to-rose-500 text-white shadow hover:from-red-600 hover:to-rose-600 transition"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    onClick={handleApprove}
+                    className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow hover:from-emerald-600 hover:to-green-700 transition"
+                  >
+                    Approve
+                  </button>
                 </div>
               )}
             </div>

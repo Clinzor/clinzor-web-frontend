@@ -2,6 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Plus, Edit3, Trash2, Calendar, Percent, Tag, FileText, X, Check, XCircle, CheckCircle, Clock, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
 
 // Type definitions
+type ClinicDetails = {
+  name: string;
+  email: string;
+};
+
 type Offer = {
   uuid: string;
   title: string;
@@ -12,6 +17,8 @@ type Offer = {
   valid_to: string;
   discount_percentage: string;
   created_by: string;
+  created_by_type: 'ADMIN' | 'CLINIC';
+  clinic_details?: ClinicDetails;
 };
 
 type OfferFormData = {
@@ -21,6 +28,8 @@ type OfferFormData = {
   valid_from: string;
   valid_to: string;
   discount_percentage: string;
+  created_by_type: 'ADMIN' | 'CLINIC';
+  clinic_details?: ClinicDetails;
 };
 
 const OfferManagementTable = () => {
@@ -34,7 +43,8 @@ const OfferManagementTable = () => {
       valid_from: "2025-05-18T14:00:00Z",
       valid_to: "2025-05-20T10:00:00Z",
       discount_percentage: "50.00",
-      created_by: "admin@gmail.com"
+      created_by: "admin@gmail.com",
+      created_by_type: 'ADMIN',
     },
     {
       uuid: "34447087-365d-4074-81eb-f88b00fc6c70",
@@ -45,7 +55,8 @@ const OfferManagementTable = () => {
       valid_from: "2025-06-01T00:00:00Z",
       valid_to: "2025-06-30T23:59:59Z",
       discount_percentage: "30.00",
-      created_by: "manager@gmail.com"
+      created_by: "manager@gmail.com",
+      created_by_type: 'ADMIN',
     },
     {
       uuid: "34447087-365d-4074-81eb-f88b00fc6c71",
@@ -56,7 +67,8 @@ const OfferManagementTable = () => {
       valid_from: "2025-05-01T00:00:00Z",
       valid_to: "2025-05-31T23:59:59Z",
       discount_percentage: "25.00",
-      created_by: "system@gmail.com"
+      created_by: "system@gmail.com",
+      created_by_type: 'ADMIN',
     },
     {
       uuid: "34447087-365d-4074-81eb-f88b00fc6c72",
@@ -67,7 +79,8 @@ const OfferManagementTable = () => {
       valid_from: "2025-06-25T00:00:00Z",
       valid_to: "2025-06-26T23:59:59Z",
       discount_percentage: "70.00",
-      created_by: "admin@gmail.com"
+      created_by: "admin@gmail.com",
+      created_by_type: 'ADMIN',
     },
     {
       uuid: "34447087-365d-4074-81eb-f88b00fc6c73",
@@ -78,8 +91,36 @@ const OfferManagementTable = () => {
       valid_from: "2025-06-01T00:00:00Z",
       valid_to: "2025-12-31T23:59:59Z",
       discount_percentage: "15.00",
-      created_by: "manager@gmail.com"
-    }
+      created_by: "manager@gmail.com",
+      created_by_type: 'ADMIN',
+    },
+    // Example clinic offers
+    {
+      uuid: "34447087-365d-4074-81eb-f88b00fc6c74",
+      title: "Clinic Special",
+      offer_type: "PROMOTIONAL",
+      status: "APPROVED",
+      description: "Special offer from Clinic A",
+      valid_from: "2025-07-01T00:00:00Z",
+      valid_to: "2025-07-31T23:59:59Z",
+      discount_percentage: "20.00",
+      created_by: "clinicA@gmail.com",
+      created_by_type: 'CLINIC',
+      clinic_details: { name: 'Clinic A', email: 'clinicA@gmail.com' },
+    },
+    {
+      uuid: "34447087-365d-4074-81eb-f88b00fc6c75",
+      title: "Clinic B Monsoon",
+      offer_type: "ADMIN",
+      status: "PENDING",
+      description: "Monsoon offer from Clinic B",
+      valid_from: "2025-08-01T00:00:00Z",
+      valid_to: "2025-08-15T23:59:59Z",
+      discount_percentage: "10.00",
+      created_by: "clinicB@gmail.com",
+      created_by_type: 'CLINIC',
+      clinic_details: { name: 'Clinic B', email: 'clinicB@gmail.com' },
+    },
   ]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,25 +130,29 @@ const OfferManagementTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [offerViewType, setOfferViewType] = useState<'ADMIN' | 'CLINIC'>('ADMIN');
   const [formData, setFormData] = useState<OfferFormData>({
     title: '',
     offer_type: 'ADMIN',
     description: '',
     valid_from: '',
     valid_to: '',
-    discount_percentage: ''
+    discount_percentage: '',
+    created_by_type: 'ADMIN',
+    clinic_details: undefined,
   });
 
   // Filter and search logic
   const filteredOffers = useMemo(() => {
     return offers.filter(offer => {
+      const matchesViewType = offer.created_by_type === offerViewType;
       const matchesSearch = offer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            offer.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'ALL' || offer.status === statusFilter;
       const matchesType = typeFilter === 'ALL' || offer.offer_type === typeFilter;
-      return matchesSearch && matchesStatus && matchesType;
+      return matchesViewType && matchesSearch && matchesStatus && matchesType;
     });
-  }, [offers, searchTerm, statusFilter, typeFilter]);
+  }, [offers, searchTerm, statusFilter, typeFilter, offerViewType]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredOffers.length / itemsPerPage);
@@ -133,7 +178,9 @@ const OfferManagementTable = () => {
         description: offer.description,
         valid_from: new Date(offer.valid_from).toISOString().slice(0, 16),
         valid_to: new Date(offer.valid_to).toISOString().slice(0, 16),
-        discount_percentage: offer.discount_percentage
+        discount_percentage: offer.discount_percentage,
+        created_by_type: offer.created_by_type,
+        clinic_details: offer.clinic_details,
       });
     } else {
       setEditingOffer(null);
@@ -143,7 +190,9 @@ const OfferManagementTable = () => {
         description: '',
         valid_from: '',
         valid_to: '',
-        discount_percentage: ''
+        discount_percentage: '',
+        created_by_type: offerViewType,
+        clinic_details: offerViewType === 'CLINIC' ? { name: '', email: '' } : undefined,
       });
     }
     setIsModalOpen(true);
@@ -158,7 +207,9 @@ const OfferManagementTable = () => {
       description: '',
       valid_from: '',
       valid_to: '',
-      discount_percentage: ''
+      discount_percentage: '',
+      created_by_type: 'ADMIN',
+      clinic_details: undefined,
     });
   };
 
@@ -170,11 +221,25 @@ const OfferManagementTable = () => {
     }));
   };
 
+  // For clinic details in the form
+  const handleClinicDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      clinic_details: {
+        name: name === 'name' ? value : prev.clinic_details?.name || '',
+        email: name === 'email' ? value : prev.clinic_details?.email || '',
+      }
+    }));
+  };
+
   const handleSubmit = () => {
     if (!formData.title || !formData.description || !formData.valid_from || !formData.valid_to || !formData.discount_percentage) {
       return;
     }
-    
+    if (formData.created_by_type === 'CLINIC' && (!formData.clinic_details?.name || !formData.clinic_details?.email)) {
+      return;
+    }
     if (editingOffer) {
       setOffers(prev => prev.map(offer => 
         offer.uuid === editingOffer.uuid 
@@ -182,7 +247,7 @@ const OfferManagementTable = () => {
               ...offer,
               ...formData,
               valid_from: new Date(formData.valid_from).toISOString(),
-              valid_to: new Date(formData.valid_to).toISOString()
+              valid_to: new Date(formData.valid_to).toISOString(),
             }
           : offer
       ));
@@ -191,13 +256,12 @@ const OfferManagementTable = () => {
         uuid: Date.now().toString(),
         ...formData,
         status: 'PENDING',
-        created_by: 'admin@gmail.com',
+        created_by: formData.created_by_type === 'ADMIN' ? 'admin@gmail.com' : (formData.clinic_details?.email || ''),
         valid_from: new Date(formData.valid_from).toISOString(),
-        valid_to: new Date(formData.valid_to).toISOString()
+        valid_to: new Date(formData.valid_to).toISOString(),
       };
       setOffers(prev => [...prev, newOffer]);
     }
-    
     closeModal();
   };
 
@@ -256,6 +320,21 @@ const OfferManagementTable = () => {
               Add Offer
             </button>
           </div>
+          {/* Toggle for Admin/Clinic offers */}
+          <div className="mt-6 flex gap-2">
+            <button
+              className={`px-6 py-2 rounded-2xl font-semibold transition-all duration-200 ${offerViewType === 'ADMIN' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              onClick={() => setOfferViewType('ADMIN')}
+            >
+              Admin Offers
+            </button>
+            <button
+              className={`px-6 py-2 rounded-2xl font-semibold transition-all duration-200 ${offerViewType === 'CLINIC' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              onClick={() => setOfferViewType('CLINIC')}
+            >
+              Clinic Offers
+            </button>
+          </div>
         </div>
 
         {/* Filters and Search */}
@@ -303,6 +382,9 @@ const OfferManagementTable = () => {
               <thead className="bg-gray-50/50 backdrop-blur-sm border-b border-gray-100">
                 <tr>
                   <th className="text-left py-5 px-6 font-semibold text-gray-800 text-sm tracking-wide">Offer Details</th>
+                  {offerViewType === 'CLINIC' && (
+                    <th className="text-left py-5 px-6 font-semibold text-gray-800 text-sm tracking-wide">Clinic Details</th>
+                  )}
                   <th className="text-left py-5 px-6 font-semibold text-gray-800 text-sm tracking-wide">Type</th>
                   <th className="text-left py-5 px-6 font-semibold text-gray-800 text-sm tracking-wide">Discount</th>
                   <th className="text-left py-5 px-6 font-semibold text-gray-800 text-sm tracking-wide">Valid Period</th>
@@ -320,6 +402,14 @@ const OfferManagementTable = () => {
                         <p className="text-xs text-gray-400 mt-2">Created by {offer.created_by}</p>
                       </div>
                     </td>
+                    {offerViewType === 'CLINIC' && (
+                      <td className="py-5 px-6">
+                        <div>
+                          <div className="font-semibold text-gray-800">{offer.clinic_details?.name}</div>
+                          <div className="text-sm text-gray-500">{offer.clinic_details?.email}</div>
+                        </div>
+                      </td>
+                    )}
                     <td className="py-5 px-6">
                       <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border ${getTypeColor(offer.offer_type)}`}>
                         <Tag size={14} />
@@ -499,7 +589,39 @@ const OfferManagementTable = () => {
                   required
                 />
               </div>
-
+              {/* Clinic details fields if Clinic offer */}
+              {formData.created_by_type === 'CLINIC' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Clinic Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.clinic_details?.name || ''}
+                      onChange={handleClinicDetailChange}
+                      className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-lg"
+                      placeholder="Enter clinic name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Clinic Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.clinic_details?.email || ''}
+                      onChange={handleClinicDetailChange}
+                      className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-lg"
+                      placeholder="Enter clinic email"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Offer Type

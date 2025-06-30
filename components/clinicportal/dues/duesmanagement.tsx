@@ -69,6 +69,20 @@ interface Clinic {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 }
 
+// Simulated bookings data
+interface Booking {
+  id: string;
+  clinic_id: string;
+  clinic_name: string;
+  patient_name: string;
+  date: string;
+  amount_due: number;
+  total_cost: number;
+  service_details: string;
+  mode_of_consultation: 'Online' | 'In-Clinic';
+  status: 'NEW' | 'COMPLETED' | 'CANCELLED';
+}
+
 // Sample data
 const sampleClinics: Clinic[] = [
   {
@@ -139,6 +153,45 @@ const sampleTransactions: Transaction[] = [
   }
 ];
 
+const sampleBookings: Booking[] = [
+  {
+    id: 'bk_001',
+    clinic_id: '5a1f8f39-ca38-464c-93c5-ea8edbd6c03f',
+    clinic_name: 'MediCare Clinic',
+    patient_name: 'John Doe',
+    date: '2025-01-16T09:00:00Z',
+    amount_due: 500,
+    total_cost: 1200,
+    service_details: 'General Consultation',
+    mode_of_consultation: 'Online',
+    status: 'NEW',
+  },
+  {
+    id: 'bk_002',
+    clinic_id: '7b2e9e4a-db49-575d-a4c6-fb9fced7d14g',
+    clinic_name: 'City Health Center',
+    patient_name: 'Jane Smith',
+    date: '2025-01-16T10:30:00Z',
+    amount_due: 700,
+    total_cost: 1500,
+    service_details: 'Dental Checkup',
+    mode_of_consultation: 'In-Clinic',
+    status: 'NEW',
+  },
+  {
+    id: 'bk_003',
+    clinic_id: '8c3f0f5b-ec5a-686e-b5d7-gca0ged8e25h',
+    clinic_name: 'Family Wellness Clinic',
+    patient_name: 'Alice Brown',
+    date: '2025-01-15T14:00:00Z',
+    amount_due: 300,
+    total_cost: 900,
+    service_details: 'Pediatric Consultation',
+    mode_of_consultation: 'Online',
+    status: 'COMPLETED',
+  },
+];
+
 const DuesManagement: React.FC = () => {
   // State management
   const [duesSummary, setDuesSummary] = useState<DuesSummary>({
@@ -153,6 +206,8 @@ const DuesManagement: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>(sampleBookings);
+  const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -164,6 +219,40 @@ const DuesManagement: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDescription, setPaymentDescription] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Payment History modal enhancements
+  const [paymentHistorySearch, setPaymentHistorySearch] = useState('');
+  const [paymentHistoryStatus, setPaymentHistoryStatus] = useState('');
+
+  // Filtered payment transactions for modal
+  const filteredPaymentTransactions = transactions.filter((transaction) => {
+    const matchesSearch =
+      transaction.clinic_name.toLowerCase().includes(paymentHistorySearch.toLowerCase()) ||
+      transaction.id.toLowerCase().includes(paymentHistorySearch.toLowerCase());
+    const matchesStatus = paymentHistoryStatus ? transaction.status === paymentHistoryStatus : true;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Export to CSV
+  const exportPaymentHistoryToCSV = () => {
+    const headers = ['Transaction ID', 'Clinic', 'Amount', 'Status', 'Date', 'Description'];
+    const rows = filteredPaymentTransactions.map((t) => [
+      t.id,
+      t.clinic_name,
+      t.amount,
+      t.status,
+      formatDate(t.created_at),
+      t.description
+    ]);
+    let csvContent = headers.join(',') + '\n' + rows.map(r => r.map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'payment_history.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Helper functions
   const formatCurrency = (amount: number) => {
@@ -287,6 +376,11 @@ const DuesManagement: React.FC = () => {
     return matchesSearch && matchesStatus && matchesClinic;
   });
 
+  // Filter bookings for new bookings with dues
+  const newBookingsWithDues = bookings.filter(
+    (b) => b.status === 'NEW' && b.amount_due > 0
+  );
+
   useEffect(() => {
     refreshDuesSummary();
   }, [clinics]);
@@ -328,13 +422,14 @@ const DuesManagement: React.FC = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Total Due amount to Clinzor */}
           <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl">
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Total Dues</p>
+                <p className="text-sm text-slate-500 font-medium">Total Due to Clinzor</p>
                 <p className="text-2xl font-bold text-slate-900">{formatCurrency(duesSummary.total_dues)}</p>
               </div>
             </div>
@@ -343,14 +438,30 @@ const DuesManagement: React.FC = () => {
               <span className="text-sm text-blue-600 font-medium">Outstanding</span>
             </div>
           </div>
-
+          {/* Total Bookings Made */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-500 font-medium">Total Bookings</p>
+                <p className="text-2xl font-bold text-slate-900">{bookings.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+              <span className="text-sm text-green-600 font-medium">Bookings</span>
+            </div>
+          </div>
+          {/* Total Amount Paid to Clinzor */}
           <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl">
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Total Paid</p>
+                <p className="text-sm text-slate-500 font-medium">Total Paid to Clinzor</p>
                 <p className="text-2xl font-bold text-slate-900">{formatCurrency(duesSummary.total_paid)}</p>
               </div>
             </div>
@@ -359,37 +470,90 @@ const DuesManagement: React.FC = () => {
               <span className="text-sm text-emerald-600 font-medium">Collected</span>
             </div>
           </div>
-
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl">
-                <Clock className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Remaining</p>
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(duesSummary.remaining_dues)}</p>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <TrendingDown className="w-4 h-4 text-amber-500 mr-1" />
-              <span className="text-sm text-amber-600 font-medium">Pending</span>
-            </div>
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
+          {/* Payment History */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowPaymentHistoryModal(true)}>
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
-                <Building className="w-6 h-6 text-white" />
+                <Receipt className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Active Clinics</p>
-                <p className="text-2xl font-bold text-slate-900">{clinics.filter(c => c.status === 'ACTIVE').length}</p>
+                <p className="text-sm text-slate-500 font-medium">Payment History</p>
+                <p className="text-2xl font-bold text-slate-900">View</p>
               </div>
             </div>
             <div className="flex items-center">
-              <Users className="w-4 h-4 text-purple-500 mr-1" />
-              <span className="text-sm text-purple-600 font-medium">Registered</span>
+              <TrendingUp className="w-4 h-4 text-purple-500 mr-1" />
+              <span className="text-sm text-purple-600 font-medium">History</span>
             </div>
+          </div>
+        </div>
+
+        {/* New Bookings with Dues to Clinzor */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">New Bookings with Dues to Clinzor</h2>
+          </div>
+          <div className="space-y-3 sm:space-y-4">
+            {newBookingsWithDues.length === 0 ? (
+              <div className="text-center py-8 sm:py-12">
+                <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">No new bookings with dues</h3>
+                <p className="text-slate-500 text-xs sm:text-sm">All bookings are settled</p>
+              </div>
+            ) : (
+              newBookingsWithDues.map((booking) => {
+                const activeDue = booking.amount_due > 0 && booking.status === 'NEW';
+                return (
+                  <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3 sm:gap-0">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900 text-sm sm:text-base">{booking.patient_name}</h3>
+                        <p className="text-xs sm:text-sm text-slate-600">{booking.clinic_name}</p>
+                        <p className="text-xs text-slate-500 mt-1">{booking.service_details}</p>
+                        <p className="text-xs text-slate-500">{formatDate(booking.date)}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center space-x-4 sm:space-x-6 mt-2 sm:mt-0">
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm text-slate-500">Total Cost</p>
+                        <p className="font-bold text-slate-700 text-sm sm:text-base">{formatCurrency(booking.total_cost)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm text-slate-500">Due to Clinzor</p>
+                        <p className="font-bold text-red-600 text-sm sm:text-base">{formatCurrency(booking.amount_due)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm text-slate-500">Mode</p>
+                        <p className="font-bold text-blue-600 text-sm sm:text-base">{booking.mode_of_consultation}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs sm:text-sm text-slate-500">Active Due</p>
+                        <span className={`inline-flex items-center px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold border ${activeDue ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'}`}>
+                          {activeDue ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          // Set selected clinic to the booking's clinic for payment modal
+                          const clinic = clinics.find(c => c.id === booking.clinic_id) || null;
+                          setSelectedClinic(clinic);
+                          setShowPaymentModal(true);
+                          setPaymentAmount(String(booking.amount_due));
+                          setPaymentDescription(`Payment for booking ${booking.id}`);
+                        }}
+                        className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors mt-2 sm:mt-0"
+                        disabled={!activeDue}
+                      >
+                        Pay Now
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -716,6 +880,110 @@ const DuesManagement: React.FC = () => {
                   <span className="block text-xs text-slate-500 font-medium mb-1">Description</span>
                   <span className="text-xs sm:text-sm text-slate-900">{selectedTransaction.description}</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment History Modal */}
+      {showPaymentHistoryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl w-full max-w-4xl border border-white/20 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button
+              onClick={() => setShowPaymentHistoryModal(false)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="p-2 sm:p-6 flex-1 flex flex-col overflow-hidden">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Receipt className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Payment History</h2>
+                <p className="text-slate-500 text-xs sm:text-sm">All payment transactions</p>
+              </div>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4 w-full">
+                <input
+                  type="text"
+                  placeholder="Search by clinic or transaction ID..."
+                  value={paymentHistorySearch}
+                  onChange={e => setPaymentHistorySearch(e.target.value)}
+                  className="w-full sm:w-1/2 px-3 py-2 border border-slate-200 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+                <select
+                  value={paymentHistoryStatus}
+                  onChange={e => setPaymentHistoryStatus(e.target.value)}
+                  className="w-full sm:w-1/4 px-3 py-2 border border-slate-200 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                >
+                  <option value="">All Status</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="CREATED">Created</option>
+                  <option value="FAILED">Failed</option>
+                </select>
+              </div>
+              <div className="flex-1 overflow-auto w-full">
+                <table className="w-full min-w-[700px] text-xs sm:text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Transaction</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Clinic</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {filteredPaymentTransactions.map((transaction) => {
+                      const statusConfig = getStatusConfig(transaction.status);
+                      const StatusIcon = statusConfig.icon;
+                      return (
+                        <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <div className="flex items-center space-x-2 sm:space-x-3">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                                <Receipt className="w-4 h-4 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900 text-xs sm:text-sm">{transaction.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <p className="font-medium text-slate-900 text-xs sm:text-sm">{transaction.clinic_name}</p>
+                            <p className="text-xs sm:text-sm text-slate-600 capitalize">{transaction.type.toLowerCase()}</p>
+                          </td>
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <p className="font-bold text-slate-900 text-xs sm:text-sm">{formatCurrency(transaction.amount)}</p>
+                          </td>
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <span className={`inline-flex items-center px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold border ${statusConfig.color}`}>
+                              <StatusIcon className="w-3 h-3 mr-1" />
+                              {transaction.status}
+                            </span>
+                          </td>
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <p className="text-xs sm:text-sm text-slate-600">{formatDate(transaction.created_at)}</p>
+                          </td>
+                          <td className="py-2 sm:py-4 px-2 sm:px-4">
+                            <p className="text-xs sm:text-sm text-slate-600">{transaction.description}</p>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {filteredPaymentTransactions.length === 0 && (
+                  <div className="text-center py-8 sm:py-12">
+                    <Receipt className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">No payment transactions found</h3>
+                    <p className="text-slate-500 text-xs sm:text-sm">No payments have been made yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
