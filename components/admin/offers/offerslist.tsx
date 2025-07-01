@@ -312,13 +312,15 @@ const OfferManagementTable = () => {
               <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Offer Management</h1>
               <p className="text-gray-500 mt-2 text-lg">Manage your promotional offers and discounts</p>
             </div>
-            <button
-              onClick={() => openModal()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-            >
-              <Plus size={20} />
-              Add Offer
-            </button>
+            {offerViewType === 'ADMIN' && (
+              <button
+                onClick={() => openModal()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-medium flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+              >
+                <Plus size={20} />
+                Add Offer
+              </button>
+            )}
           </div>
           {/* Toggle for Admin/Clinic offers */}
           <div className="mt-6 flex gap-2">
@@ -444,38 +446,61 @@ const OfferManagementTable = () => {
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center justify-end gap-2">
-                        {offer.status === 'PENDING' && (
+                        {offer.created_by_type === 'CLINIC' ? (
+                          offer.status === 'PENDING' && (
+                            <>
+                              <button
+                                onClick={() => updateOfferStatus(offer.uuid, 'APPROVED')}
+                                className="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all duration-200 group-hover:scale-105"
+                                title="Approve"
+                              >
+                                <CheckCircle size={18} />
+                              </button>
+                              <button
+                                onClick={() => updateOfferStatus(offer.uuid, 'REJECTED')}
+                                className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 group-hover:scale-105"
+                                title="Reject"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            </>
+                          )
+                        ) : (
                           <>
+                            {offer.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => updateOfferStatus(offer.uuid, 'APPROVED')}
+                                  className="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all duration-200 group-hover:scale-105"
+                                  title="Approve"
+                                >
+                                  <CheckCircle size={18} />
+                                </button>
+                                <button
+                                  onClick={() => updateOfferStatus(offer.uuid, 'REJECTED')}
+                                  className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 group-hover:scale-105"
+                                  title="Reject"
+                                >
+                                  <XCircle size={18} />
+                                </button>
+                              </>
+                            )}
                             <button
-                              onClick={() => updateOfferStatus(offer.uuid, 'APPROVED')}
-                              className="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all duration-200 group-hover:scale-105"
-                              title="Approve"
+                              onClick={() => openModal(offer)}
+                              className="p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all duration-200 group-hover:scale-105"
+                              title="Edit"
                             >
-                              <CheckCircle size={18} />
+                              <Edit3 size={18} />
                             </button>
                             <button
-                              onClick={() => updateOfferStatus(offer.uuid, 'REJECTED')}
+                              onClick={() => deleteOffer(offer.uuid)}
                               className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 group-hover:scale-105"
-                              title="Reject"
+                              title="Delete"
                             >
-                              <XCircle size={18} />
+                              <Trash2 size={18} />
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={() => openModal(offer)}
-                          className="p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all duration-200 group-hover:scale-105"
-                          title="Edit"
-                        >
-                          <Edit3 size={18} />
-                        </button>
-                        <button
-                          onClick={() => deleteOffer(offer.uuid)}
-                          className="p-2.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 group-hover:scale-105"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -557,7 +582,7 @@ const OfferManagementTable = () => {
       </div>
 
       {/* Modal */}
-      {isModalOpen && (
+      {isModalOpen && offerViewType === 'ADMIN' && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-8 border-b border-gray-100">

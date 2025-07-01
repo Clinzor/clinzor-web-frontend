@@ -368,7 +368,7 @@ export default function BookingManagement() {
             <div className="flex items-center gap-2">
               <Building size={14} className="text-blue-600" />
               <button
-                onClick={() => window.open(`/clinic/${booking.clinic_id}`, '_blank')}
+                onClick={() => window.open(`/admin/allclinics/${booking.clinic_id}`, '_blank')}
                 className="text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm transition-colors"
               >
                 {booking.clinic_name}
@@ -548,20 +548,6 @@ export default function BookingManagement() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex space-x-4">
-            <button
-              onClick={() => {
-                setActiveTab('ALL');
-                setSelectedBookingType('ALL');
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                activeTab === 'ALL'
-                  ? 'bg-blue-50 text-blue-600 font-medium'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Users size={20} />
-              <span>All Bookings ({bookings.length})</span>
-            </button>
             <button
               onClick={() => {
                 setActiveTab('VIDEO_CALL');
@@ -769,6 +755,10 @@ export default function BookingManagement() {
                       <div className="flex items-center gap-2">
                         <Building size={16} className="text-gray-400" />
                         <span className="text-gray-900">{selectedBooking.clinic_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">Service Type:</span>
+                        <span className="text-emerald-700 font-medium text-sm bg-emerald-50 px-2 py-1 rounded-full">{selectedBooking.service_type}</span>
                       </div>
                     </div>
                   </div>

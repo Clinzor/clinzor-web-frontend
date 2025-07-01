@@ -29,126 +29,106 @@ import {
 
 interface ServiceRequest {
   id: string;
-  clinicName: string;
-  clinicEmail: string;
-  clinicPhone: string;
-  clinicAddress: string;
-  serviceName: string;
-  serviceDescription: string;
-  serviceImage: string | null;
-  consultationFeeVideo: string | null;
-  consultationFeePhysical: string | null;
-  consultationFeeHome: string | null;
-  treatmentFeeVideo: string | null;
-  treatmentFeePhysical: string | null;
-  treatmentFeeHome: string | null;
-  isVideoCallAvailable: boolean;
-  isPhysicalVisitAvailable: boolean;
-  isHomeVisitAvailable: boolean;
-  requestedDate: string;
+  clinic: string;
+  service: string;
+  consultation_charge_video_call: number | null;
+  consultation_charge_home_visit: number | null;
+  treatment_charge_video_call: number | null;
+  treatment_charge_physical_visit: number | null;
+  consultation_charge_physical_visit: number | null;
+  treatment_charge_home_visit: number | null;
+  is_video_call: boolean;
+  is_home_service: boolean;
+  is_clinic_visit: boolean;
+  clinic_provided_name?: string;
+  description?: string;
+  image?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  rejectionReason: string | null;
-  additionalInfo: string | null;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  rejectionReason?: string | null;
+  requestedDate: string;
 }
 
 const ClinicServiceRequests: React.FC = () => {
   const [requests, setRequests] = useState<ServiceRequest[]>([
     {
       id: '1',
-      clinicName: 'CardioHealth Medical Center',
-      clinicEmail: 'admin@cardiohealth.com',
-      clinicPhone: '+91 98765 43210',
-      clinicAddress: '123 Medical District, Mumbai, Maharashtra 400001',
-      serviceName: 'Advanced Cardiology',
-      serviceDescription: 'Comprehensive cardiac care including ECG, Echo, stress tests, and cardiac catheterization. Specialized in treating heart diseases, arrhythmias, and preventive cardiology.',
-      serviceImage: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop',
-      consultationFeeVideo: '500',
-      consultationFeePhysical: '800',
-      consultationFeeHome: '1200',
-      treatmentFeeVideo: '300',
-      treatmentFeePhysical: '600',
-      treatmentFeeHome: '1000',
-      isVideoCallAvailable: true,
-      isPhysicalVisitAvailable: true,
-      isHomeVisitAvailable: true,
-      requestedDate: '2024-06-25',
+      clinic: '5a1f8f39-ca38-464c-93c5-ea8edbd6c03f',
+      service: '4ffadff3-c90f-4fb4-b798-3c6fcab21020',
+      consultation_charge_video_call: 400,
+      consultation_charge_home_visit: 200,
+      treatment_charge_video_call: 800,
+      treatment_charge_physical_visit: 500,
+      consultation_charge_physical_visit: 200,
+      treatment_charge_home_visit: 600,
+      is_video_call: true,
+      is_home_service: false,
+      is_clinic_visit: true,
+      clinic_provided_name: 'Podiatric Treatment',
+      description: 'Assessment, diagnosis, and treatment of conditions affecting the feet and lower limbs',
+      image: 'https://clinzor.s3.ap-south-1.amazonaws.com/clinic_images/0abd6f91-ab5f-437d-9020-ea074a56ae04_cardiology.jpeg',
       status: 'PENDING',
       rejectionReason: null,
-      additionalInfo: 'We have state-of-the-art equipment and certified cardiologists with 15+ years experience.',
-      priority: 'HIGH'
+      requestedDate: '2024-06-25',
     },
     {
       id: '2',
-      clinicName: 'NeuroWise Clinic',
-      clinicEmail: 'contact@neurowise.com',
-      clinicPhone: '+91 87654 32109',
-      clinicAddress: '456 Brain Street, Delhi, Delhi 110001',
-      serviceName: 'Neurology & Brain Health',
-      serviceDescription: 'Complete neurological evaluation and treatment for headaches, seizures, stroke, Parkinson\'s disease, and memory disorders.',
-      serviceImage: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-      consultationFeeVideo: '400',
-      consultationFeePhysical: '600',
-      consultationFeeHome: '900',
-      treatmentFeeVideo: '250',
-      treatmentFeePhysical: '500',
-      treatmentFeeHome: '800',
-      isVideoCallAvailable: true,
-      isPhysicalVisitAvailable: true,
-      isHomeVisitAvailable: false,
-      requestedDate: '2024-06-28',
+      clinic: 'clinic-2',
+      service: 'service-2',
+      consultation_charge_video_call: 300,
+      consultation_charge_home_visit: null,
+      treatment_charge_video_call: 700,
+      treatment_charge_physical_visit: 400,
+      consultation_charge_physical_visit: 150,
+      treatment_charge_home_visit: null,
+      is_video_call: true,
+      is_home_service: false,
+      is_clinic_visit: true,
+      clinic_provided_name: 'Dermatology',
+      description: 'Skin care and treatment for various dermatological conditions.',
+      image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=300&fit=crop',
       status: 'APPROVED',
       rejectionReason: null,
-      additionalInfo: 'Equipped with EEG, EMG, and advanced neuroimaging facilities.',
-      priority: 'MEDIUM'
+      requestedDate: '2024-06-28',
     },
     {
       id: '3',
-      clinicName: 'Family Care Plus',
-      clinicEmail: 'info@familycareplus.com',
-      clinicPhone: '+91 76543 21098',
-      clinicAddress: '789 Wellness Avenue, Bangalore, Karnataka 560001',
-      serviceName: 'General Medicine',
-      serviceDescription: 'Primary healthcare services including routine checkups, vaccinations, health screenings, and treatment of common illnesses.',
-      serviceImage: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=400&h=300&fit=crop',
-      consultationFeeVideo: '200',
-      consultationFeePhysical: '300',
-      consultationFeeHome: '500',
-      treatmentFeeVideo: '150',
-      treatmentFeePhysical: '250',
-      treatmentFeeHome: '400',
-      isVideoCallAvailable: true,
-      isPhysicalVisitAvailable: true,
-      isHomeVisitAvailable: true,
-      requestedDate: '2024-06-20',
+      clinic: 'clinic-3',
+      service: 'service-3',
+      consultation_charge_video_call: 250,
+      consultation_charge_home_visit: 100,
+      treatment_charge_video_call: 500,
+      treatment_charge_physical_visit: 300,
+      consultation_charge_physical_visit: 100,
+      treatment_charge_home_visit: 400,
+      is_video_call: false,
+      is_home_service: true,
+      is_clinic_visit: true,
+      clinic_provided_name: 'General Medicine',
+      description: 'Routine checkups, vaccinations, and treatment of common illnesses.',
+      image: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=400&h=300&fit=crop',
       status: 'REJECTED',
       rejectionReason: 'Insufficient documentation provided. Please submit proper medical certifications and facility photos.',
-      additionalInfo: 'We serve families with comprehensive primary care.',
-      priority: 'LOW'
+      requestedDate: '2024-06-20',
     },
     {
       id: '4',
-      clinicName: 'Orthopedic Excellence',
-      clinicEmail: 'admin@orthoexcellence.com',
-      clinicPhone: '+91 65432 10987',
-      clinicAddress: '321 Bone Street, Chennai, Tamil Nadu 600001',
-      serviceName: 'Orthopedic Surgery',
-      serviceDescription: 'Specialized orthopedic care including joint replacement, sports medicine, spine surgery, and trauma care.',
-      serviceImage: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=300&fit=crop',
-      consultationFeeVideo: '600',
-      consultationFeePhysical: '1000',
-      consultationFeeHome: null,
-      treatmentFeeVideo: '400',
-      treatmentFeePhysical: '800',
-      treatmentFeeHome: null,
-      isVideoCallAvailable: true,
-      isPhysicalVisitAvailable: true,
-      isHomeVisitAvailable: false,
-      requestedDate: '2024-06-29',
+      clinic: 'clinic-4',
+      service: 'service-4',
+      consultation_charge_video_call: 600,
+      consultation_charge_home_visit: null,
+      treatment_charge_video_call: 900,
+      treatment_charge_physical_visit: 800,
+      consultation_charge_physical_visit: 400,
+      treatment_charge_home_visit: null,
+      is_video_call: true,
+      is_home_service: false,
+      is_clinic_visit: true,
+      clinic_provided_name: 'Orthopedic Surgery',
+      description: 'Joint replacement, sports medicine, spine surgery, and trauma care.',
+      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=300&fit=crop',
       status: 'PENDING',
       rejectionReason: null,
-      additionalInfo: 'Advanced surgical facilities with robotic surgery capabilities.',
-      priority: 'HIGH'
+      requestedDate: '2024-06-29',
     }
   ]);
 
@@ -238,12 +218,10 @@ const ClinicServiceRequests: React.FC = () => {
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = 
-      request.clinicName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.clinicEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      request.clinic.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.service.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || request.status === statusFilter;
-    const matchesPriority = priorityFilter === 'ALL' || request.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch && matchesStatus;
   });
 
   // Pagination logic
@@ -255,7 +233,7 @@ const ClinicServiceRequests: React.FC = () => {
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, priorityFilter]);
+  }, [searchTerm, statusFilter]);
 
   const getStatusCounts = () => {
     return {
@@ -358,28 +336,25 @@ const ClinicServiceRequests: React.FC = () => {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    {getServiceIcon(request.serviceName)}
+                    {getServiceIcon(request.service)}
                     <div>
-                      <h3 className="font-semibold text-gray-900 text-lg">{request.serviceName}</h3>
-                      <p className="text-sm text-gray-600">{request.clinicName}</p>
+                      <h3 className="font-semibold text-gray-900 text-lg">{request.service}</h3>
+                      <p className="text-sm text-gray-600">{request.clinic}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end space-y-2">
                     <span className={`text-xs px-3 py-1 rounded-full border font-medium ${getStatusColor(request.status)}`}>
                       {request.status}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded-full border font-medium ${getPriorityColor(request.priority)}`}>
-                      {request.priority}
-                    </span>
                   </div>
                 </div>
 
                 {/* Service Image */}
-                {request.serviceImage && (
+                {request.image && (
                   <div className="mb-4 rounded-lg overflow-hidden">
                     <img 
-                      src={request.serviceImage} 
-                      alt={request.serviceName}
+                      src={request.image} 
+                      alt={request.service}
                       className="w-full h-48 object-cover"
                     />
                   </div>
@@ -393,29 +368,29 @@ const ClinicServiceRequests: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Mail className="w-4 h-4" />
-                    <span>{request.clinicEmail}</span>
+                    <span>{request.clinic_provided_name}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Phone className="w-4 h-4" />
-                    <span>{request.clinicPhone}</span>
+                    <span>{request.clinic_provided_name}</span>
                   </div>
                 </div>
 
                 {/* Service Types */}
                 <div className="flex items-center space-x-2 mb-4">
-                  {request.isVideoCallAvailable && (
+                  {request.is_video_call && (
                     <span className="flex items-center space-x-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
                       <Video className="w-3 h-3" />
                       <span>Video</span>
                     </span>
                   )}
-                  {request.isPhysicalVisitAvailable && (
+                  {request.is_clinic_visit && (
                     <span className="flex items-center space-x-1 text-xs bg-green-50 text-green-600 px-2 py-1 rounded-md">
                       <Building className="w-3 h-3" />
                       <span>Physical</span>
                     </span>
                   )}
-                  {request.isHomeVisitAvailable && (
+                  {request.is_home_service && (
                     <span className="flex items-center space-x-1 text-xs bg-purple-50 text-purple-600 px-2 py-1 rounded-md">
                       <Home className="w-3 h-3" />
                       <span>Home</span>
@@ -427,22 +402,22 @@ const ClinicServiceRequests: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-3 mb-4">
                   <div className="text-xs text-gray-600 mb-2">Consultation Fees</div>
                   <div className="grid grid-cols-3 gap-2 text-xs">
-                    {request.consultationFeeVideo && (
+                    {request.consultation_charge_video_call && (
                       <div className="text-center">
                         <div className="text-gray-500">Video</div>
-                        <div className="font-medium">₹{request.consultationFeeVideo}</div>
+                        <div className="font-medium">₹{request.consultation_charge_video_call}</div>
                       </div>
                     )}
-                    {request.consultationFeePhysical && (
+                    {request.consultation_charge_physical_visit && (
                       <div className="text-center">
                         <div className="text-gray-500">Physical</div>
-                        <div className="font-medium">₹{request.consultationFeePhysical}</div>
+                        <div className="font-medium">₹{request.consultation_charge_physical_visit}</div>
                       </div>
                     )}
-                    {request.consultationFeeHome && (
+                    {request.consultation_charge_home_visit && (
                       <div className="text-center">
                         <div className="text-gray-500">Home</div>
-                        <div className="font-medium">₹{request.consultationFeeHome}</div>
+                        <div className="font-medium">₹{request.consultation_charge_home_visit}</div>
                       </div>
                     )}
                   </div>
@@ -599,8 +574,8 @@ const ClinicServiceRequests: React.FC = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-3">
-                  {getServiceIcon(viewingRequest.serviceName)}
-                  {viewingRequest.serviceName}
+                  {getServiceIcon(viewingRequest.service)}
+                  {viewingRequest.service}
                 </h2>
                 <button
                   onClick={() => setViewingRequest(null)}
@@ -614,11 +589,11 @@ const ClinicServiceRequests: React.FC = () => {
                 {/* Left Column */}
                 <div className="space-y-6">
                   {/* Service Image */}
-                  {viewingRequest.serviceImage && (
+                  {viewingRequest.image && (
                     <div className="rounded-lg overflow-hidden">
                       <img 
-                        src={viewingRequest.serviceImage} 
-                        alt={viewingRequest.serviceName}
+                        src={viewingRequest.image} 
+                        alt={viewingRequest.service}
                         className="w-full h-64 object-cover"
                       />
                     </div>
@@ -630,19 +605,19 @@ const ClinicServiceRequests: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-sm">
                         <Building className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-900">{viewingRequest.clinicName}</span>
+                        <span className="text-gray-900">{viewingRequest.clinic}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm">
                         <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{viewingRequest.clinicAddress}</span>
+                        <span className="text-gray-600">{viewingRequest.clinic_provided_name}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm">
                         <Mail className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{viewingRequest.clinicEmail}</span>
+                        <span className="text-gray-600">{viewingRequest.clinic_provided_name}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm">
                         <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{viewingRequest.clinicPhone}</span>
+                        <span className="text-gray-600">{viewingRequest.clinic_provided_name}</span>
                       </div>
                     </div>
                   </div>
@@ -650,7 +625,7 @@ const ClinicServiceRequests: React.FC = () => {
                   {/* Service Description */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">Service Description</h3>
-                    <p className="text-sm text-gray-600">{viewingRequest.serviceDescription}</p>
+                    <p className="text-sm text-gray-600">{viewingRequest.description}</p>
                   </div>
                 </div>
 
@@ -663,18 +638,13 @@ const ClinicServiceRequests: React.FC = () => {
                         {viewingRequest.status}
                       </span>
                     </div>
-                    <div>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(viewingRequest.priority)}`}>
-                        {viewingRequest.priority} Priority
-                      </span>
-                    </div>
                   </div>
 
                   {/* Service Types */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-3">Available Service Types</h3>
                     <div className="grid grid-cols-1 gap-3">
-                      {viewingRequest.isVideoCallAvailable && (
+                      {viewingRequest.is_video_call && (
                         <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                           <div className="flex items-center space-x-3">
                             <Video className="w-5 h-5 text-blue-500" />
@@ -684,13 +654,13 @@ const ClinicServiceRequests: React.FC = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultationFeeVideo}</p>
+                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultation_charge_video_call}</p>
                             <p className="text-xs text-gray-500">Consultation</p>
                           </div>
                         </div>
                       )}
 
-                      {viewingRequest.isPhysicalVisitAvailable && (
+                      {viewingRequest.is_clinic_visit && (
                         <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                           <div className="flex items-center space-x-3">
                             <Building className="w-5 h-5 text-green-500" />
@@ -700,13 +670,13 @@ const ClinicServiceRequests: React.FC = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultationFeePhysical}</p>
+                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultation_charge_physical_visit}</p>
                             <p className="text-xs text-gray-500">Consultation</p>
                           </div>
                         </div>
                       )}
 
-                      {viewingRequest.isHomeVisitAvailable && (
+                      {viewingRequest.is_home_service && (
                         <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                           <div className="flex items-center space-x-3">
                             <Home className="w-5 h-5 text-purple-500" />
@@ -716,7 +686,7 @@ const ClinicServiceRequests: React.FC = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultationFeeHome}</p>
+                            <p className="text-sm font-medium text-gray-900">₹{viewingRequest.consultation_charge_home_visit}</p>
                             <p className="text-xs text-gray-500">Consultation</p>
                           </div>
                         </div>
@@ -725,10 +695,10 @@ const ClinicServiceRequests: React.FC = () => {
                   </div>
 
                   {/* Additional Information */}
-                  {viewingRequest.additionalInfo && (
+                  {viewingRequest.description && (
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h3 className="font-semibold text-gray-900 mb-2">Additional Information</h3>
-                      <p className="text-sm text-gray-600">{viewingRequest.additionalInfo}</p>
+                      <p className="text-sm text-gray-600">{viewingRequest.description}</p>
                     </div>
                   )}
 

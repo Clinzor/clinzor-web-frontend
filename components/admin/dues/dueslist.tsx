@@ -160,6 +160,159 @@ const sampleBookings: Booking[] = [
     clinic_name: "Sunrise Clinic",
     clinic_id: "clinic-1",
     service_type: "Dermatology"
+  },
+  {
+    uuid: "mock-uuid-001",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "VIDEO_CALL",
+    booking_status: "PENDING",
+    start_time: "2025-07-10T10:00:00Z",
+    end_time: "2025-07-10T10:30:00Z",
+    payment_status: "PENDING",
+    session_type: "CONSULTATION",
+    patient_name: "John Doe",
+    patient_mobile: "9876543210",
+    patient_email: "johndoe@email.com",
+    booking_charge: "500.00",
+    clinic_name: "Getwell Hospital",
+    clinic_id: "8c16ae4e-bb2a-48d3-90bf-7cb84d9a3a03",
+    service_type: "General Medicine"
+  },
+  {
+    uuid: "mock-uuid-002",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "PHYSICAL_VISIT",
+    booking_status: "PENDING",
+    start_time: "2025-07-11T11:00:00Z",
+    end_time: "2025-07-11T11:30:00Z",
+    payment_status: "PENDING",
+    session_type: "CONSULTATION",
+    patient_name: "Alice Smith",
+    patient_mobile: "9876543211",
+    patient_email: "alice@email.com",
+    booking_charge: "600.00",
+    clinic_name: "Aurbindo Medical Center",
+    clinic_id: "7b420213-bdba-487f-a5f5-553ab55a81e8",
+    service_type: "Cardiology"
+  },
+  {
+    uuid: "mock-uuid-003",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "VIDEO_CALL",
+    booking_status: "PENDING",
+    start_time: "2025-07-12T12:00:00Z",
+    end_time: "2025-07-12T12:30:00Z",
+    payment_status: "PENDING",
+    session_type: "SESSION",
+    patient_name: "Bob Lee",
+    patient_mobile: "9876543212",
+    patient_email: "bob@email.com",
+    booking_charge: "700.00",
+    clinic_name: "Greater Kailash Hospital",
+    clinic_id: "be080dc7-ba7e-4e44-ae49-5a8a5c604a62",
+    service_type: "Orthopedics"
+  },
+  {
+    uuid: "mock-uuid-004",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "PHYSICAL_VISIT",
+    booking_status: "PENDING",
+    start_time: "2025-07-13T13:00:00Z",
+    end_time: "2025-07-13T13:30:00Z",
+    payment_status: "PENDING",
+    session_type: "CONSULTATION",
+    patient_name: "Carol King",
+    patient_mobile: "9876543213",
+    patient_email: "carol@email.com",
+    booking_charge: "800.00",
+    clinic_name: "Harmony Health Hub",
+    clinic_id: "d7204f42-d700-40b9-b29f-045dcd023e4a",
+    service_type: "Dermatology"
+  },
+  {
+    uuid: "mock-uuid-005",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "VIDEO_CALL",
+    booking_status: "PENDING",
+    start_time: "2025-07-14T14:00:00Z",
+    end_time: "2025-07-14T14:30:00Z",
+    payment_status: "PENDING",
+    session_type: "SESSION",
+    patient_name: "David Kim",
+    patient_mobile: "9876543214",
+    patient_email: "david@email.com",
+    booking_charge: "900.00",
+    clinic_name: "Sunrise Dental Clinic",
+    clinic_id: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f",
+    service_type: "Dental Care"
+  },
+  {
+    uuid: "mock-uuid-006",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "PHYSICAL_VISIT",
+    booking_status: "PENDING",
+    start_time: "2025-07-15T15:00:00Z",
+    end_time: "2025-07-15T15:30:00Z",
+    payment_status: "PENDING",
+    session_type: "CONSULTATION",
+    patient_name: "Eva Green",
+    patient_mobile: "9876543215",
+    patient_email: "eva@email.com",
+    booking_charge: "1000.00",
+    clinic_name: "City Care Clinic",
+    clinic_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    service_type: "Pediatrics"
+  },
+  {
+    uuid: "mock-uuid-007",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "VIDEO_CALL",
+    booking_status: "PENDING",
+    start_time: "2025-07-16T16:00:00Z",
+    end_time: "2025-07-16T16:30:00Z",
+    payment_status: "PENDING",
+    session_type: "SESSION",
+    patient_name: "Frank Moore",
+    patient_mobile: "9876543216",
+    patient_email: "frank@email.com",
+    booking_charge: "1100.00",
+    clinic_name: "Wellness Point",
+    clinic_id: "b2c3d4e5-f6a7-8901-bcde-fa2345678901",
+    service_type: "General Checkup"
+  },
+  {
+    uuid: "mock-uuid-008",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "PHYSICAL_VISIT",
+    booking_status: "PENDING",
+    start_time: "2025-07-17T17:00:00Z",
+    end_time: "2025-07-17T17:30:00Z",
+    payment_status: "PENDING",
+    session_type: "CONSULTATION",
+    patient_name: "Grace Hall",
+    patient_mobile: "9876543217",
+    patient_email: "grace@email.com",
+    booking_charge: "1200.00",
+    clinic_name: "Family Health Center",
+    clinic_id: "c3d4e5f6-a7b8-9012-cdef-ab3456789012",
+    service_type: "ENT"
+  },
+  {
+    uuid: "mock-uuid-009",
+    created_by: "mockuser@clinzor.com",
+    booking_type: "VIDEO_CALL",
+    booking_status: "PENDING",
+    start_time: "2025-07-18T18:00:00Z",
+    end_time: "2025-07-18T18:30:00Z",
+    payment_status: "PENDING",
+    session_type: "SESSION",
+    patient_name: "Henry Young",
+    patient_mobile: "9876543218",
+    patient_email: "henry@email.com",
+    booking_charge: "1300.00",
+    clinic_name: "Prime Medicals",
+    clinic_id: "d4e5f6a7-b8c9-0123-defa-bc4567890123",
+    service_type: "Neurology"
   }
 ];
 
@@ -297,6 +450,8 @@ const DueManagement = () => {
   const itemsPerPage = 9;
   const [dueTypeFilter, setDueTypeFilter] = useState('ALL');
   const [activeTab, setActiveTab] = useState('DUES');
+  const [sortBy, setSortBy] = useState<'default' | 'highest' | 'lowest'>('default');
+  const [modalBookingFilter, setModalBookingFilter] = useState<'ALL' | 'SERVICE' | 'SESSION'>('ALL');
 
   // Sample clinic data
   const clinicsData = [
@@ -368,9 +523,19 @@ const DueManagement = () => {
     return matchesSearch;
   });
 
+  // Sorting logic for clinics
+  const sortedClinics = (() => {
+    if (sortBy === 'highest') {
+      return [...filteredClinics].sort((a, b) => b.due_detail.remaining_dues - a.due_detail.remaining_dues);
+    } else if (sortBy === 'lowest') {
+      return [...filteredClinics].sort((a, b) => a.due_detail.remaining_dues - b.due_detail.remaining_dues);
+    }
+    return filteredClinics;
+  })();
+
   // Pagination logic
-  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
-  const paginatedClinics = filteredClinics.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedClinics.length / itemsPerPage);
+  const paginatedClinics = sortedClinics.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const getStatusInfo = (remaining: number) => {
     if (remaining > 0) return { 
@@ -435,11 +600,11 @@ const DueManagement = () => {
   const clinicIds = clinicsData.map(c => c.clinic_uuid);
   const filteredPaymentRecords = samplePaymentRecords.filter(r => clinicIds.includes(r.clinicId));
 
-  // Helper to get bookings for a clinic
+  // Helper to get bookings for a clinic (with modal filter)
   const getClinicBookings = (clinicId: string) => {
     let filtered = sampleBookings.filter(b => b.clinic_id === clinicId);
-    if (dueTypeFilter === 'SERVICE') filtered = filtered.filter(b => b.session_type !== 'SESSION');
-    if (dueTypeFilter === 'SESSION') filtered = filtered.filter(b => b.session_type === 'SESSION');
+    if (modalBookingFilter === 'SERVICE') filtered = filtered.filter(b => b.session_type !== 'SESSION');
+    if (modalBookingFilter === 'SESSION') filtered = filtered.filter(b => b.session_type === 'SESSION');
     return filtered;
   };
 
@@ -571,7 +736,6 @@ const DueManagement = () => {
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                   />
                 </div>
-                
                 <div className="flex items-center gap-4">
                   <select
                     value={selectedFilter}
@@ -583,7 +747,16 @@ const DueManagement = () => {
                     <option value="paid">Settled</option>
                     <option value="credit">Credit Balance</option>
                   </select>
-                  
+                  {/* Sorting dropdown */}
+                  <select
+                    value={sortBy}
+                    onChange={e => setSortBy(e.target.value as any)}
+                    className="px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 font-medium"
+                  >
+                    <option value="default">Sort: Default</option>
+                    <option value="highest">Sort: Highest Due</option>
+                    <option value="lowest">Sort: Lowest Due</option>
+                  </select>
                   <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                     Export Report
                   </button>
@@ -698,7 +871,7 @@ const DueManagement = () => {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
-              totalItems={filteredClinics.length}
+              totalItems={sortedClinics.length}
               itemsPerPage={itemsPerPage}
             />
           </>
@@ -706,52 +879,97 @@ const DueManagement = () => {
       </div>
 
       <Modal isOpen={viewModalOpen} onClose={handleCloseModal} title={selectedClinic?.clinic_name || 'Clinic Details'} size="md">
-        <div onClick={e => e.stopPropagation()}>
+        <div onClick={e => e.stopPropagation()} className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-2 sm:p-4">
           {selectedClinic ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-semibold text-lg text-gray-900">{selectedClinic.clinic_name}</div>
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusInfo(selectedClinic.due_detail.remaining_dues).color}`}>{getStatusInfo(selectedClinic.due_detail.remaining_dues).icon}{getStatusInfo(selectedClinic.due_detail.remaining_dues).text}</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-gray-600 text-xs mb-1">Total Dues</div>
-                  <div className="font-bold text-lg text-gray-900">{formatCurrency(selectedClinic.due_detail.total_dues)}</div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-gray-600 text-xs mb-1">Total Paid</div>
-                  <div className="font-bold text-lg text-green-600">{formatCurrency(selectedClinic.due_detail.total_paid)}</div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-gray-600 text-xs mb-1">Remaining Dues</div>
-                  <div className={`font-bold text-lg ${selectedClinic.due_detail.remaining_dues > 0 ? 'text-red-600' : selectedClinic.due_detail.remaining_dues < 0 ? 'text-green-600' : 'text-gray-600'}`}>{selectedClinic.due_detail.remaining_dues < 0 ? '-' : ''}{formatCurrency(selectedClinic.due_detail.remaining_dues)}</div>
+            <div className="space-y-6">
+              {/* Outstanding Amount Section */}
+              <div className="flex items-center gap-4 bg-white/90 border border-red-100 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="w-7 h-7 text-red-600" />
+                  <div>
+                    <div className="text-xs text-red-700 font-semibold uppercase tracking-wide">Outstanding Amount</div>
+                    <div className="text-3xl font-extrabold text-red-700 flex items-center gap-2">
+                      {formatCurrency(selectedClinic.due_detail.remaining_dues)}
+                      <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full ml-2">DUE</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {/* Bookings Table */}
-              <div>
-                <div className="font-medium mb-2">Bookings</div>
+
+              {/* Clinic Financial Summary */}
+              <div className="bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-blue-500" />
+                  <span className="font-semibold text-gray-900 text-lg">Clinic Financial Summary</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 rounded-xl p-4 flex flex-col items-center">
+                    <div className="text-gray-600 text-xs mb-1">Total Dues</div>
+                    <div className="font-bold text-lg text-blue-700">{formatCurrency(selectedClinic.due_detail.total_dues)}</div>
+                  </div>
+                  <div className="bg-green-50 rounded-xl p-4 flex flex-col items-center">
+                    <div className="text-gray-600 text-xs mb-1">Total Paid</div>
+                    <div className="font-bold text-lg text-green-700">{formatCurrency(selectedClinic.due_detail.total_paid)}</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-xl p-4 flex flex-col items-center">
+                    <div className="text-gray-600 text-xs mb-1">Remaining Dues</div>
+                    <div className={`font-bold text-lg ${selectedClinic.due_detail.remaining_dues > 0 ? 'text-red-600' : selectedClinic.due_detail.remaining_dues < 0 ? 'text-green-600' : 'text-gray-600'}`}>{selectedClinic.due_detail.remaining_dues < 0 ? '-' : ''}{formatCurrency(selectedClinic.due_detail.remaining_dues)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bookings Section */}
+              <div className="bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-purple-500" />
+                  <span className="font-semibold text-gray-900 text-lg">Bookings</span>
+                  <select
+                    value={modalBookingFilter}
+                    onChange={e => setModalBookingFilter(e.target.value as any)}
+                    className="ml-auto px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+                  >
+                    <option value="ALL">All</option>
+                    <option value="SERVICE">Service</option>
+                    <option value="SESSION">Session</option>
+                  </select>
+                </div>
+                <div className="border-t border-dashed border-gray-200 my-2"></div>
                 {getClinicBookings(selectedClinic.clinic_uuid).length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm border rounded-xl bg-white">
                       <thead>
-                        <tr className="bg-gray-100">
-                          <th className="p-2 text-left">Patient</th>
-                          <th className="p-2 text-left">Service</th>
-                          <th className="p-2 text-left">Session</th>
-                          <th className="p-2 text-left">Date</th>
-                          <th className="p-2 text-left">Status</th>
-                          <th className="p-2 text-left">Amount</th>
+                        <tr className="bg-gray-50 text-gray-700">
+                          <th className="p-3 text-left font-semibold">Patient</th>
+                          <th className="p-3 text-left font-semibold">Service</th>
+                          <th className="p-3 text-left font-semibold">Session</th>
+                          <th className="p-3 text-left font-semibold">Date</th>
+                          <th className="p-3 text-left font-semibold">Status</th>
+                          <th className="p-3 text-left font-semibold">Amount</th>
+                          <th className="p-3 text-left font-semibold">Due</th>
                         </tr>
                       </thead>
                       <tbody>
                         {getClinicBookings(selectedClinic.clinic_uuid).map(b => (
-                          <tr key={b.uuid} className="border-t">
-                            <td className="p-2">{b.patient_name}</td>
-                            <td className="p-2">{b.service_type}</td>
-                            <td className="p-2">{b.session_type}</td>
-                            <td className="p-2">{new Date(b.start_time).toLocaleDateString()}</td>
-                            <td className="p-2">{b.payment_status}</td>
-                            <td className="p-2">{formatCurrency(Number(b.booking_charge))}</td>
+                          <tr key={b.uuid} className="border-t hover:bg-blue-50/40 transition">
+                            <td className="p-3 font-medium text-gray-900">{b.patient_name}</td>
+                            <td className="p-3">{b.service_type}</td>
+                            <td className="p-3">{b.session_type}</td>
+                            <td className="p-3">{new Date(b.start_time).toLocaleDateString()}</td>
+                            <td className="p-3">
+                              {b.payment_status === 'PENDING' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Due</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Paid</span>
+                              )}
+                            </td>
+                            <td className="p-3">{formatCurrency(Number(b.booking_charge))}</td>
+                            <td className="p-3">
+                              {b.payment_status === 'PENDING' ? (
+                                <AlertCircle className="w-4 h-4 text-red-500 inline" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4 text-green-500 inline" />
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -761,31 +979,46 @@ const DueManagement = () => {
                   <div className="text-gray-500 text-sm py-4">No bookings found for this clinic.</div>
                 )}
               </div>
-              {/* Payment History Table */}
-              <div>
-                <div className="font-medium mb-2 mt-6">Payment History</div>
+
+              {/* Payment History Section */}
+              <div className="bg-white/90 border border-gray-100 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <CreditCard className="w-5 h-5 text-teal-500" />
+                  <span className="font-semibold text-gray-900 text-lg">Payment History</span>
+                </div>
+                <div className="border-t border-dashed border-gray-200 my-2"></div>
                 {samplePaymentRecords.filter(r => r.clinicId === selectedClinic.clinic_uuid).length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm border rounded-xl bg-white">
                       <thead>
-                        <tr className="bg-gray-100">
-                          <th className="p-2 text-left">Payment Date</th>
-                          <th className="p-2 text-left">Amount</th>
-                          <th className="p-2 text-left">Status</th>
-                          <th className="p-2 text-left">Transaction ID</th>
-                          <th className="p-2 text-left">Payment Method</th>
-                          <th className="p-2 text-left">Gateway</th>
+                        <tr className="bg-gray-50 text-gray-700">
+                          <th className="p-3 text-left font-semibold">Payment Date</th>
+                          <th className="p-3 text-left font-semibold">Amount</th>
+                          <th className="p-3 text-left font-semibold">Status</th>
+                          <th className="p-3 text-left font-semibold">Transaction ID</th>
+                          <th className="p-3 text-left font-semibold">Payment Method</th>
+                          <th className="p-3 text-left font-semibold">Gateway</th>
                         </tr>
                       </thead>
                       <tbody>
                         {samplePaymentRecords.filter(r => r.clinicId === selectedClinic.clinic_uuid).map(r => (
-                          <tr key={r.transactionId} className="border-t">
-                            <td className="p-2">{new Date(r.paymentDate).toLocaleDateString()}</td>
-                            <td className="p-2">{formatCurrency(r.amount)}</td>
-                            <td className="p-2">{r.paymentStatus}</td>
-                            <td className="p-2">{r.transactionId}</td>
-                            <td className="p-2">{r.paymentMethod}</td>
-                            <td className="p-2">{r.paymentGateway}</td>
+                          <tr key={r.transactionId} className="border-t hover:bg-teal-50/40 transition">
+                            <td className="p-3">{new Date(r.paymentDate).toLocaleDateString()}</td>
+                            <td className="p-3">{formatCurrency(r.amount)}</td>
+                            <td className="p-3">
+                              {r.paymentStatus === 'COMPLETED' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Completed</span>
+                              ) : r.paymentStatus === 'PENDING' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-semibold">Pending</span>
+                              ) : r.paymentStatus === 'FAILED' ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Failed</span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">Refunded</span>
+                              )}
+                            </td>
+                            <td className="p-3">{r.transactionId}</td>
+                            <td className="p-3">{r.paymentMethod}</td>
+                            <td className="p-3">{r.paymentGateway}</td>
                           </tr>
                         ))}
                       </tbody>

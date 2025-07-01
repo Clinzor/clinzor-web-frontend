@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Clock, Users, Calendar, Check, X, Filter, Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, XCircle, Eye, EyeOff, Plus } from 'lucide-react';
+import { Clock, Users, Calendar, Check, X, Filter, Search, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2, XCircle, Eye, EyeOff, Plus, Building2, MapPin, User, Activity, Settings, RefreshCw, Download, Upload } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // Slot type definition
 interface Slot {
@@ -84,27 +86,8 @@ const SlotManager = () => {
   const [toDate, setToDate] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [actionFeedback, setActionFeedback] = useState<{type: 'success' | 'error', message: string} | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
-  const [newSlot, setNewSlot] = useState({
-    clinic_service: '',
-    start_time: '',
-    end_time: '',
-    max_bookings: 6
-  });
   const [viewSlot, setViewSlot] = useState<Slot | null>(null);
-  const [showBulkCreateForm, setShowBulkCreateForm] = useState<boolean>(false);
-  const [bulkClinicService, setBulkClinicService] = useState<string>("");
-  const [bulkSlots, setBulkSlots] = useState([
-    { start_time: "", end_time: "", max_bookings: 6 }
-  ]);
-
-  // For focusing date/datetime-local inputs
-  const singleStartRef = useRef<HTMLInputElement>(null);
-  const singleEndRef = useRef<HTMLInputElement>(null);
-
-  // For bulk create, keep refs in an array
-  const bulkStartRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const bulkEndRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [clinicNameSearch, setClinicNameSearch] = useState('');
 
   // Sample clinic services for the dropdown
   const clinicServices = [
@@ -136,34 +119,38 @@ const SlotManager = () => {
     switch (status) {
       case 'APPROVED':
         return {
-          color: 'bg-green-100 text-green-700 border-green-200',
+          color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
           icon: CheckCircle2,
-          label: 'Approved'
+          label: 'Active & Approved',
+          description: 'This slot is live and accepting bookings'
         };
       case 'PENDING':
         return {
-          color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+          color: 'bg-amber-100 text-amber-800 border-amber-200',
           icon: AlertCircle,
-          label: 'Pending Review'
+          label: 'Awaiting Review',
+          description: 'This slot requires administrator approval before going live'
         };
       case 'REJECTED':
         return {
-          color: 'bg-red-100 text-red-700 border-red-200',
+          color: 'bg-red-100 text-red-800 border-red-200',
           icon: XCircle,
-          label: 'Rejected'
+          label: 'Rejected',
+          description: 'This slot has been declined and will not be available for booking'
         };
       default:
         return {
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
           icon: AlertCircle,
-          label: 'Unknown'
+          label: 'Unknown Status',
+          description: 'Status could not be determined'
         };
     }
   };
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setActionFeedback({ type, message });
-    setTimeout(() => setActionFeedback(null), 3000);
+    setTimeout(() => setActionFeedback(null), 4000);
   };
 
   const handleApprove = (slotId: string) => {
@@ -172,18 +159,18 @@ const SlotManager = () => {
         ? { ...slot, status: 'APPROVED', reason_for_rejection: null }
         : slot
     ));
-    showFeedback('success', 'Slot approved successfully!');
+    showFeedback('success', 'Slot approved successfully and is now available for booking!');
   };
 
   const handleReject = (slotId: string, reason?: string) => {
-    const rejectionReason = reason || prompt('Please provide a reason for rejection:');
+    const rejectionReason = reason || prompt('Please provide a detailed reason for rejection:');
     if (rejectionReason) {
       setSlots(slots.map(slot =>
         slot.id === slotId
           ? { ...slot, status: 'REJECTED', reason_for_rejection: rejectionReason }
           : slot
       ));
-      showFeedback('success', 'Slot rejected successfully!');
+      showFeedback('success', 'Slot rejected and removed from available bookings.');
     }
   };
 
@@ -195,11 +182,11 @@ const SlotManager = () => {
         : slot
     ));
     setSelectedSlots([]);
-    showFeedback('success', `${count} slot${count > 1 ? 's' : ''} approved successfully!`);
+    showFeedback('success', `${count} slot${count > 1 ? 's' : ''} approved and now available for booking!`);
   };
 
   const handleBulkReject = () => {
-    const reason = prompt('Please provide a reason for rejection:');
+    const reason = prompt('Please provide a reason for rejecting these slots:');
     if (reason) {
       const count = selectedSlots.length;
       setSlots(slots.map(slot =>
@@ -208,55 +195,8 @@ const SlotManager = () => {
           : slot
       ));
       setSelectedSlots([]);
-      showFeedback('success', `${count} slot${count > 1 ? 's' : ''} rejected successfully!`);
+      showFeedback('success', `${count} slot${count > 1 ? 's' : ''} rejected and removed from booking availability.`);
     }
-  };
-
-  const handleCreateSlot = () => {
-    // Validate form
-    if (!newSlot.clinic_service || !newSlot.start_time || !newSlot.end_time) {
-      showFeedback('error', 'Please fill in all required fields');
-      return;
-    }
-
-    // Validate end time is after start time
-    if (new Date(newSlot.end_time) <= new Date(newSlot.start_time)) {
-      showFeedback('error', 'End time must be after start time');
-      return;
-    }
-
-    // Create new slot
-    const newSlotData: Slot = {
-      id: `slot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      clinic_service: newSlot.clinic_service,
-      start_time: new Date(newSlot.start_time).toISOString(),
-      end_time: new Date(newSlot.end_time).toISOString(),
-      created_by: "current_user@gmail.com", // This would come from auth context
-      max_bookings: newSlot.max_bookings,
-      available_slots: newSlot.max_bookings,
-      status: 'PENDING',
-      reason_for_rejection: null
-    };
-
-    setSlots([newSlotData, ...slots]);
-    setShowCreateForm(false);
-    setNewSlot({
-      clinic_service: '',
-      start_time: '',
-      end_time: '',
-      max_bookings: 6
-    });
-    showFeedback('success', 'New slot created successfully!');
-  };
-
-  const resetCreateForm = () => {
-    setNewSlot({
-      clinic_service: '',
-      start_time: '',
-      end_time: '',
-      max_bookings: 6
-    });
-    setShowCreateForm(false);
   };
 
   const toggleSlotSelection = (slotId: string) => {
@@ -292,10 +232,83 @@ const SlotManager = () => {
     setCurrentPage(1);
   };
 
+  // Sample clinics and clinic services (copy from servicelist.tsx)
+  const sampleClinics = [
+    { uuid: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f", name: "City General Hospital", location: "Downtown Medical District" },
+    { uuid: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f", name: "Metro Medical Center", location: "Central Business District" },
+    { uuid: "c3d9f5e2-5b6c-5d8e-9f0g-2b3c4d5e6f7g", name: "Downtown Clinic", location: "Main Street" }
+  ];
+
+  const sampleClinicServices = [
+    {
+      uuid: "159e3627-65eb-40b2-b535-37cbb6535ab8",
+      service: "d7afe788-af8b-4fd4-b65b-bab700df841a",
+      clinic: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f",
+      service_name: "Cardiology Consultation",
+      created_by: "admin@gmail.com",
+      clinic_provided_name: "Advanced Cardiology Care",
+      rank: 1,
+      consultation_charge_video_call: "400.00",
+      consultation_charge_physical_visit: "200.00",
+      consultation_charge_home_visit: "200.00",
+      treatment_charge_video_call: "600.00",
+      treatment_charge_physical_visit: "500.00",
+      treatment_charge_home_visit: "800.00",
+      status: "APPROVED",
+      is_video_call: true,
+      is_home_visit: false,
+      is_physical_visit: true,
+      image: null,
+      description: "Premium cardiology services with experienced specialists",
+      reason_for_rejection: null
+    },
+    {
+      uuid: "269f4738-76fc-51c3-c646-48dcc7646cb9",
+      service: "661d42bc-4393-49a3-ab8f-c24b6ab17c38",
+      clinic: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f",
+      service_name: "Heart Specialist Consultation",
+      created_by: "admin@gmail.com",
+      clinic_provided_name: null,
+      rank: 2,
+      consultation_charge_video_call: "350.00",
+      consultation_charge_physical_visit: "180.00",
+      consultation_charge_home_visit: "250.00",
+      treatment_charge_video_call: "550.00",
+      treatment_charge_physical_visit: "450.00",
+      treatment_charge_home_visit: "700.00",
+      status: "PENDING",
+      is_video_call: true,
+      is_home_visit: true,
+      is_physical_visit: true,
+      image: null,
+      description: null,
+      reason_for_rejection: null
+    }
+  ];
+
+  const getClinicNameByService = (clinic_service_id: string) => {
+    const svc = sampleClinicServices.find(s => s.uuid === clinic_service_id);
+    if (!svc) return 'Unknown Clinic';
+    const clinic = sampleClinics.find(c => c.uuid === svc.clinic);
+    return clinic ? clinic.name : 'Unknown Clinic';
+  };
+
+  const getServiceDetailsByService = (clinic_service_id: string) => {
+    const svc = sampleClinicServices.find(s => s.uuid === clinic_service_id);
+    if (!svc) return { name: 'Unknown Service', clinic: 'Unknown Clinic', location: 'Unknown Location' };
+    const clinic = sampleClinics.find(c => c.uuid === svc.clinic);
+    return {
+      name: svc.clinic_provided_name || svc.service_name,
+      clinic: clinic ? clinic.name : 'Unknown Clinic',
+      location: clinic ? clinic.location : 'Unknown Location'
+    };
+  };
+
   // Filtering logic
   const filteredSlots = slots.filter(slot => {
     const matchesStatus = statusFilter === 'ALL' || slot.status === statusFilter;
-    const matchesSearch = slot.created_by.toLowerCase().includes(searchTerm.toLowerCase());
+    const clinicName = (getClinicNameByService(slot.clinic_service) || '').toLowerCase();
+    const matchesClinicName = clinicName.includes(clinicNameSearch.toLowerCase());
     let matchesFromDate = true;
     let matchesToDate = true;
     if (fromDate) {
@@ -306,7 +319,7 @@ const SlotManager = () => {
       toDateObj.setDate(toDateObj.getDate() + 1);
       matchesToDate = new Date(slot.start_time) < toDateObj;
     }
-    return matchesStatus && matchesSearch && matchesFromDate && matchesToDate;
+    return matchesStatus && matchesClinicName && matchesFromDate && matchesToDate;
   });
 
   // Pagination logic
@@ -317,7 +330,7 @@ const SlotManager = () => {
   // Reset page if filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchTerm, fromDate, toDate]);
+  }, [statusFilter, fromDate, toDate]);
 
   // Get counts for quick stats
   const statusCounts = slots.reduce((acc, slot) => {
@@ -325,475 +338,230 @@ const SlotManager = () => {
     return acc;
   }, {} as Record<string, number>);
 
+  // Calculate additional metrics
+  const totalBookableSlots = slots.filter(s => s.status === 'APPROVED').reduce((sum, slot) => sum + slot.available_slots, 0);
+  const totalMaxCapacity = slots.filter(s => s.status === 'APPROVED').reduce((sum, slot) => sum + slot.max_bookings, 0);
+  const utilizationRate = totalMaxCapacity > 0 ? Math.round(((totalMaxCapacity - totalBookableSlots) / totalMaxCapacity) * 100) : 0;
+
   // Simulate fetching slot by UUID (in real app, replace with API call)
   const handleViewSlot = (uuid: string) => {
     const slot = slots.find((s) => s.id === uuid);
     if (slot) setViewSlot(slot);
   };
+
   const closeViewSlot = () => setViewSlot(null);
 
-  // Bulk create logic
-  const handleBulkSlotChange = (idx: number, field: string, value: string | number) => {
-    setBulkSlots((prev) =>
-      prev.map((slot, i) =>
-        i === idx ? { ...slot, [field]: value } : slot
-      )
-    );
-  };
-  const addBulkSlotRow = () => setBulkSlots((prev) => [...prev, { start_time: "", end_time: "", max_bookings: 6 }]);
-  const removeBulkSlotRow = (idx: number) => setBulkSlots((prev) => prev.filter((_, i) => i !== idx));
-  const resetBulkCreateForm = () => {
-    setBulkClinicService("");
-    setBulkSlots([{ start_time: "", end_time: "", max_bookings: 6 }]);
-    setShowBulkCreateForm(false);
-  };
-  const handleBulkCreateSlots = () => {
-    if (!bulkClinicService) {
-      showFeedback("error", "Please select a clinic service");
-      return;
-    }
-    for (const slot of bulkSlots) {
-      if (!slot.start_time || !slot.end_time) {
-        showFeedback("error", "Please fill all slot fields");
-        return;
-      }
-      if (new Date(slot.end_time) <= new Date(slot.start_time)) {
-        showFeedback("error", "End time must be after start time");
-        return;
-      }
-    }
-    const newSlots: Slot[] = bulkSlots.map((slot) => ({
-      id: `slot-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      clinic_service: bulkClinicService,
-      start_time: new Date(slot.start_time).toISOString(),
-      end_time: new Date(slot.end_time).toISOString(),
-      created_by: "current_user@gmail.com",
-      max_bookings: slot.max_bookings,
-      available_slots: slot.max_bookings,
-      status: "PENDING",
-      reason_for_rejection: null
-    }));
-    setSlots((prev) => [...newSlots, ...prev]);
-    resetBulkCreateForm();
-    showFeedback("success", `${newSlots.length} slots created successfully!`);
-  };
+  // Remove refs for native date pickers
+  // Add state for DatePicker (convert string to Date and vice versa)
+  const [fromDateObj, setFromDateObj] = useState<Date | null>(fromDate ? new Date(fromDate) : null);
+  const [toDateObj, setToDateObj] = useState<Date | null>(toDate ? new Date(toDate) : null);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-1 sm:p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-2 sm:p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto w-full">
         {/* Action Feedback */}
         {actionFeedback && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 ${
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-2xl border-l-4 ${
             actionFeedback.type === 'success' 
-              ? 'bg-green-50 border-green-400 text-green-700' 
-              : 'bg-red-50 border-red-400 text-red-700'
-          } transition-all duration-300`}>
-            <div className="flex items-center gap-2">
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-800' 
+              : 'bg-red-50 border-red-500 text-red-800'
+          } transition-all duration-500 transform translate-x-0`}>
+            <div className="flex items-center gap-3">
               {actionFeedback.type === 'success' ? (
-                <CheckCircle2 className="h-5 w-5" />
+                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
               ) : (
-                <XCircle className="h-5 w-5" />
+                <XCircle className="h-6 w-6 text-red-600" />
               )}
-              <span className="font-medium">{actionFeedback.message}</span>
+              <div>
+                <p className="font-semibold text-sm">
+                  {actionFeedback.type === 'success' ? 'Success!' : 'Error!'}
+                </p>
+                <p className="text-sm opacity-90">{actionFeedback.message}</p>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Header */}
-        <div className="mb-6">
-          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Clinic Slot Management
-                </h1>
-                <p className="text-gray-600">
-                  Review and manage appointment slots efficiently
-                </p>
-              </div>
-              {/* Create New Slot & Bulk Create Buttons */}
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium shadow-lg shadow-blue-500/25"
-                >
-                  <Plus className="h-5 w-5" />
-                  Create New Slot
-                </button>
-                <button
-                  onClick={() => setShowBulkCreateForm(true)}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 font-medium shadow-lg shadow-purple-500/25"
-                >
-                  <Plus className="h-5 w-5" />
-                  Bulk Create
-                </button>
-              </div>
-            </div>
-            
-            {/* Quick Stats */}
-            <div className="flex flex-wrap gap-3 mt-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2">
-                <div className="text-yellow-700 font-semibold text-lg">{statusCounts.PENDING || 0}</div>
-                <div className="text-yellow-600 text-sm">Pending Review</div>
-              </div>
-              <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-                <div className="text-green-700 font-semibold text-lg">{statusCounts.APPROVED || 0}</div>
-                <div className="text-green-600 text-sm">Approved</div>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2">
-                <div className="text-red-700 font-semibold text-lg">{statusCounts.REJECTED || 0}</div>
-                <div className="text-red-600 text-sm">Rejected</div>
+        {/* Enhanced Header Section */}
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <Calendar className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+                      Appointment Slot Management
+                    </h1>
+                    <p className="text-gray-600 text-lg">
+                      Review, approve, and manage healthcare appointment slots across all clinics
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Key Metrics Dashboard */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                  <div className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="h-5 w-5 text-amber-600" />
+                      <span className="text-amber-700 font-semibold text-sm">Pending Approval</span>
+                    </div>
+                    <div className="text-amber-800 font-bold text-2xl">{statusCounts.PENDING || 0}</div>
+                    <div className="text-amber-600 text-xs mt-1">Requires your review</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      <span className="text-emerald-700 font-semibold text-sm">Active Slots</span>
+                    </div>
+                    <div className="text-emerald-800 font-bold text-2xl">{statusCounts.APPROVED || 0}</div>
+                    <div className="text-emerald-600 text-xs mt-1">Available for booking</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      <span className="text-blue-700 font-semibold text-sm">Available Spots</span>
+                    </div>
+                    <div className="text-blue-800 font-bold text-2xl">{totalBookableSlots}</div>
+                    <div className="text-blue-600 text-xs mt-1">Open appointments</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Activity className="h-5 w-5 text-purple-600" />
+                      <span className="text-purple-700 font-semibold text-sm">Utilization</span>
+                    </div>
+                    <div className="text-purple-800 font-bold text-2xl">{utilizationRate}%</div>
+                    <div className="text-purple-600 text-xs mt-1">Booking efficiency</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Create New Slot Modal */}
-        {showCreateForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Create New Slot</h2>
-                  <button
-                    onClick={resetCreateForm}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-
-                <form className="space-y-4">
-                  {/* Clinic Service Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Clinic Service *
-                    </label>
-                    <select
-                      value={newSlot.clinic_service}
-                      onChange={(e) => setNewSlot({...newSlot, clinic_service: e.target.value})}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                      required
-                    >
-                      <option value="">Select a clinic service</option>
-                      {clinicServices.map((service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Start Time */}
-                  <div className="relative flex items-center gap-2">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Start Time *
-                      </label>
-                      <input
-                        ref={singleStartRef}
-                        type="datetime-local"
-                        value={newSlot.start_time}
-                        onChange={(e) => setNewSlot({...newSlot, start_time: e.target.value})}
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="absolute right-3 top-8 text-gray-400 hover:text-blue-600"
-                      tabIndex={-1}
-                      onClick={() => {
-                        if (singleStartRef.current) {
-                          singleStartRef.current.focus();
-                          singleStartRef.current.click();
-                        }
-                      }}
-                    >
-                      <Calendar className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* End Time */}
-                  <div className="relative flex items-center gap-2">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        End Time *
-                      </label>
-                      <input
-                        ref={singleEndRef}
-                        type="datetime-local"
-                        value={newSlot.end_time}
-                        onChange={(e) => setNewSlot({...newSlot, end_time: e.target.value})}
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="absolute right-3 top-8 text-gray-400 hover:text-blue-600"
-                      tabIndex={-1}
-                      onClick={() => {
-                        if (singleEndRef.current) {
-                          singleEndRef.current.focus();
-                          singleEndRef.current.click();
-                        }
-                      }}
-                    >
-                      <Calendar className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* Max Bookings */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Maximum Bookings
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={newSlot.max_bookings}
-                      onChange={(e) => setNewSlot({...newSlot, max_bookings: parseInt(e.target.value) || 1})}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                    />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={handleCreateSlot}
-                      className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Create Slot
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetCreateForm}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Bulk Create Modal */}
-        {showBulkCreateForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-full sm:max-w-2xl max-h-[95vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Bulk Create Slots</h2>
-                  <button
-                    onClick={resetBulkCreateForm}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-                <form className="space-y-4">
-                  {/* Clinic Service Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Clinic Service *
-                    </label>
-                    <select
-                      value={bulkClinicService}
-                      onChange={(e) => setBulkClinicService(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
-                      required
-                    >
-                      <option value="">Select a clinic service</option>
-                      {clinicServices.map((service) => (
-                        <option key={service.id} value={service.id}>
-                          {service.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {/* Slot List */}
-                  <div className="space-y-4">
-                    {bulkSlots.map((slot, idx) => (
-                      <div key={idx} className="flex flex-col sm:flex-row gap-2 items-end border-b pb-2 w-full">
-                        <div className="relative flex-1 flex items-center gap-2">
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Start Time *</label>
-                            <input
-                              ref={el => (bulkStartRefs.current[idx] = el)}
-                              type="datetime-local"
-                              value={slot.start_time}
-                              onChange={e => handleBulkSlotChange(idx, 'start_time', e.target.value)}
-                              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
-                              required
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="absolute right-3 top-7 text-gray-400 hover:text-purple-600"
-                            tabIndex={-1}
-                            onClick={() => {
-                              if (bulkStartRefs.current[idx]) {
-                                bulkStartRefs.current[idx]?.focus();
-                                bulkStartRefs.current[idx]?.click();
-                              }
-                            }}
-                          >
-                            <Calendar className="h-5 w-5" />
-                          </button>
-                        </div>
-                        <div className="relative flex-1 flex items-center gap-2">
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">End Time *</label>
-                            <input
-                              ref={el => (bulkEndRefs.current[idx] = el)}
-                              type="datetime-local"
-                              value={slot.end_time}
-                              onChange={e => handleBulkSlotChange(idx, 'end_time', e.target.value)}
-                              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
-                              required
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="absolute right-3 top-7 text-gray-400 hover:text-purple-600"
-                            tabIndex={-1}
-                            onClick={() => {
-                              if (bulkEndRefs.current[idx]) {
-                                bulkEndRefs.current[idx]?.focus();
-                                bulkEndRefs.current[idx]?.click();
-                              }
-                            }}
-                          >
-                            <Calendar className="h-5 w-5" />
-                          </button>
-                        </div>
-                        <div className="w-32">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Max Bookings</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={slot.max_bookings}
-                            onChange={e => handleBulkSlotChange(idx, 'max_bookings', parseInt(e.target.value) || 1)}
-                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeBulkSlotRow(idx)}
-                          className="ml-2 text-red-500 hover:text-red-700"
-                          disabled={bulkSlots.length === 1}
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={addBulkSlotRow}
-                      className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                    >
-                      + Add Slot
-                    </button>
-                  </div>
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={handleBulkCreateSlots}
-                      className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                    >
-                      Create Slots
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetBulkCreateForm}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Filters Section */}
+        {/* Enhanced Filters Section */}
         <div className="mb-6">
-          <div className="bg-white rounded-xl shadow-sm border">
-            <div className="p-2 sm:p-4 border-b border-gray-100">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <h3 className="font-semibold text-gray-900">Filters & Search</h3>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
+            <div className="p-4 sm:p-6 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-gray-600" />
+                    <h3 className="font-bold text-gray-900 text-lg">Search & Filter Slots</h3>
+                  </div>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                   >
                     {showFilters ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="text-sm">{showFilters ? 'Hide' : 'Show'} Advanced</span>
+                    <span className="text-sm font-medium">{showFilters ? 'Hide' : 'Show'} Advanced Filters</span>
                   </button>
                 </div>
-                {(statusFilter !== 'ALL' || searchTerm || fromDate || toDate) && (
+                {(statusFilter !== 'ALL' || fromDate || toDate || clinicNameSearch) && (
                   <button
                     onClick={clearAllFilters}
-                    className="text-gray-500 hover:text-gray-700 text-sm underline"
+                    className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 text-sm font-medium"
                   >
-                    Clear all filters
+                    <X className="h-4 w-4" />
+                    Clear All Filters
                   </button>
                 )}
               </div>
             </div>
             
-            <div className="p-2 sm:p-4">
-              {/* Basic Search */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  type="text"
-                  placeholder="Search by creator email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                />
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by clinic name..."
+                    value={clinicNameSearch}
+                    onChange={(e) => setClinicNameSearch(e.target.value)}
+                    className="pl-10 w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+                
+                <div className="flex gap-2">
+                  {/* From Date Picker */}
+                  <div className="flex-1">
+                    <DatePicker
+                      selected={fromDateObj}
+                      onChange={date => {
+                        setFromDateObj(date);
+                        setFromDate(date ? date.toISOString().slice(0, 10) : '');
+                      }}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="From Date"
+                      className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
+                      isClearable
+                    />
+                  </div>
+                  {/* To Date Picker */}
+                  <div className="flex-1">
+                    <DatePicker
+                      selected={toDateObj}
+                      onChange={date => {
+                        setToDateObj(date);
+                        setToDate(date ? date.toISOString().slice(0, 10) : '');
+                      }}
+                      dateFormat="yyyy-MM-dd"
+                      placeholderText="To Date"
+                      className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
+                      isClearable
+                    />
+                  </div>
+                </div>
               </div>
-
-              {/* Advanced Filters */}
+              
               {showFilters && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 p-2 sm:p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                    >
-                      <option value="ALL">All Status</option>
-                      <option value="PENDING">Pending Review</option>
-                      <option value="APPROVED">Approved</option>
-                      <option value="REJECTED">Rejected</option>
-                    </select>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-3 bg-blue-50 p-4 rounded-xl">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Time Range</p>
+                      <p className="text-xs text-gray-500">Filter slots within date range</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={e => setFromDate(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                    />
+                  
+                  <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-xl">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Pending Review</p>
+                      <p className="text-xs text-gray-500">{statusCounts.PENDING || 0} slots awaiting approval</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={e => setToDate(e.target.value)}
-                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                    />
+                  
+                  <div className="flex items-center gap-3 bg-emerald-50 p-4 rounded-xl">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <Check className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Approved Slots</p>
+                      <p className="text-xs text-gray-500">{statusCounts.APPROVED || 0} active slots</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -801,278 +569,424 @@ const SlotManager = () => {
           </div>
         </div>
 
-        {/* Bulk Actions */}
-        {selectedSlots.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-2 sm:p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <div className="text-blue-700 font-semibold">
-                    {selectedSlots.length} slot{selectedSlots.length > 1 ? 's' : ''} selected
-                  </div>
-                  <button
-                    onClick={clearSelection}
-                    className="text-blue-600 hover:text-blue-700 text-sm underline"
-                  >
-                    Clear selection
-                  </button>
-                  <button
-                    onClick={selectAllVisible}
-                    className="text-blue-600 hover:text-blue-700 text-sm underline"
-                  >
-                    Select all visible
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 sm:gap-3">
+        {/* Slots Table */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-gray-100">
+            <h3 className="font-bold text-xl text-gray-900">
+              Appointment Slots ({filteredSlots.length})
+            </h3>
+            <div className="flex items-center gap-3">
+              {selectedSlots.length > 0 && (
+                <>
                   <button
                     onClick={handleBulkApprove}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 transition-colors"
                   >
                     <Check className="h-4 w-4" />
-                    Approve Selected
+                    <span>Approve Selected</span>
                   </button>
                   <button
                     onClick={handleBulkReject}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
                   >
                     <X className="h-4 w-4" />
-                    Reject Selected
+                    <span>Reject Selected</span>
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Clear Selection</span>
+                  </button>
+                </>
+              )}
+              <button
+                onClick={selectAllVisible}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <Check className="h-4 w-4" />
+                <span>Select Visible</span>
+              </button>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedSlots.length === paginatedSlots.length && paginatedSlots.length > 0}
+                      onChange={() => {
+                        if (selectedSlots.length === paginatedSlots.length) {
+                          clearSelection();
+                        } else {
+                          selectAllVisible();
+                        }
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Clinic & Service
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date & Time
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Availability
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedSlots.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Calendar className="h-12 w-12 text-gray-300" />
+                        <p className="text-lg font-medium text-gray-700">No appointment slots found</p>
+                        <p className="text-gray-500">Try adjusting your filters.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedSlots.map((slot) => {
+                    const { date, time } = formatDateTime(slot.start_time);
+                    const statusConfig = getStatusConfig(slot.status);
+                    const serviceDetails = getServiceDetailsByService(slot.clinic_service);
+                    
+                    return (
+                      <tr key={slot.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedSlots.includes(slot.id)}
+                            onChange={() => toggleSlotSelection(slot.id)}
+                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-indigo-100 p-2 rounded-lg">
+                              <Activity className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">{serviceDetails.name}</div>
+                              <div className="text-sm text-gray-500 flex items-center gap-1">
+                                <Building2 className="h-4 w-4" />
+                                {serviceDetails.clinic}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">{date}</div>
+                          <div className="text-sm text-gray-500 flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {time}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div
+                                className="bg-blue-600 h-2.5 rounded-full"
+                                style={{
+                                  width: `${((slot.max_bookings - slot.available_slots) / slot.max_bookings * 100)}%`
+                                }}
+                              ></div>
+                            </div>
+                            <div className="text-sm font-medium text-gray-700">
+                              {slot.available_slots}/{slot.max_bookings}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
+                            <statusConfig.icon className="h-4 w-4" />
+                            {statusConfig.label}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center gap-3">
+                            {slot.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => handleApprove(slot.id)}
+                                  className="text-emerald-600 hover:text-emerald-900 flex items-center gap-1"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleReject(slot.id)}
+                                  className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                                >
+                                  <X className="h-4 w-4" />
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleViewSlot(slot.id)}
+                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {paginatedSlots.length > 0 && (
+            <div className="border-t border-gray-200 px-4 py-3 sm:px-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(currentPage - 1) * PAGE_SIZE + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(currentPage * PAGE_SIZE, totalItems)}</span> of{' '}
+                  <span className="font-medium">{totalItems}</span> slots
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                      currentPage === 1 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Results Summary */}
-        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div className="text-gray-600">
-            Showing {paginatedSlots.length} of {totalItems} slots
-            {totalItems !== slots.length && (
-              <span className="text-gray-500"> (filtered from {slots.length} total)</span>
-            )}
-          </div>
-        </div>
-
-        {/* Slots Grid */}
-        <div className="space-y-4 mb-8">
-          {paginatedSlots.length === 0 && (
-            <div className="bg-white rounded-xl p-6 sm:p-12 text-center shadow-sm border">
-              <div className="text-gray-400 mb-2">
-                <Calendar className="h-12 w-12 mx-auto" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No slots found</h3>
-              <p className="text-gray-500">Try adjusting your filters to see more results.</p>
             </div>
           )}
-          
-          {paginatedSlots.map((slot) => {
-            const startDateTime = formatDateTime(slot.start_time);
-            const endDateTime = formatDateTime(slot.end_time);
-            const isSelected = selectedSlots.includes(slot.id);
-            const statusConfig = getStatusConfig(slot.status);
-            const StatusIcon = statusConfig.icon;
-
-            return (
-              <div
-                key={slot.id}
-                className={`bg-white rounded-xl border shadow-sm transition-all duration-200 hover:shadow-md ${
-                  isSelected ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200'
-                }`}
-              >
-                <div className="p-3 sm:p-6">
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-4">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 w-full">
-                      <div className="pt-1">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSlotSelection(slot.id)}
-                          className="w-5 h-5 text-blue-600 bg-white border border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-2 sm:space-y-4">
-                        {/* Main Info Row */}
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div className="flex items-center gap-2 bg-gray-50 px-2 sm:px-3 py-2 rounded-lg">
-                            <Calendar className="h-4 w-4 text-gray-600" />
-                            <span className="font-medium text-gray-900">{startDateTime.date}</span>
-                          </div>
-                          <div className="flex items-center gap-2 bg-purple-50 px-2 sm:px-3 py-2 rounded-lg">
-                            <Clock className="h-4 w-4 text-purple-600" />
-                            <span className="font-medium text-purple-700">
-                              {startDateTime.time} - {endDateTime.time}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 bg-blue-50 px-2 sm:px-3 py-2 rounded-lg">
-                            <Users className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium text-blue-700">
-                              {slot.available_slots} of {slot.max_bookings} available
-                            </span>
-                          </div>
-                          <div className={`flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg border ${statusConfig.color}`}>
-                            <StatusIcon className="h-4 w-4" />
-                            <span className="font-medium">{statusConfig.label}</span>
-                          </div>
-                        </div>
-                        {/* Details Row */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-600">
-                          <span>
-                            Created by: <span className="font-medium text-gray-900">{slot.created_by}</span>
-                          </span>
-                          {slot.reason_for_rejection && (
-                            <span className="text-red-600 bg-red-50 px-2 py-1 rounded">
-                              Reason: <span className="font-medium">{slot.reason_for_rejection}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {/* Action Buttons */}
-                    <div className="flex flex-row gap-2 mt-2 md:mt-0 w-full md:w-auto">
-                      {slot.status === 'PENDING' && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(slot.id)}
-                            className="flex-1 md:flex-none px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium"
-                          >
-                            <Check className="h-4 w-4" />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleReject(slot.id)}
-                            className="flex-1 md:flex-none px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm font-medium"
-                          >
-                            <X className="h-4 w-4" />
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleViewSlot(slot.id)}
-                        className="flex-1 md:flex-none px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
-                      >
-                        <Eye className="h-4 w-4" />
-                        View
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
+      </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center">
-            <div className="bg-white rounded-xl p-2 sm:p-4 shadow-sm border">
-              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+      {/* View Slot Modal */}
+      {viewSlot && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900">Slot Details</h3>
                 <button
-                  className={`p-2 rounded-lg transition-colors ${
-                    currentPage === 1 
-                      ? 'text-gray-300 cursor-not-allowed' 
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                  }`}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
+                  onClick={closeViewSlot}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) =>
-                    (page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) ? (
-                      <button
-                        key={page}
-                        className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                          page === currentPage
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                        }`}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    ) : (
-                      (page === currentPage - 2 || page === currentPage + 2) && totalPages > 5 ? (
-                        <span key={page} className="px-2 text-gray-400">...</span>
-                      ) : null
-                    )
-                  )}
-                </div>
-                
-                <button
-                  className={`p-2 rounded-lg transition-colors ${
-                    currentPage === totalPages || totalPages === 0
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                  }`}
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                >
-                  <ChevronRight className="h-5 w-5" />
+                  <X className="h-6 w-6" />
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* View Slot Modal */}
-        {viewSlot && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-full sm:max-w-md max-h-[95vh] overflow-y-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Slot Details</h2>
-                  <button
-                    onClick={closeViewSlot}
-                    className="text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
+            <div className="p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <Activity className="h-8 w-8 text-blue-600" />
                 </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    {getServiceDetailsByService(viewSlot.clinic_service).name}
+                  </h4>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Building2 className="h-4 w-4" />
+                    {getServiceDetailsByService(viewSlot.clinic_service).clinic}
+                  </div>
+                </div>
+              </div>
+
+              {/* Clinic Service Details Section */}
+              {(() => {
+                const svc = sampleClinicServices.find(s => s.uuid === viewSlot.clinic_service);
+                if (!svc) return null;
+                return (
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                    <h5 className="text-md font-bold text-blue-800 mb-2">Clinic Service Details</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Service Name: </span>
+                          <span>{svc.service_name}</span>
+                        </div>
+                        {svc.clinic_provided_name && (
+                          <div className="mb-2">
+                            <span className="font-medium text-gray-700">Clinic Provided Name: </span>
+                            <span>{svc.clinic_provided_name}</span>
+                          </div>
+                        )}
+                        {svc.description && (
+                          <div className="mb-2">
+                            <span className="font-medium text-gray-700">Description: </span>
+                            <span>{svc.description}</span>
+                          </div>
+                        )}
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Status: </span>
+                          <span>{svc.status}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Consultation Charges: </span>
+                          <span>Video: ₹{svc.consultation_charge_video_call}, Physical: ₹{svc.consultation_charge_physical_visit}, Home: ₹{svc.consultation_charge_home_visit}</span>
+                        </div>
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Treatment Charges: </span>
+                          <span>Video: ₹{svc.treatment_charge_video_call}, Physical: ₹{svc.treatment_charge_physical_visit}, Home: ₹{svc.treatment_charge_home_visit}</span>
+                        </div>
+                        <div className="mb-2">
+                          <span className="font-medium text-gray-700">Service Types: </span>
+                          <span>
+                            {svc.is_video_call && 'Video Call'}
+                            {svc.is_video_call && (svc.is_home_visit || svc.is_physical_visit) ? ', ' : ''}
+                            {svc.is_home_visit && 'Home Visit'}
+                            {svc.is_home_visit && svc.is_physical_visit ? ', ' : ''}
+                            {svc.is_physical_visit && 'Physical Visit'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <span className="block text-sm text-gray-500">UUID</span>
-                    <span className="font-mono text-gray-900 break-all">{viewSlot.id}</span>
+                    <p className="text-sm text-gray-500">Start Time</p>
+                    <p className="font-medium">
+                      {formatDateTime(viewSlot.start_time).date}
+                    </p>
+                    <p className="text-gray-600">
+                      {formatDateTime(viewSlot.start_time).time}
+                    </p>
                   </div>
+                  
                   <div>
-                    <span className="block text-sm text-gray-500">Clinic Service</span>
-                    <span className="font-medium text-gray-900">{clinicServices.find(s => s.id === viewSlot.clinic_service)?.name || viewSlot.clinic_service}</span>
+                    <p className="text-sm text-gray-500">End Time</p>
+                    <p className="font-medium">
+                      {formatDateTime(viewSlot.end_time).date}
+                    </p>
+                    <p className="text-gray-600">
+                      {formatDateTime(viewSlot.end_time).time}
+                    </p>
                   </div>
+                </div>
+                
+                <div className="space-y-4">
                   <div>
-                    <span className="block text-sm text-gray-500">Start Time</span>
-                    <span className="font-medium text-gray-900">{formatDateTime(viewSlot.start_time).date} {formatDateTime(viewSlot.start_time).time}</span>
+                    <p className="text-sm text-gray-500">Availability</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full"
+                          style={{
+                            width: `${((viewSlot.max_bookings - viewSlot.available_slots) / viewSlot.max_bookings * 100)}%`
+                          }}
+                        ></div>
+                      </div>
+                      <div className="text-lg font-medium text-gray-700">
+                        {viewSlot.available_slots}/{viewSlot.max_bookings}
+                      </div>
+                    </div>
                   </div>
+                  
                   <div>
-                    <span className="block text-sm text-gray-500">End Time</span>
-                    <span className="font-medium text-gray-900">{formatDateTime(viewSlot.end_time).date} {formatDateTime(viewSlot.end_time).time}</span>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <div className="mt-1">
+                      {(() => {
+                        const config = getStatusConfig(viewSlot.status);
+                        return (
+                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+                            <config.icon className="h-4 w-4" />
+                            {config.label}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  <div>
-                    <span className="block text-sm text-gray-500">Max Bookings</span>
-                    <span className="font-medium text-gray-900">{viewSlot.max_bookings}</span>
-                  </div>
-                  <div>
-                    <span className="block text-sm text-gray-500">Available Slots</span>
-                    <span className="font-medium text-gray-900">{viewSlot.available_slots}</span>
-                  </div>
-                  <div>
-                    <span className="block text-sm text-gray-500">Status</span>
-                    <span className="font-medium text-gray-900">{getStatusConfig(viewSlot.status).label}</span>
-                  </div>
-                  {viewSlot.reason_for_rejection && (
+                  
+                  {viewSlot.status === 'REJECTED' && viewSlot.reason_for_rejection && (
                     <div>
-                      <span className="block text-sm text-gray-500">Reason for Rejection</span>
-                      <span className="font-medium text-red-600">{viewSlot.reason_for_rejection}</span>
+                      <p className="text-sm text-gray-500">Reason for Rejection</p>
+                      <p className="mt-1 text-gray-700 bg-red-50 p-3 rounded-lg">
+                        {viewSlot.reason_for_rejection}
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-end">
+                <button
+                  onClick={closeViewSlot}
+                  className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
