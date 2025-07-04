@@ -250,15 +250,12 @@ const MedicalServicesApp: React.FC = () => {
           {Object.entries(statusCounts).map(([status, count]) => (
             <div
               key={status}
-              onClick={status === 'ALL' ? undefined : () => setStatusFilter(status as 'ALL' | ServiceStatus)}
-              className={`p-4 sm:p-6 rounded-xl border-2 ${
-                status === 'ALL'
-                  ? 'bg-gray-50 border-gray-100 cursor-default'
-                  : 'cursor-pointer transition-all hover:shadow-md ' + (statusFilter === status
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-100 bg-white hover:border-gray-200')
+              onClick={() => setStatusFilter(status as 'ALL' | ServiceStatus)}
+              className={`p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                statusFilter === status
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-100 bg-white hover:border-gray-200'
               }`}
-              style={status === 'ALL' ? { pointerEvents: 'none', opacity: 0.85 } : {}}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -353,57 +350,32 @@ const MedicalServicesApp: React.FC = () => {
                       </button>
                     </div>
                   )}
-                  {/* Status Change for Approved/Rejected */}
+                  {/* Only show view/edit/delete for non-pending services */}
                   {service.status !== 'PENDING' && (
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                      {service.status === 'APPROVED' && (
-                        <button
-                          onClick={() => handleStatusChange(service.uuid, 'REJECTED')}
-                          className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                        >
-                          Mark as Rejected
-                        </button>
-                      )}
-                      {service.status === 'REJECTED' && (
-                        <button
-                          onClick={() => handleStatusChange(service.uuid, 'APPROVED')}
-                          className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
-                        >
-                          Mark as Approved
-                        </button>
-                      )}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                       <button
-                        onClick={() => handleStatusChange(service.uuid, 'PENDING')}
-                        className="flex-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                        onClick={() => setViewingService(service)}
+                        className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium transition-colors"
                       >
-                        Mark as Requested
+                        <Eye className="w-4 h-4" />
+                        <span>View</span>
                       </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(service)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(service.uuid)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
-                  {/* View/Edit/Delete */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <button
-                      onClick={() => setViewingService(service)}
-                      className="flex items-center space-x-1 text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>View</span>
-                    </button>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleEdit(service)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(service.uuid)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

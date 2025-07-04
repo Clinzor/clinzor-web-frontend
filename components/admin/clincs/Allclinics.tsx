@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Building2, 
   Search, 
@@ -29,6 +31,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Clinic {
   id: number;
@@ -462,6 +465,7 @@ const allClinicsMockData: Clinic[] = [
 ];
 
 export default function ClinicManagement() {
+  const router = useRouter();
   const [clinics, setClinics] = useState<Clinic[]>(allClinicsMockData);
 
   const [filteredClinics, setFilteredClinics] = useState<Clinic[]>(clinics);
@@ -509,6 +513,12 @@ export default function ClinicManagement() {
     { value: 'Sun', label: 'Sunday' }
   ];
 
+  const clinicsListRef = useRef<HTMLDivElement>(null);
+
+  const [showDeactivated, setShowDeactivated] = useState(false);
+
+  const [selectedHeader, setSelectedHeader] = useState<'ALL' | 'Approved' | 'Pending' | 'Active' | 'Deactivated'>('Approved');
+
   // Filter clinics
   useEffect(() => {
     let filtered = [...clinics];
@@ -534,10 +544,16 @@ export default function ClinicManagement() {
     setCurrentPage(1);
   }, [clinics, searchQuery, selectedStatus, selectedPaymentStatus]);
 
+  // Filter for header selection
+  let clinicsToShow = filteredClinics;
+  if (selectedHeader === 'Approved') clinicsToShow = filteredClinics.filter(c => c.status === 'Approved');
+  else if (selectedHeader === 'Pending') clinicsToShow = filteredClinics.filter(c => c.status === 'Pending');
+  else if (selectedHeader === 'Active') clinicsToShow = filteredClinics.filter(c => c.isActive);
+  else if (selectedHeader === 'Deactivated') clinicsToShow = filteredClinics.filter(c => !c.isActive);
   // Pagination
-  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
+  const totalPages = Math.ceil(clinicsToShow.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedClinics = filteredClinics.slice(startIndex, startIndex + itemsPerPage);
+  clinicsToShow = clinicsToShow.slice(startIndex, startIndex + itemsPerPage);
 
   const handleView = (clinic: Clinic) => {
     setSelectedClinic(clinic);
@@ -651,7 +667,8 @@ export default function ClinicManagement() {
     total: clinics.length,
     approved: clinics.filter(c => c.status === 'Approved').length,
     pending: clinics.filter(c => c.status === 'Pending').length,
-    active: clinics.filter(c => c.isActive).length
+    active: clinics.filter(c => c.isActive).length,
+    deactivated: clinics.filter(c => !c.isActive).length
   };
 
   function handleApprove(clinic: Clinic) {
@@ -709,12 +726,32 @@ export default function ClinicManagement() {
           </div>
         </motion.div>
         
+        {/* Deactivated Clinics Header/Toggle */}
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">All Clinics</h2>
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition ${showDeactivated ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            onClick={() => setShowDeactivated(!showDeactivated)}
+          >
+            Deactivated Clinics
+          </button>
+          {showDeactivated && (
+            <button
+              className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 transition"
+              onClick={() => setShowDeactivated(false)}
+            >
+              Show All
+            </button>
+          )}
+        </div>
+        
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 mb-8">
           <motion.div 
-            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-100 cursor-pointer transition ${selectedHeader === 'ALL' ? 'ring-2 ring-blue-500' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={() => { setSelectedHeader('ALL'); setSelectedStatus('ALL'); setShowDeactivated(false); }}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -728,10 +765,11 @@ export default function ClinicManagement() {
           </motion.div>
           
           <motion.div 
-            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-100 cursor-pointer transition ${selectedHeader === 'Approved' ? 'ring-2 ring-blue-500' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            onClick={() => { setSelectedHeader('Approved'); setSelectedStatus('ALL'); setShowDeactivated(false); }}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -745,10 +783,11 @@ export default function ClinicManagement() {
           </motion.div>
           
           <motion.div 
-            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-100 cursor-pointer transition ${selectedHeader === 'Pending' ? 'ring-2 ring-blue-500' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            onClick={() => { router.push('/admin/pending'); }}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -762,10 +801,11 @@ export default function ClinicManagement() {
           </motion.div>
           
           <motion.div 
-            className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-100 cursor-pointer transition ${selectedHeader === 'Active' ? 'ring-2 ring-blue-500' : ''}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            onClick={() => { setSelectedHeader('Active'); setSelectedStatus('ALL'); setShowDeactivated(false); }}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -774,6 +814,24 @@ export default function ClinicManagement() {
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <CheckCircle size={24} className="text-purple-600" />
+              </div>
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            className={`bg-white p-6 rounded-xl shadow-lg border border-gray-100 cursor-pointer transition ${selectedHeader === 'Deactivated' ? 'ring-2 ring-blue-500' : ''}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            onClick={() => { setSelectedHeader('Deactivated'); setSelectedStatus('ALL'); setShowDeactivated(true); setTimeout(() => { clinicsListRef.current?.scrollIntoView({ behavior: 'smooth' }); }, 100); }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Deactivated</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.deactivated}</p>
+              </div>
+              <div className="p-3 bg-gray-100 rounded-lg">
+                <XCircle size={24} className="text-gray-500" />
               </div>
             </div>
           </motion.div>
@@ -840,14 +898,15 @@ export default function ClinicManagement() {
         </div>
 
         {/* Clinics List - Card Style for All Screens */}
-        <div className="mb-8 space-y-4">
-          {paginatedClinics.map((clinic, index) => (
+        <div ref={clinicsListRef} className="mb-8 space-y-4">
+          {clinicsToShow.map((clinic, index) => (
             <motion.div
               key={clinic.id}
-              className="bg-white rounded-xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-shadow"
+              className="bg-white rounded-xl shadow-xl border border-gray-100 p-6 hover:shadow-2xl transition-shadow cursor-pointer"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
+              onClick={() => window.location.href = `/admin/allclinics/${clinic.id}`}
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 {/* Clinic Info */}
@@ -896,6 +955,7 @@ export default function ClinicManagement() {
                     <a
                       className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                       aria-label="Review details"
+                      onClick={e => e.stopPropagation()}
                     >
                       <Eye size={16} />
                       <span className="hidden sm:inline">Review</span>

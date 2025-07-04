@@ -9,8 +9,6 @@ export default function Allusers() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* Breadcrumb Navigation */}
-      <Box sx={{ display: "flex", alignItems: "center" }}>
-      </Box>
       <AllUsersPage />
     </Box>
   );

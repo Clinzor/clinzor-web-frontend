@@ -16,6 +16,7 @@ interface Camp {
   status: string;
   priority: string;
   created_at: string;
+  completed?: boolean;
 }
 
 const CampManagement = () => {
@@ -40,6 +41,7 @@ const CampManagement = () => {
   const [selectedCamp, setSelectedCamp] = useState<Camp | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCompletion, setFilterCompletion] = useState('all');
   const [viewMode, setViewMode] = useState('grid');
 
   // Approve/Reject handlers
@@ -52,6 +54,10 @@ const CampManagement = () => {
     if (!selectedCamp) return;
     setCamps(prev => prev.map(c => c.uuid === selectedCamp.uuid ? { ...c, status: 'rejected' } : c));
     setSelectedCamp(null);
+  };
+
+  const handleMarkComplete = (campId: string) => {
+    setCamps(prev => prev.map(c => c.uuid === campId ? { ...c, completed: true } : c));
   };
 
   const getStatusConfig = (status: string) => {
@@ -95,7 +101,8 @@ const CampManagement = () => {
     const matchesSearch = camp.org_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          camp.contact_person.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || camp.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesCompletion = filterCompletion === 'all' || (filterCompletion === 'completed' ? camp.completed : !camp.completed);
+    return matchesSearch && matchesFilter && matchesCompletion;
   });
 
   const stats = {
@@ -169,7 +176,7 @@ const CampManagement = () => {
               />
             </div>
             
-            {/* Filter */}
+            {/* Filter by Status */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -179,6 +186,17 @@ const CampManagement = () => {
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
+            </select>
+
+            {/* Filter by Completion */}
+            <select
+              value={filterCompletion}
+              onChange={(e) => setFilterCompletion(e.target.value)}
+              className="px-4 py-3 bg-white/60 backdrop-blur-sm border border-white/20 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-300 shadow-lg text-base sm:text-lg"
+            >
+              <option value="all">All</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
             </select>
           </div>
         </div>
@@ -266,6 +284,19 @@ const CampManagement = () => {
                       View Details
                     </div>
                   </div>
+
+                  {/* Mark as Complete Button */}
+                  {!camp.completed && (
+                    <button
+                      onClick={e => { e.stopPropagation(); handleMarkComplete(camp.uuid); }}
+                      className="mt-4 w-full px-4 py-2 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow hover:from-emerald-600 hover:to-green-700 transition"
+                    >
+                      Mark as Complete
+                    </button>
+                  )}
+                  {camp.completed && (
+                    <div className="mt-4 w-full px-4 py-2 rounded-xl font-bold bg-gradient-to-r from-gray-400 to-gray-500 text-white text-center">Completed</div>
+                  )}
                 </div>
               </div>
             );

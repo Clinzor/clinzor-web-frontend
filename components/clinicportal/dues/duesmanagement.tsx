@@ -381,6 +381,16 @@ const DuesManagement: React.FC = () => {
     (b) => b.status === 'NEW' && b.amount_due > 0
   );
 
+  // Pagination logic
+  const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  const bookingsPerPage = 3;
+  const allBookingsWithDues = bookings.filter((b) => b.amount_due > 0);
+  const totalBookingPages = Math.ceil(allBookingsWithDues.length / bookingsPerPage);
+  const paginatedBookings = allBookingsWithDues.slice(
+    (currentBookingPage - 1) * bookingsPerPage,
+    currentBookingPage * bookingsPerPage
+  );
+
   useEffect(() => {
     refreshDuesSummary();
   }, [clinics]);
@@ -405,14 +415,6 @@ const DuesManagement: React.FC = () => {
                 className="p-2 sm:p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
               >
                 <RefreshCw className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="group relative inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-sm sm:text-base"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                <Plus className="w-5 h-5 mr-2 relative" />
-                <span className="relative">Initiate Payment</span>
               </button>
             </div>
           </div>
@@ -493,74 +495,80 @@ const DuesManagement: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
             <h2 className="text-lg sm:text-xl font-bold text-slate-900">New Bookings with Dues to Clinzor</h2>
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            {newBookingsWithDues.length === 0 ? (
-              <div className="text-center py-8 sm:py-12">
-                <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">No new bookings with dues</h3>
-                <p className="text-slate-500 text-xs sm:text-sm">All bookings are settled</p>
+          <div className="space-y-6 sm:space-y-8">
+            {paginatedBookings.length === 0 ? (
+              <div className="text-center py-12 sm:py-16">
+                <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-6" />
+                <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No bookings with dues</h3>
+                <p className="text-slate-500 text-sm sm:text-base">All bookings are settled</p>
               </div>
             ) : (
-              newBookingsWithDues.map((booking) => {
+              paginatedBookings.map((booking) => {
                 const activeDue = booking.amount_due > 0 && booking.status === 'NEW';
                 return (
-                  <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3 sm:gap-0">
-                    <div className="flex items-center space-x-3 sm:space-x-4">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-white" />
+                  <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-3xl shadow-lg hover:shadow-2xl transition-all gap-6 sm:gap-0 border border-slate-200/70">
+                    <div className="flex items-center space-x-6 sm:space-x-8">
+                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center">
+                        <Calendar className="w-8 h-8 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-slate-900 text-sm sm:text-base">{booking.patient_name}</h3>
-                        <p className="text-xs sm:text-sm text-slate-600">{booking.clinic_name}</p>
+                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl">{booking.patient_name}</h3>
+                        <p className="text-sm sm:text-base text-slate-600 font-medium">{booking.clinic_name}</p>
                         <p className="text-xs text-slate-500 mt-1">{booking.service_details}</p>
                         <p className="text-xs text-slate-500">{formatDate(booking.date)}</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center space-x-4 sm:space-x-6 mt-2 sm:mt-0">
+                    <div className="flex flex-wrap items-center space-x-8 sm:space-x-12 mt-4 sm:mt-0">
                       <div className="text-right">
                         <p className="text-xs sm:text-sm text-slate-500">Total Cost</p>
-                        <p className="font-bold text-slate-700 text-sm sm:text-base">{formatCurrency(booking.total_cost)}</p>
+                        <p className="font-bold text-slate-700 text-base sm:text-lg">{formatCurrency(booking.total_cost)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs sm:text-sm text-slate-500">Due to Clinzor</p>
-                        <p className="font-bold text-red-600 text-sm sm:text-base">{formatCurrency(booking.amount_due)}</p>
+                        <p className="font-bold text-red-600 text-base sm:text-lg">{formatCurrency(booking.amount_due)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs sm:text-sm text-slate-500">Mode</p>
-                        <p className="font-bold text-blue-600 text-sm sm:text-base">{booking.mode_of_consultation}</p>
+                        <p className="font-bold text-blue-600 text-base sm:text-lg">{booking.mode_of_consultation}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs sm:text-sm text-slate-500">Active Due</p>
-                        <span className={`inline-flex items-center px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold border ${activeDue ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'}`}>
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border ${activeDue ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'}`}>
                           {activeDue ? 'Yes' : 'No'}
                         </span>
                       </div>
-                      <button
-                        onClick={() => {
-                          // Set selected clinic to the booking's clinic for payment modal
-                          const clinic = clinics.find(c => c.id === booking.clinic_id) || null;
-                          setSelectedClinic(clinic);
-                          setShowPaymentModal(true);
-                          setPaymentAmount(String(booking.amount_due));
-                          setPaymentDescription(`Payment for booking ${booking.id}`);
-                        }}
-                        className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors mt-2 sm:mt-0"
-                        disabled={!activeDue}
-                      >
-                        Pay Now
-                      </button>
                     </div>
                   </div>
                 );
               })
             )}
           </div>
+          {/* Pagination Controls */}
+          {totalBookingPages > 1 && (
+            <div className="flex justify-center items-center mt-8 space-x-2">
+              <button
+                onClick={() => setCurrentBookingPage((p) => Math.max(1, p - 1))}
+                disabled={currentBookingPage === 1}
+                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="px-3 py-2 text-slate-600 font-medium">Page {currentBookingPage} of {totalBookingPages}</span>
+              <button
+                onClick={() => setCurrentBookingPage((p) => Math.min(totalBookingPages, p + 1))}
+                disabled={currentBookingPage === totalBookingPages}
+                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Clinics Overview */}
         <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900">Clinics Overview</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900">Service Overview</h2>
             <button className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium">View All</button>
           </div>
           <div className="space-y-3 sm:space-y-4">
@@ -592,15 +600,6 @@ const DuesManagement: React.FC = () => {
                       <StatusIcon className="w-3 h-3 mr-1" />
                       {clinic.status}
                     </span>
-                    <button
-                      onClick={() => {
-                        setSelectedClinic(clinic);
-                        setShowPaymentModal(true);
-                      }}
-                      className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors mt-2 sm:mt-0"
-                    >
-                      Pay Now
-                    </button>
                   </div>
                 </div>
               );
@@ -691,7 +690,7 @@ const DuesManagement: React.FC = () => {
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Transaction</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Clinic</th>
+                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Service</th>
                   <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
                   <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                   <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
@@ -930,7 +929,7 @@ const DuesManagement: React.FC = () => {
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Transaction</th>
-                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Clinic</th>
+                      <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Service</th>
                       <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
                       <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                       <th className="text-left py-2 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>

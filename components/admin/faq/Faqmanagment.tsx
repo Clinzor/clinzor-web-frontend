@@ -283,35 +283,26 @@ const FAQAdminPanel = () => {
                     <div className="p-4 md:p-8">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2 md:gap-0">
                         <h3 className="text-lg md:text-xl font-semibold text-gray-900 leading-tight pr-4">{faq.question}</h3>
-                        <div className="relative">
+                        <div className="flex gap-2">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDropdown(activeDropdown === faq.id ? null : faq.id);
-                            }}
-                            className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-xl transition-all duration-200 group"
+                            onClick={() => setActiveDropdown(faq.id)}
+                            className="flex items-center px-3 py-2 text-blue-600 hover:bg-blue-50/80 rounded-xl transition-all duration-200 font-semibold"
                           >
-                            <MoreVertical className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
+                            <Search className="w-4 h-4 mr-1" /> Read
                           </button>
-                          {activeDropdown === faq.id && (
-                            <div className="absolute right-0 top-full mt-2 w-40 md:w-48 backdrop-blur-xl bg-white/95 rounded-2xl shadow-xl border border-white/20 py-2 z-10 animate-in slide-in-from-top-2 duration-200">
-                              <button
-                                onClick={() => handleEdit(faq)}
-                                className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-blue-50/80 transition-colors duration-150 group"
-                              >
-                                <Edit2 className="w-4 h-4 mr-3 text-blue-500 group-hover:scale-110 transition-transform duration-150" />
-                                Edit FAQ
-                              </button>
-                              <button
-                                onClick={() => handleDelete(faq.id)}
-                                disabled={isLoading}
-                                className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50/80 transition-colors duration-150 group"
-                              >
-                                <Trash2 className="w-4 h-4 mr-3 group-hover:scale-110 transition-transform duration-150" />
-                                Delete FAQ
-                              </button>
-                            </div>
-                          )}
+                          <button
+                            onClick={() => handleEdit(faq)}
+                            className="flex items-center px-3 py-2 text-emerald-600 hover:bg-emerald-50/80 rounded-xl transition-all duration-200 font-semibold"
+                          >
+                            <Edit2 className="w-4 h-4 mr-1" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(faq.id)}
+                            disabled={isLoading}
+                            className="flex items-center px-3 py-2 text-red-600 hover:bg-red-50/80 rounded-xl transition-all duration-200 font-semibold disabled:opacity-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" /> Delete
+                          </button>
                         </div>
                       </div>
                       <div className="prose prose-lg max-w-none">
@@ -359,6 +350,46 @@ const FAQAdminPanel = () => {
           </div>
         </div>
       )}
+
+      {/* Read Modal */}
+      {activeDropdown && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-lg md:max-w-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-3xl blur-xl"></div>
+            <div className="relative backdrop-blur-xl bg-white/95 rounded-3xl shadow-2xl border border-white/20 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+              <div className="flex items-center justify-between p-6 md:p-8 border-b border-gray-100/50">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+                    <Search className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">FAQ Details</h2>
+                </div>
+                <button
+                  onClick={() => setActiveDropdown(null)}
+                  className="p-3 hover:bg-gray-100/80 rounded-2xl transition-all duration-200 group"
+                >
+                  <X className="w-6 h-6 text-gray-500 group-hover:text-gray-700 group-hover:rotate-90 transition-all duration-200" />
+                </button>
+              </div>
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 tracking-wide">QUESTION</label>
+                  <div className="w-full px-4 py-4 bg-gray-50/80 border border-gray-200/50 rounded-2xl text-base md:text-lg">
+                    {faqs.find(f => f.id === activeDropdown)?.question}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 tracking-wide">ANSWER</label>
+                  <div className="w-full px-4 py-4 bg-gray-50/80 border border-gray-200/50 rounded-2xl text-base md:text-lg">
+                    {faqs.find(f => f.id === activeDropdown)?.answer}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page fade-in animation */}
       <style jsx global>{`
         .animate-fadein {

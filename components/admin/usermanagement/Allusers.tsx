@@ -52,10 +52,6 @@ interface StatusBadgeProps {
   type: 'active' | 'blocked' | 'staff' | 'superuser';
 }
 
-interface RoleBadgeProps {
-  role: User['role'];
-}
-
 interface UserCardProps {
   user: User;
   onEdit: (user: User) => void;
@@ -78,6 +74,122 @@ interface NotificationProps {
   message: string;
   onClose: () => void;
 }
+
+// --- Add Booking type for mock bookings (from PatientBookings) ---
+type Booking = {
+  uuid: string;
+  created_by: string;
+  booking_type: 'VIDEO_CALL' | 'PHYSICAL_VISIT';
+  booking_status: 'PENDING' | 'SCHEDULED' | 'COMPLETED';
+  start_time: string;
+  end_time: string;
+  payment_status: 'PENDING' | 'COMPLETED';
+  session_type: string;
+  patient_name: string;
+  patient_mobile: string;
+  patient_email: string;
+  booking_charge: string;
+  clinic_name: string;
+  clinic_id: string;
+  service_type: string;
+};
+
+// --- Generate mock users and bookings together ---
+const clinicNames = [
+  'Sunrise Clinic',
+  'MedCare Center',
+  'City Health Center',
+  'Family Wellness Clinic',
+  'Wellness Point',
+  'Care & Cure',
+  'HealthFirst',
+  'LifeSpring',
+  'Prime Health',
+  'CureWell Hospital'
+];
+const serviceTypes = [
+  'Dermatology',
+  'Cardiology',
+  'ENT',
+  'Orthopedics',
+  'General Medicine',
+  'Pediatrics',
+  'Neurology',
+  'Gynecology',
+  'Ophthalmology',
+  'Dentistry'
+];
+const sessionTypes = ['CONSULTATION', 'SESSION', 'FOLLOWUP'];
+const bookingTypes = ['VIDEO_CALL', 'PHYSICAL_VISIT'];
+const bookingStatuses = ['PENDING', 'SCHEDULED', 'COMPLETED'];
+const paymentStatuses = ['PENDING', 'COMPLETED'];
+
+function randomFromArray<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const generateMockUsersAndBookings = () => {
+  const users: User[] = [];
+  const bookings: Booking[] = [];
+  const countries = ['91', '1', '44', '61', '49'];
+  const names = [
+    'Gaurav Sahu', 'Priya Sharma', 'Rajesh Kumar', 'Anita Nair', 'Mohammed Ali',
+    'Lakshmi Pillai', 'Arjun Menon', 'Meera Joseph', 'Suresh Nair', 'Ravi Kumar',
+    'Deepika Singh', 'Vikram Reddy', 'Sonia Gupta', 'Amit Patel', 'Kavya Iyer',
+    'Rohit Joshi', 'Sneha Desai', 'Kiran Rao', 'Pooja Agarwal', 'Nikhil Varma'
+  ];
+  for (let index = 0; index < 150; index++) {
+    const name = names[index % names.length];
+    const email = `user${index + 1}@example.com`;
+    const user: User = {
+      uuid: `user-${index + 1}-${Math.random().toString(36).substr(2, 9)}`,
+      email,
+      full_name: name,
+      phone_number: `${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+      country_code: countries[Math.floor(Math.random() * countries.length)],
+      role: 'CUSTOMER',
+      is_active: Math.random() > 0.1,
+      is_staff: false,
+      is_superuser: false,
+      is_blocked: Math.random() > 0.9,
+      last_login: Math.random() > 0.3 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+      created_by: Math.random() > 0.5 ? 'system' : null,
+      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      profile_image: `https://images.unsplash.com/photo-${1500000000000 + index}?auto=format&fit=crop&w=64&h=64&q=80`
+    };
+    users.push(user);
+    // Generate 2-5 bookings per user
+    const bookingCount = Math.floor(Math.random() * 4) + 2;
+    for (let b = 0; b < bookingCount; b++) {
+      const clinicIdx = Math.floor(Math.random() * clinicNames.length);
+      const serviceIdx = Math.floor(Math.random() * serviceTypes.length);
+      const daysAgo = Math.floor(Math.random() * 180);
+      const startHour = 9 + Math.floor(Math.random() * 8); // 9am to 5pm
+      const startMinute = Math.random() > 0.5 ? 0 : 30;
+      const start = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+      start.setHours(startHour, startMinute, 0, 0);
+      const end = new Date(start.getTime() + 30 * 60 * 1000);
+      bookings.push({
+        uuid: `b-${user.uuid}-${b}`,
+        created_by: 'admin@clinzor.com',
+        booking_type: randomFromArray(bookingTypes) as 'VIDEO_CALL' | 'PHYSICAL_VISIT',
+        booking_status: randomFromArray(bookingStatuses) as 'PENDING' | 'SCHEDULED' | 'COMPLETED',
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        payment_status: randomFromArray(paymentStatuses) as 'PENDING' | 'COMPLETED',
+        session_type: randomFromArray(sessionTypes),
+        patient_name: name,
+        patient_mobile: user.phone_number,
+        patient_email: email,
+        booking_charge: (Math.floor(Math.random() * 900) + 100).toFixed(2),
+        clinic_name: clinicNames[clinicIdx],
+        clinic_id: `clinic-${clinicIdx + 1}`,
+        service_type: serviceTypes[serviceIdx],
+      });
+    }
+  }
+  return { users, bookings };
+};
 
 const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null;
@@ -154,35 +266,6 @@ const Notification = ({ type, message, onClose }: NotificationProps) => {
   );
 };
 
-// Mock data based on your API structure
-const generateMockUsers = (): User[] => {
-  const roles: User['role'][] = ['CUSTOMER', 'EXPERT', 'CLINIC_ADMIN', 'SUPER_ADMIN'];
-  const countries = ['91', '1', '44', '61', '49'];
-  const names = [
-    'Gaurav Sahu', 'Priya Sharma', 'Rajesh Kumar', 'Anita Nair', 'Mohammed Ali',
-    'Lakshmi Pillai', 'Arjun Menon', 'Meera Joseph', 'Suresh Nair', 'Ravi Kumar',
-    'Deepika Singh', 'Vikram Reddy', 'Sonia Gupta', 'Amit Patel', 'Kavya Iyer',
-    'Rohit Joshi', 'Sneha Desai', 'Kiran Rao', 'Pooja Agarwal', 'Nikhil Varma'
-  ];
-  
-  return Array.from({ length: 150 }, (_, index) => ({
-    uuid: `user-${index + 1}-${Math.random().toString(36).substr(2, 9)}`,
-    email: `user${index + 1}@example.com`,
-    full_name: names[index % names.length],
-    phone_number: `${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-    country_code: countries[Math.floor(Math.random() * countries.length)],
-    role: roles[Math.floor(Math.random() * roles.length)],
-    is_active: Math.random() > 0.1,
-    is_staff: Math.random() > 0.8,
-    is_superuser: Math.random() > 0.95,
-    is_blocked: Math.random() > 0.9,
-    last_login: Math.random() > 0.3 ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() : null,
-    created_by: Math.random() > 0.5 ? 'system' : null,
-    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-    profile_image: `https://images.unsplash.com/photo-${1500000000000 + index}?auto=format&fit=crop&w=64&h=64&q=80`
-  }));
-};
-
 const StatusBadge = ({ status, type }: StatusBadgeProps) => {
   const getStatusConfig = () => {
     if (type === 'active') {
@@ -218,23 +301,6 @@ const StatusBadge = ({ status, type }: StatusBadgeProps) => {
   );
 };
 
-const RoleBadge = ({ role }: RoleBadgeProps) => {
-  const roleConfig = {
-    CUSTOMER: { color: 'bg-blue-100 text-blue-700', text: 'Customer' },
-    EXPERT: { color: 'bg-green-100 text-green-700', text: 'Expert' },
-    CLINIC_ADMIN: { color: 'bg-orange-100 text-orange-700', text: 'Clinic Admin' },
-    SUPER_ADMIN: { color: 'bg-purple-100 text-purple-700', text: 'Super Admin' }
-  } as const;
-  
-  const config = roleConfig[role] || { color: 'bg-gray-100 text-gray-700', text: role };
-  
-  return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-      {config.text}
-    </span>
-  );
-};
-
 const UserCard = ({ user, onEdit, onDelete, onBlock, onView }: UserCardProps) => (
   <motion.div 
     className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200"
@@ -265,11 +331,6 @@ const UserCard = ({ user, onEdit, onDelete, onBlock, onView }: UserCardProps) =>
     </div>
     
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">Role:</span>
-        <RoleBadge role={user.role} />
-      </div>
-      
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-600">Status:</span>
         <div className="flex gap-2">
@@ -342,9 +403,6 @@ const UserRow = ({ user, onEdit, onDelete, onBlock, onView }: UserRowProps) => (
       <div className="text-sm text-gray-900">+{user.country_code} {user.phone_number}</div>
     </td>
     <td className="px-6 py-4 whitespace-nowrap">
-      <RoleBadge role={user.role} />
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
       <div className="flex gap-1">
         <StatusBadge status={user.is_active} type="active" />
         {user.is_blocked && <StatusBadge status={user.is_blocked} type="blocked" />}
@@ -393,10 +451,10 @@ const UserRow = ({ user, onEdit, onDelete, onBlock, onView }: UserRowProps) => (
 
 export default function AllUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRole, setSelectedRole] = useState<User['role'] | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [currentPage, setCurrentPage] = useState(1);
@@ -423,14 +481,13 @@ export default function AllUsersPage() {
   useEffect(() => {
     const loadUsers = async () => {
       setLoading(true);
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockUsers = generateMockUsers();
+      const { users: mockUsers, bookings: mockBookings } = generateMockUsersAndBookings();
       setUsers(mockUsers);
+      setBookings(mockBookings);
       setFilteredUsers(mockUsers);
       setLoading(false);
     };
-    
     loadUsers();
   }, []);
   
@@ -445,11 +502,6 @@ export default function AllUsersPage() {
         user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.phone_number.includes(searchQuery)
       );
-    }
-    
-    // Role filter
-    if (selectedRole !== 'ALL') {
-      filtered = filtered.filter(user => user.role === selectedRole);
     }
     
     // Status filter
@@ -489,7 +541,7 @@ export default function AllUsersPage() {
     
     setFilteredUsers(filtered);
     setCurrentPage(1);
-  }, [users, searchQuery, selectedRole, statusFilter, sortBy, sortOrder]);
+  }, [users, searchQuery, statusFilter, sortBy, sortOrder]);
   
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -509,7 +561,6 @@ export default function AllUsersPage() {
       email: user.email,
       phone_number: user.phone_number,
       country_code: user.country_code,
-      role: user.role,
       is_active: user.is_active,
       is_staff: user.is_staff,
       is_superuser: user.is_superuser
@@ -748,22 +799,6 @@ export default function AllUsersPage() {
               />
             </div>
             
-            {/* Role Filter */}
-            <div className="relative w-full md:w-auto">
-              <select
-                value={selectedRole}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedRole(e.target.value as User['role'] | 'ALL')}
-                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 sm:py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto text-sm sm:text-base"
-              >
-                <option value="ALL">All Roles</option>
-                <option value="CUSTOMER">Customer</option>
-                <option value="EXPERT">Expert</option>
-                <option value="CLINIC_ADMIN">Clinic Admin</option>
-                <option value="SUPER_ADMIN">Super Admin</option>
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
-            
             {/* Status Filter */}
             <div className="relative w-full md:w-auto">
               <select
@@ -818,7 +853,6 @@ export default function AllUsersPage() {
               <option value="full_name">Name</option>
               <option value="created_at">Date Joined</option>
               <option value="last_login">Last Login</option>
-              <option value="role">Role</option>
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -858,9 +892,6 @@ export default function AllUsersPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Phone
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -957,44 +988,132 @@ export default function AllUsersPage() {
         title="User Details"
       >
         {selectedUser && (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+          <div className="space-y-6 max-h-[80vh] overflow-y-auto">
+            {/* Profile Section */}
+            <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-3xl shadow">
                 {selectedUser.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
               </div>
-              <div>
-                <h4 className="text-lg font-semibold">{selectedUser.full_name}</h4>
-                <p className="text-gray-600">{selectedUser.email}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-medium">+{selectedUser.country_code} {selectedUser.phone_number}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Role</p>
-                <RoleBadge role={selectedUser.role} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <div className="flex gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-2xl font-bold text-gray-900">{selectedUser.full_name}</h4>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
+                  <Mail size={16} />
+                  <span>{selectedUser.email}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
                   <StatusBadge status={selectedUser.is_active} type="active" />
                   {selectedUser.is_blocked && <StatusBadge status={selectedUser.is_blocked} type="blocked" />}
                 </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Joined</p>
-                <p className="font-medium">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+            </div>
+            {/* User Stats Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2 bg-blue-50 rounded-lg p-3">
+                <Calendar size={18} className="text-blue-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Joined</div>
+                  <div className="font-medium text-gray-900">{new Date(selectedUser.created_at).toLocaleDateString()}</div>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Last Login</p>
-                <p className="font-medium">
-                  {selectedUser.last_login 
-                    ? new Date(selectedUser.last_login).toLocaleDateString()
-                    : 'Never'}
-                </p>
+              <div className="flex items-center gap-2 bg-purple-50 rounded-lg p-3">
+                <Clock size={18} className="text-purple-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Last Login</div>
+                  <div className="font-medium text-gray-900">{selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleDateString() : 'Never'}</div>
+                </div>
               </div>
+              <div className="flex items-center gap-2 bg-green-50 rounded-lg p-3">
+                <Users size={18} className="text-green-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Total Bookings</div>
+                  <div className="font-medium text-gray-900">{bookings.filter(b => b.patient_email === selectedUser.email).length}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-yellow-50 rounded-lg p-3">
+                <UserCheck size={18} className="text-yellow-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Active</div>
+                  <div className="font-medium text-gray-900">{selectedUser.is_active ? 'Yes' : 'No'}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-red-50 rounded-lg p-3">
+                <UserX size={18} className="text-red-600" />
+                <div>
+                  <div className="text-xs text-gray-500">Blocked</div>
+                  <div className="font-medium text-gray-900">{selectedUser.is_blocked ? 'Yes' : 'No'}</div>
+                </div>
+              </div>
+            </div>
+            {/* Bookings Table - show directly in modal */}
+            <div className="pt-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Bookings</h3>
+              {(() => {
+                const userBookings = bookings.filter(b => b.patient_email === selectedUser.email);
+                if (userBookings.length === 0) {
+                  return <div className="text-gray-500 text-center py-4">No bookings found for this user.</div>;
+                }
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[600px] w-full divide-y divide-gray-200 text-xs sm:text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Clinic</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Service</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Date</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Time</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Slot</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Type</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Status</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Payment</th>
+                          <th className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">Charge</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {userBookings.map((b: Booking) => {
+                          const date = new Date(b.start_time);
+                          const end = new Date(b.end_time);
+                          return (
+                            <tr key={b.uuid}>
+                              <td className="px-2 sm:px-4 py-2 font-medium text-blue-700 whitespace-nowrap">{b.clinic_name}</td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">{b.service_type}</td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">{date.toLocaleDateString()}</td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                                <span className="inline-block bg-gray-100 rounded px-2 py-1 text-xs">
+                                  {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${b.booking_type === 'VIDEO_CALL' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                  {b.booking_type === 'VIDEO_CALL' ? 'Video Call' : 'Clinic Visit'}
+                                </span>
+                                <span className="ml-2 inline-block bg-gray-50 rounded px-2 py-1 text-xs text-gray-500">{b.session_type}</span>
+                              </td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                                  ${b.booking_status === 'COMPLETED' ? 'bg-green-100 text-green-700' : b.booking_status === 'SCHEDULED' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}
+                                >
+                                  {b.booking_status}
+                                </span>
+                              </td>
+                              <td className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
+                                  ${b.payment_status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}
+                                >
+                                  {b.payment_status === 'COMPLETED' ? 'Paid' : 'Pending'}
+                                </span>
+                              </td>
+                              <td className="px-2 sm:px-4 py-2 font-semibold text-right whitespace-nowrap">₹{parseFloat(b.booking_charge).toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -1053,19 +1172,6 @@ export default function AllUsersPage() {
                   placeholder="Enter 10-digit number"
                 />
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Role</label>
-              <select
-                value={editFormData.role || ''}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, role: e.target.value as User['role'] }))}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="CUSTOMER">Customer</option>
-                <option value="EXPERT">Expert</option>
-                <option value="CLINIC_ADMIN">Clinic Admin</option>
-                <option value="SUPER_ADMIN">Super Admin</option>
-              </select>
             </div>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
