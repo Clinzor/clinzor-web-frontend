@@ -81,6 +81,7 @@ interface Booking {
   service_details: string;
   mode_of_consultation: 'Online' | 'In-Clinic';
   status: 'NEW' | 'COMPLETED' | 'CANCELLED';
+  is_past_due?: boolean;
 }
 
 // Sample data
@@ -189,6 +190,72 @@ const sampleBookings: Booking[] = [
     service_details: 'Pediatric Consultation',
     mode_of_consultation: 'Online',
     status: 'COMPLETED',
+  },
+  // Past due bookings
+  {
+    id: 'bk_004',
+    clinic_id: '5a1f8f39-ca38-464c-93c5-ea8edbd6c03f',
+    clinic_name: 'MediCare Clinic',
+    patient_name: 'Robert Wilson',
+    date: '2025-01-10T11:00:00Z',
+    amount_due: 800,
+    total_cost: 1600,
+    service_details: 'Cardiology Consultation',
+    mode_of_consultation: 'In-Clinic',
+    status: 'COMPLETED',
+    is_past_due: true,
+  },
+  {
+    id: 'bk_005',
+    clinic_id: '7b2e9e4a-db49-575d-a4c6-fb9fced7d14g',
+    clinic_name: 'City Health Center',
+    patient_name: 'Sarah Johnson',
+    date: '2025-01-08T13:30:00Z',
+    amount_due: 1200,
+    total_cost: 2000,
+    service_details: 'Orthopedic Surgery',
+    mode_of_consultation: 'In-Clinic',
+    status: 'COMPLETED',
+    is_past_due: true,
+  },
+  {
+    id: 'bk_006',
+    clinic_id: '8c3f0f5b-ec5a-686e-b5d7-gca0ged8e25h',
+    clinic_name: 'Family Wellness Clinic',
+    patient_name: 'Michael Davis',
+    date: '2025-01-05T09:15:00Z',
+    amount_due: 450,
+    total_cost: 950,
+    service_details: 'Dermatology Consultation',
+    mode_of_consultation: 'Online',
+    status: 'COMPLETED',
+    is_past_due: true,
+  },
+  {
+    id: 'bk_007',
+    clinic_id: '5a1f8f39-ca38-464c-93c5-ea8edbd6c03f',
+    clinic_name: 'MediCare Clinic',
+    patient_name: 'Emily Chen',
+    date: '2025-01-03T16:45:00Z',
+    amount_due: 650,
+    total_cost: 1300,
+    service_details: 'Neurology Consultation',
+    mode_of_consultation: 'In-Clinic',
+    status: 'COMPLETED',
+    is_past_due: true,
+  },
+  {
+    id: 'bk_008',
+    clinic_id: '7b2e9e4a-db49-575d-a4c6-fb9fced7d14g',
+    clinic_name: 'City Health Center',
+    patient_name: 'David Thompson',
+    date: '2025-01-01T10:00:00Z',
+    amount_due: 950,
+    total_cost: 1800,
+    service_details: 'Gastroenterology Consultation',
+    mode_of_consultation: 'Online',
+    status: 'COMPLETED',
+    is_past_due: true,
   },
 ];
 
@@ -383,12 +450,19 @@ const DuesManagement: React.FC = () => {
 
   // Pagination logic
   const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  const [currentPastDuePage, setCurrentPastDuePage] = useState(1);
   const bookingsPerPage = 3;
-  const allBookingsWithDues = bookings.filter((b) => b.amount_due > 0);
+  const allBookingsWithDues = bookings.filter((b) => b.amount_due > 0 && !b.is_past_due);
+  const allPastDueBookings = bookings.filter((b) => b.amount_due > 0 && b.is_past_due);
   const totalBookingPages = Math.ceil(allBookingsWithDues.length / bookingsPerPage);
+  const totalPastDuePages = Math.ceil(allPastDueBookings.length / bookingsPerPage);
   const paginatedBookings = allBookingsWithDues.slice(
     (currentBookingPage - 1) * bookingsPerPage,
     currentBookingPage * bookingsPerPage
+  );
+  const paginatedPastDueBookings = allPastDueBookings.slice(
+    (currentPastDuePage - 1) * bookingsPerPage,
+    currentPastDuePage * bookingsPerPage
   );
 
   useEffect(() => {
@@ -399,20 +473,20 @@ const DuesManagement: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* Header */}
       <div className="backdrop-blur-xl bg-white/80 border-b border-slate-200/60 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-20 py-4 sm:py-0 gap-2 sm:gap-0">
-            <div className="flex flex-col space-y-1 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center space-x-8">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
                   Dues Management
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">Track payments and manage clinic dues</p>
+                <p className="text-sm text-slate-500 mt-1">Track payments and manage clinic dues</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4 mt-2 sm:mt-0">
+            <div className="flex items-center space-x-3 sm:space-x-4 mt-2 sm:mt-0">
               <button
                 onClick={refreshDuesSummary}
-                className="p-2 sm:p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
@@ -421,119 +495,196 @@ const DuesManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12">
           {/* Total Due amount to Clinzor */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl">
-                <DollarSign className="w-6 h-6 text-white" />
+          <div className="group bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="w-7 h-7 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Total Due to Clinzor</p>
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(duesSummary.total_dues)}</p>
+                <p className="text-sm sm:text-base text-slate-600 font-semibold mb-1">Total Due to Clinzor</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{formatCurrency(duesSummary.total_dues)}</p>
               </div>
             </div>
             <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 text-blue-500 mr-1" />
-              <span className="text-sm text-blue-600 font-medium">Outstanding</span>
+              <TrendingUp className="w-5 h-5 text-blue-500 mr-2" />
+              <span className="text-sm sm:text-base text-blue-600 font-semibold">Outstanding</span>
             </div>
           </div>
           {/* Total Bookings Made */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
-                <Calendar className="w-6 h-6 text-white" />
+          <div className="group bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="w-7 h-7 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Total Bookings</p>
-                <p className="text-2xl font-bold text-slate-900">{bookings.length}</p>
+                <p className="text-sm sm:text-base text-slate-600 font-semibold mb-1">Total Bookings</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{bookings.length}</p>
               </div>
             </div>
             <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-sm text-green-600 font-medium">Bookings</span>
+              <TrendingUp className="w-5 h-5 text-green-500 mr-2" />
+              <span className="text-sm sm:text-base text-green-600 font-semibold">Bookings</span>
             </div>
           </div>
           {/* Total Amount Paid to Clinzor */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-white" />
+          <div className="group bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <CheckCircle className="w-7 h-7 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Total Paid to Clinzor</p>
-                <p className="text-2xl font-bold text-slate-900">{formatCurrency(duesSummary.total_paid)}</p>
+                <p className="text-sm sm:text-base text-slate-600 font-semibold mb-1">Total Paid to Clinzor</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{formatCurrency(duesSummary.total_paid)}</p>
               </div>
             </div>
             <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
-              <span className="text-sm text-emerald-600 font-medium">Collected</span>
+              <TrendingUp className="w-5 h-5 text-emerald-500 mr-2" />
+              <span className="text-sm sm:text-base text-emerald-600 font-semibold">Collected</span>
             </div>
           </div>
           {/* Payment History */}
-          <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-6 shadow-sm hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowPaymentHistoryModal(true)}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
-                <Receipt className="w-6 h-6 text-white" />
+          <div className="group bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer" onClick={() => setShowPaymentHistoryModal(true)}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Receipt className="w-7 h-7 text-white" />
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500 font-medium">Payment History</p>
-                <p className="text-2xl font-bold text-slate-900">View</p>
+                <p className="text-sm sm:text-base text-slate-600 font-semibold mb-1">Payment History</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">View</p>
               </div>
             </div>
             <div className="flex items-center">
-              <TrendingUp className="w-4 h-4 text-purple-500 mr-1" />
-              <span className="text-sm text-purple-600 font-medium">History</span>
+              <TrendingUp className="w-5 h-5 text-purple-500 mr-2" />
+              <span className="text-sm sm:text-base text-purple-600 font-semibold">History</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Section - match DoctorManagement style */}
+        <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+            {/* Search Bar */}
+            <div className="xl:col-span-2">
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Search</label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search transactions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                />
+              </div>
+            </div>
+            {/* Status Filter */}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
+              >
+                <option value="">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="PENDING">Pending</option>
+                <option value="CREATED">Created</option>
+                <option value="FAILED">Failed</option>
+              </select>
+            </div>
+            {/* Clinic Filter */}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic</label>
+              <select
+                value={clinicFilter}
+                onChange={(e) => setClinicFilter(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
+              >
+                <option value="">All Clinics</option>
+                {clinics.map(clinic => (
+                  <option key={clinic.id} value={clinic.id}>{clinic.name}</option>
+                ))}
+              </select>
+            </div>
+            {/* Date Range Filter */}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Date Range</label>
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
             </div>
           </div>
         </div>
 
         {/* New Bookings with Dues to Clinzor */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900">New Bookings with Dues to Clinzor</h2>
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 sm:p-8 mb-8 sm:mb-12 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">New Bookings with Dues to Clinzor</h2>
+                <p className="text-sm text-slate-600 mt-1">Recent bookings requiring payment</p>
+              </div>
+            </div>
           </div>
           <div className="space-y-6 sm:space-y-8">
             {paginatedBookings.length === 0 ? (
-              <div className="text-center py-12 sm:py-16">
-                <Calendar className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-6" />
-                <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No bookings with dues</h3>
-                <p className="text-slate-500 text-sm sm:text-base">All bookings are settled</p>
+              <div className="text-center py-16 sm:py-20">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Calendar className="w-10 h-10 text-blue-500" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3">No bookings with dues</h3>
+                <p className="text-slate-600 text-base">All bookings are settled</p>
               </div>
             ) : (
-              paginatedBookings.map((booking) => {
+              paginatedBookings.map((booking, index) => {
                 const activeDue = booking.amount_due > 0 && booking.status === 'NEW';
                 return (
-                  <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-3xl shadow-lg hover:shadow-2xl transition-all gap-6 sm:gap-0 border border-slate-200/70">
+                  <div 
+                    key={booking.id} 
+                    className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 gap-6 sm:gap-0 border border-slate-200/70 hover:-translate-y-1"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
                     <div className="flex items-center space-x-6 sm:space-x-8">
-                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center">
+                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                         <Calendar className="w-8 h-8 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl">{booking.patient_name}</h3>
-                        <p className="text-sm sm:text-base text-slate-600 font-medium">{booking.clinic_name}</p>
-                        <p className="text-xs text-slate-500 mt-1">{booking.service_details}</p>
-                        <p className="text-xs text-slate-500">{formatDate(booking.date)}</p>
+                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-1">{booking.patient_name}</h3>
+                        <p className="text-sm sm:text-base text-slate-600 font-semibold mb-2">{booking.clinic_name}</p>
+                        <p className="text-sm text-slate-500 mb-1">{booking.service_details}</p>
+                        <p className="text-sm text-slate-500 font-medium">{formatDate(booking.date)}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center space-x-8 sm:space-x-12 mt-4 sm:mt-0">
                       <div className="text-right">
-                        <p className="text-xs sm:text-sm text-slate-500">Total Cost</p>
-                        <p className="font-bold text-slate-700 text-base sm:text-lg">{formatCurrency(booking.total_cost)}</p>
+                        <p className="text-sm text-slate-600 font-medium mb-1">Total Cost</p>
+                        <p className="font-bold text-slate-800 text-lg sm:text-xl">{formatCurrency(booking.total_cost)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs sm:text-sm text-slate-500">Due to Clinzor</p>
-                        <p className="font-bold text-red-600 text-base sm:text-lg">{formatCurrency(booking.amount_due)}</p>
+                        <p className="text-sm text-slate-600 font-medium mb-1">Due to Clinzor</p>
+                        <p className="font-bold text-red-600 text-lg sm:text-xl">{formatCurrency(booking.amount_due)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs sm:text-sm text-slate-500">Mode</p>
-                        <p className="font-bold text-blue-600 text-base sm:text-lg">{booking.mode_of_consultation}</p>
+                        <p className="text-sm text-slate-600 font-medium mb-1">Mode</p>
+                        <p className="font-bold text-blue-600 text-lg sm:text-xl">{booking.mode_of_consultation}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs sm:text-sm text-slate-500">Active Due</p>
-                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border ${activeDue ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'}`}>
+                        <p className="text-sm text-slate-600 font-medium mb-1">Active Due</p>
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border shadow-sm ${activeDue ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'}`}>
                           {activeDue ? 'Yes' : 'No'}
                         </span>
                       </div>
@@ -545,19 +696,113 @@ const DuesManagement: React.FC = () => {
           </div>
           {/* Pagination Controls */}
           {totalBookingPages > 1 && (
-            <div className="flex justify-center items-center mt-8 space-x-2">
+            <div className="flex justify-center items-center mt-10 space-x-3">
               <button
                 onClick={() => setCurrentBookingPage((p) => Math.max(1, p - 1))}
                 disabled={currentBookingPage === 1}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold disabled:opacity-50"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Previous
               </button>
-              <span className="px-3 py-2 text-slate-600 font-medium">Page {currentBookingPage} of {totalBookingPages}</span>
+              <span className="px-6 py-3 text-slate-700 font-semibold bg-white rounded-2xl shadow-sm">Page {currentBookingPage} of {totalBookingPages}</span>
               <button
                 onClick={() => setCurrentBookingPage((p) => Math.min(totalBookingPages, p + 1))}
                 disabled={currentBookingPage === totalBookingPages}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold disabled:opacity-50"
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Past Due Bookings */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 sm:p-8 mb-8 sm:mb-12 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl shadow-lg">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Past Due Bookings</h2>
+                <p className="text-sm text-slate-600 mt-1">Overdue payments requiring attention</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-red-600 font-semibold">Overdue Payments</span>
+            </div>
+          </div>
+          <div className="space-y-6 sm:space-y-8">
+            {paginatedPastDueBookings.length === 0 ? (
+              <div className="text-center py-16 sm:py-20">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-green-500" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3">No past due bookings</h3>
+                <p className="text-slate-600 text-base">All payments are up to date</p>
+              </div>
+            ) : (
+              paginatedPastDueBookings.map((booking, index) => {
+                const daysOverdue = Math.floor((Date.now() - new Date(booking.date).getTime()) / (1000 * 60 * 60 * 24));
+                return (
+                  <div 
+                    key={booking.id} 
+                    className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 sm:p-8 bg-gradient-to-br from-red-50 via-white to-orange-50 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 gap-6 sm:gap-0 border border-red-200/70 hover:-translate-y-1"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-center space-x-6 sm:space-x-8">
+                      <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <AlertCircle className="w-8 h-8 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-lg sm:text-xl mb-1">{booking.patient_name}</h3>
+                        <p className="text-sm sm:text-base text-slate-600 font-semibold mb-2">{booking.clinic_name}</p>
+                        <p className="text-sm text-slate-500 mb-1">{booking.service_details}</p>
+                        <p className="text-sm text-red-600 font-semibold">{formatDate(booking.date)} • {daysOverdue} days overdue</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center space-x-8 sm:space-x-12 mt-4 sm:mt-0">
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600 font-medium mb-1">Total Cost</p>
+                        <p className="font-bold text-slate-800 text-lg sm:text-xl">{formatCurrency(booking.total_cost)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600 font-medium mb-1">Overdue Amount</p>
+                        <p className="font-bold text-red-600 text-lg sm:text-xl">{formatCurrency(booking.amount_due)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600 font-medium mb-1">Mode</p>
+                        <p className="font-bold text-blue-600 text-lg sm:text-xl">{booking.mode_of_consultation}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-600 font-medium mb-1">Status</p>
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border shadow-sm bg-red-500/10 text-red-700 border-red-500/20">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Past Due
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {/* Pagination Controls for Past Due */}
+          {totalPastDuePages > 1 && (
+            <div className="flex justify-center items-center mt-10 space-x-3">
+              <button
+                onClick={() => setCurrentPastDuePage((p) => Math.max(1, p - 1))}
+                disabled={currentPastDuePage === 1}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Previous
+              </button>
+              <span className="px-6 py-3 text-slate-700 font-semibold bg-white rounded-2xl shadow-sm">Page {currentPastDuePage} of {totalPastDuePages}</span>
+              <button
+                onClick={() => setCurrentPastDuePage((p) => Math.min(totalPastDuePages, p + 1))}
+                disabled={currentPastDuePage === totalPastDuePages}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300 text-slate-700 font-semibold disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Next
               </button>
@@ -566,38 +811,52 @@ const DuesManagement: React.FC = () => {
         </div>
 
         {/* Clinics Overview */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900">Service Overview</h2>
-            <button className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium">View All</button>
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/60 p-6 sm:p-8 mb-8 sm:mb-12 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                <Building className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Service Overview</h2>
+                <p className="text-sm text-slate-600 mt-1">Clinic performance and payment status</p>
+              </div>
+            </div>
+            <button className="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md">
+              View All
+            </button>
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            {clinics.slice(0, 3).map((clinic) => {
+          <div className="space-y-4 sm:space-y-6">
+            {clinics.slice(0, 3).map((clinic, index) => {
               const statusConfig = getStatusConfig(clinic.status);
               const StatusIcon = statusConfig.icon;
               
               return (
-                <div key={clinic.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3 sm:gap-0">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                      <Building className="w-5 h-5 text-white" />
+                <div 
+                  key={clinic.id} 
+                  className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl hover:from-slate-100 hover:to-slate-200 transition-all duration-300 gap-4 sm:gap-0 border border-slate-200/50 hover:shadow-lg"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-center space-x-4 sm:space-x-6">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Building className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900 text-sm sm:text-base">{clinic.name}</h3>
-                      <p className="text-xs sm:text-sm text-slate-600">{clinic.email}</p>
+                      <h3 className="font-bold text-slate-900 text-base sm:text-lg mb-1">{clinic.name}</h3>
+                      <p className="text-sm text-slate-600 font-medium">{clinic.email}</p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center space-x-4 sm:space-x-6 mt-2 sm:mt-0">
+                  <div className="flex flex-wrap items-center space-x-6 sm:space-x-8 mt-3 sm:mt-0">
                     <div className="text-right">
-                      <p className="text-xs sm:text-sm text-slate-500">Current Dues</p>
-                      <p className="font-bold text-red-600 text-sm sm:text-base">{formatCurrency(clinic.current_dues)}</p>
+                      <p className="text-sm text-slate-600 font-medium mb-1">Current Dues</p>
+                      <p className="font-bold text-red-600 text-base sm:text-lg">{formatCurrency(clinic.current_dues)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs sm:text-sm text-slate-500">Total Paid</p>
-                      <p className="font-bold text-emerald-600 text-sm sm:text-base">{formatCurrency(clinic.total_paid)}</p>
+                      <p className="text-sm text-slate-600 font-medium mb-1">Total Paid</p>
+                      <p className="font-bold text-emerald-600 text-base sm:text-lg">{formatCurrency(clinic.total_paid)}</p>
                     </div>
-                    <span className={`inline-flex items-center px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold border ${statusConfig.color}`}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
+                    <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-bold border shadow-sm ${statusConfig.color}`}>
+                      <StatusIcon className="w-4 h-4 mr-1" />
                       {clinic.status}
                     </span>
                   </div>
@@ -607,139 +866,85 @@ const DuesManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search transactions..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm"
-              >
-                <option value="">All Status</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PENDING">Pending</option>
-                <option value="CREATED">Created</option>
-                <option value="FAILED">Failed</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Clinic</label>
-              <select
-                value={clinicFilter}
-                onChange={(e) => setClinicFilter(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm"
-              >
-                <option value="">All Clinics</option>
-                {clinics.map(clinic => (
-                  <option key={clinic.id} value={clinic.id}>{clinic.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Date Range</label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-sm"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         {/* Transactions List */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 shadow-sm overflow-x-auto">
-          <div className="p-4 sm:p-6 border-b border-slate-200">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">Recent Transactions</h2>
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <button className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-                  <Download className="w-4 h-4" />
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200 shadow-xl overflow-x-auto">
+          <div className="p-6 sm:p-8 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-lg">
+                  <Receipt className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Recent Transactions</h2>
+                  <p className="text-sm text-slate-600 mt-1">Payment and transaction history</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <button className="p-3 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-2xl transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Download className="w-5 h-5" />
                 </button>
-                <button className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-                  <Filter className="w-4 h-4" />
+                <button className="p-3 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-2xl transition-all duration-200 shadow-sm hover:shadow-md">
+                  <Filter className="w-5 h-5" />
                 </button>
               </div>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] sm:min-w-full text-xs sm:text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
+            <table className="w-full min-w-[600px] sm:min-w-full text-sm sm:text-base">
+              <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
                 <tr>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Transaction</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Service</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                  <th className="text-left py-2 sm:py-4 px-2 sm:px-6 text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Transaction</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Service</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Amount</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Date</th>
+                  <th className="text-left py-4 sm:py-6 px-4 sm:px-8 text-sm font-bold text-slate-700 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredTransactions.map((transaction) => {
+                {filteredTransactions.map((transaction, index) => {
                   const statusConfig = getStatusConfig(transaction.status);
                   const StatusIcon = statusConfig.icon;
                   
                   return (
-                    <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
-                            <Receipt className="w-4 h-4 text-white" />
+                    <tr key={transaction.id} className="hover:bg-slate-50 transition-all duration-200 group">
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                           </div>
                           <div>
-                            <p className="font-semibold text-slate-900 text-xs sm:text-sm">{transaction.id}</p>
-                            <p className="text-xs sm:text-sm text-slate-600">{transaction.description}</p>
+                            <p className="font-bold text-slate-900 text-sm sm:text-base">{transaction.id}</p>
+                            <p className="text-sm text-slate-600 font-medium">{transaction.description}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
-                        <p className="font-medium text-slate-900 text-xs sm:text-sm">{transaction.clinic_name}</p>
-                        <p className="text-xs sm:text-sm text-slate-600 capitalize">{transaction.type.toLowerCase()}</p>
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
+                        <p className="font-semibold text-slate-900 text-sm sm:text-base">{transaction.clinic_name}</p>
+                        <p className="text-sm text-slate-600 capitalize font-medium">{transaction.type.toLowerCase()}</p>
                       </td>
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
-                        <p className="font-bold text-slate-900 text-xs sm:text-sm">{formatCurrency(transaction.amount)}</p>
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
+                        <p className="font-bold text-slate-900 text-lg sm:text-xl">{formatCurrency(transaction.amount)}</p>
                       </td>
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
-                        <span className={`inline-flex items-center px-2 sm:px-3 py-1.5 rounded-full text-xs font-bold border ${statusConfig.color}`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
+                        <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-bold border shadow-sm ${statusConfig.color}`}>
+                          <StatusIcon className="w-4 h-4 mr-1" />
                           {transaction.status}
                         </span>
                       </td>
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
-                        <p className="text-xs sm:text-sm text-slate-600">{formatDate(transaction.created_at)}</p>
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
+                        <p className="text-sm text-slate-600 font-medium">{formatDate(transaction.created_at)}</p>
                       </td>
-                      <td className="py-2 sm:py-4 px-2 sm:px-6">
+                      <td className="py-4 sm:py-6 px-4 sm:px-8">
                         <button
                           onClick={() => {
                             setSelectedTransaction(transaction);
                             setShowTransactionModal(true);
                           }}
-                          className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-3 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-5 h-5" />
                         </button>
                       </td>
                     </tr>
@@ -750,10 +955,12 @@ const DuesManagement: React.FC = () => {
           </div>
 
           {filteredTransactions.length === 0 && (
-            <div className="text-center py-8 sm:py-12">
-              <Receipt className="w-10 h-10 sm:w-12 sm:h-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-2">No transactions found</h3>
-              <p className="text-slate-500 text-xs sm:text-sm">Try adjusting your search criteria</p>
+            <div className="text-center py-12 sm:py-16">
+              <div className="w-20 h-20 bg-gradient-to-r from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Receipt className="w-10 h-10 text-slate-400" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3">No transactions found</h3>
+              <p className="text-slate-600 text-base">Try adjusting your search criteria</p>
             </div>
           )}
         </div>
@@ -762,7 +969,7 @@ const DuesManagement: React.FC = () => {
       {/* Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl w-full max-w-sm sm:max-w-md border border-white/20 shadow-2xl relative">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-sm sm:max-w-md border border-white/20 shadow-2xl relative">
             <button
               onClick={() => {
                 setShowPaymentModal(false);
@@ -836,7 +1043,7 @@ const DuesManagement: React.FC = () => {
       {/* Transaction Modal */}
       {showTransactionModal && selectedTransaction && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl w-full max-w-sm sm:max-w-md border border-white/20 shadow-2xl relative">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-sm sm:max-w-md border border-white/20 shadow-2xl relative">
             <button
               onClick={() => {
                 setShowTransactionModal(false);
@@ -888,7 +1095,7 @@ const DuesManagement: React.FC = () => {
       {/* Payment History Modal */}
       {showPaymentHistoryModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl w-full max-w-4xl border border-white/20 shadow-2xl relative flex flex-col max-h-[90vh]">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl w-full max-w-4xl border border-white/20 shadow-2xl relative flex flex-col max-h-[90vh]">
             <button
               onClick={() => setShowPaymentHistoryModal(false)}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition"

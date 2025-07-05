@@ -39,6 +39,7 @@ interface Clinic {
   gpsCoordinates?: string;
   submissionDate?: string;
   documents?: string[];
+  changedFields?: string[];
 }
 
 // Status Badge Component
@@ -166,6 +167,8 @@ const ClinicDetailModal = ({
 }) => {
   if (!clinic) return null;
 
+  const changedFields = getChangedFields(clinic);
+
   return (
     <ModernModal isOpen={isOpen} onClose={onClose} title={`Review: ${clinic.name}`} size="xl">
       <div className="space-y-6">
@@ -275,6 +278,18 @@ const ClinicDetailModal = ({
           </div>
         </div>
 
+        {/* Changed Fields */}
+        {changedFields.includes('services') && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-400 p-2 rounded mb-2">
+            <span className="font-semibold text-yellow-800">Services have been updated by the clinic.</span>
+          </div>
+        )}
+        {changedFields.includes('doctors') && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-400 p-2 rounded mb-2">
+            <span className="font-semibold text-yellow-800">Doctors list has been updated by the clinic.</span>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
           <button
@@ -307,6 +322,15 @@ const ClinicDetailModal = ({
       </div>
     </ModernModal>
   );
+};
+
+// Simulate changed fields for demo
+const getChangedFields = (clinic: Clinic) => {
+  // In real app, compare with previous approved data
+  // For demo, randomly highlight 'services' and 'doctors' for some clinics
+  if (clinic.id % 2 === 0) return ['services'];
+  if (clinic.id % 3 === 0) return ['doctors'];
+  return [];
 };
 
 // Main Component
@@ -650,6 +674,30 @@ export default function PendingApprovalPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Highlight Changed Fields: Services/Doctors */}
+                {(() => {
+                  const changed = getChangedFields(clinic);
+                  if (changed.includes('services') || changed.includes('doctors')) {
+                    return (
+                      <div className="flex gap-2 mt-2">
+                        {changed.includes('services') && (
+                          <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">
+                            <svg className="mr-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 10v4M17 10v4M3 10v4M21 10v4M5 10V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4M15 10V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"/></svg>
+                            Services updated
+                          </span>
+                        )}
+                        {changed.includes('doctors') && (
+                          <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">
+                            <svg className="mr-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                            Doctors updated
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </motion.div>
             ))}
           </div>

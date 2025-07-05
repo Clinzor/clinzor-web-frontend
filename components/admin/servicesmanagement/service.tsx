@@ -90,6 +90,7 @@ const MedicalServicesApp: React.FC = () => {
     tags: '',
     image: '',
   });
+  const [viewMode, setViewMode] = useState<'all' | 'approved'>('all');
 
   const getServiceIcon = (name: string) => {
     const serviceLower = name.toLowerCase();
@@ -168,13 +169,23 @@ const MedicalServicesApp: React.FC = () => {
     ));
   };
 
-  const filteredServices = services.filter((service) => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.tags.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || service.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const getFilteredServices = () => {
+    let filtered = services.filter((service) => {
+      const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.tags.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'ALL' || service.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+    
+    if (viewMode === 'approved') {
+      filtered = filtered.filter(service => service.status === 'APPROVED');
+    }
+    
+    return filtered;
+  };
+
+  const filteredServices = getFilteredServices();
 
   // Pagination logic
   const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
@@ -218,21 +229,44 @@ const MedicalServicesApp: React.FC = () => {
     }
   };
 
+  const handleTotalServicesClick = () => {
+    setViewMode('approved');
+    setStatusFilter('ALL');
+    setSearchTerm('');
+  };
+  
+  const handleBackToAll = () => {
+    setViewMode('all');
+    setStatusFilter('ALL');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between h-auto sm:h-20 py-4 sm:py-0 gap-4 sm:gap-0">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                <Stethoscope className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Service Management</h1>
-                <p className="text-sm text-gray-500">Manage and monitor medical services</p>
-              </div>
+            {viewMode === 'approved' && (
+              <button
+                onClick={handleBackToAll}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
+              </button>
+            )}
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Stethoscope className="w-6 h-6 text-white" />
             </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {viewMode === 'approved' ? 'All Approved Services' : 'Service Management'}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {viewMode === 'approved' ? 'View all approved services in the database' : 'Manage and monitor medical services'}
+              </p>
+            </div>
+          </div>
+          {viewMode === 'all' && (
             <button
               onClick={() => setIsFormOpen(true)}
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
@@ -240,41 +274,49 @@ const MedicalServicesApp: React.FC = () => {
               <Plus className="w-5 h-5" />
               <span className="font-medium">Add Service</span>
             </button>
-          </div>
+          )}
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <div
-              key={status}
-              onClick={() => setStatusFilter(status as 'ALL' | ServiceStatus)}
-              className={`p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
-                statusFilter === status
-                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                  : 'border-gray-100 bg-white hover:border-gray-200'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">
-                    {statusLabels[status]}
-                  </p>
-                  <p className="text-xl sm:text-3xl font-bold text-gray-900">{count}</p>
-                </div>
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
-                  status === 'APPROVED' ? 'bg-green-100' :
-                  status === 'REJECTED' ? 'bg-red-100' :
-                  status === 'PENDING' ? 'bg-yellow-100' : 'bg-blue-100'
-                }`}>
-                  {getStatusIcon(status)}
+        {/* Stats Cards - Only show in 'all' view */}
+        {viewMode === 'all' && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-8">
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div
+                key={status}
+                onClick={() => {
+                  if (status === 'ALL') {
+                    handleTotalServicesClick();
+                  } else {
+                    setStatusFilter(status as 'ALL' | ServiceStatus);
+                  }
+                }}
+                className={`p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                  statusFilter === status
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-100 bg-white hover:border-gray-200'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">
+                      {statusLabels[status]}
+                    </p>
+                    <p className="text-xl sm:text-3xl font-bold text-gray-900">{count}</p>
+                  </div>
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
+                    status === 'APPROVED' ? 'bg-green-100' :
+                    status === 'REJECTED' ? 'bg-red-100' :
+                    status === 'PENDING' ? 'bg-yellow-100' : 'bg-blue-100'
+                  }`}>
+                    {getStatusIcon(status)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row gap-2 sm:gap-4">
@@ -282,7 +324,7 @@ const MedicalServicesApp: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search services..."
+              placeholder={viewMode === 'approved' ? "Search approved services..." : "Search services..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
@@ -331,8 +373,8 @@ const MedicalServicesApp: React.FC = () => {
                 </div>
                 {/* Action Buttons */}
                 <div className="space-y-2 sm:space-y-3">
-                  {/* Accept/Reject Buttons for Requested Services */}
-                  {service.status === 'PENDING' && (
+                  {/* Accept/Reject Buttons for Requested Services - Only show in 'all' view */}
+                  {viewMode === 'all' && service.status === 'PENDING' && (
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <button
                         onClick={() => handleStatusChange(service.uuid, 'APPROVED')}
@@ -350,8 +392,8 @@ const MedicalServicesApp: React.FC = () => {
                       </button>
                     </div>
                   )}
-                  {/* Only show view/edit/delete for non-pending services */}
-                  {service.status !== 'PENDING' && (
+                  {/* View/Edit/Delete buttons - Show for approved services in both views */}
+                  {(service.status === 'APPROVED' || (viewMode === 'all' && service.status !== 'PENDING')) && (
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                       <button
                         onClick={() => setViewingService(service)}
@@ -360,20 +402,22 @@ const MedicalServicesApp: React.FC = () => {
                         <Eye className="w-4 h-4" />
                         <span>View</span>
                       </button>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(service)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(service.uuid)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {viewMode === 'all' && (
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(service)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service.uuid)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -388,16 +432,22 @@ const MedicalServicesApp: React.FC = () => {
             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
               <Search className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No services found</h3>
-            <p className="text-gray-500 mb-4 sm:mb-6">Try adjusting your search criteria or filters</p>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              {viewMode === 'approved' ? 'No approved services found' : 'No services found'}
+            </h3>
+            <p className="text-gray-500 mb-4 sm:mb-6">
+              {viewMode === 'approved' ? 'Try adjusting your search criteria' : 'Try adjusting your search criteria or filters'}
+            </p>
             <button
               onClick={() => {
                 setSearchTerm('');
-                setStatusFilter('ALL');
+                if (viewMode === 'all') {
+                  setStatusFilter('ALL');
+                }
               }}
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              Clear all filters
+              Clear search
             </button>
           </div>
         )}

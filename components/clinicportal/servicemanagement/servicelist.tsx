@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Plus, 
@@ -25,8 +25,16 @@ import {
   FileText,
   Image as ImageIcon,
   XCircle,
-  Building2
+  Building2,
+  LayoutGrid,
+  List as ListIcon,
+  Calendar as CalendarIcon
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import type { DraggableProvided, DroppableProvided } from 'react-beautiful-dnd';
+import { isBefore, startOfDay } from 'date-fns';
 
 // Types
 interface Service {
@@ -60,6 +68,7 @@ interface ClinicService {
   image: string | null;
   description: string | null;
   reason_for_rejection: string | null;
+  display_date?: string; // ISO string for display date
 }
 
 interface NewClinicService {
@@ -84,7 +93,9 @@ interface NewClinicService {
 const sampleClinics = [
   { uuid: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f", name: "City General Hospital" },
   { uuid: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f", name: "Metro Medical Center" },
-  { uuid: "c3d9f5e2-5b6c-5d8e-9f0g-2b3c4d5e6f7g", name: "Downtown Clinic" }
+  { uuid: "c3d9f5e2-5b6c-5d8e-9f0g-2b3c4d5e6f7g", name: "Downtown Clinic" },
+  { uuid: "d4e5f6g7-h8i9-j0k1-l2m3-n4o5p6q7r8s9", name: "Sunrise Specialty Clinic" },
+  { uuid: "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t0", name: "Lakeside Health Center" }
 ];
 
 const sampleServices: Service[] = [
@@ -123,6 +134,42 @@ const sampleServices: Service[] = [
     tags: "general,medicine,primary care,checkup",
     image: null,
     status: "REJECTED"
+  },
+  {
+    uuid: "9a8b7c6d-5e4f-3g2h-1i0j-k9l8m7n6o5p4",
+    created_by: "admin@gmail.com",
+    name: "dermatologist",
+    description: "Expert in skin, hair, and nail disorders.",
+    tags: "skin,acne,eczema,psoriasis,allergy",
+    image: null,
+    status: "APPROVED"
+  },
+  {
+    uuid: "8b7c6d5e-4f3g-2h1i-0j9k-8l7m6n5o4p3q",
+    created_by: "admin@gmail.com",
+    name: "orthopedic",
+    description: "Specialist in bones, joints, and muscles.",
+    tags: "bones,joints,fracture,arthritis,orthopedics",
+    image: null,
+    status: "PENDING"
+  },
+  {
+    uuid: "7c6d5e4f-3g2h-1i0j-9k8l-7m6n5o4p3q2r",
+    created_by: "admin@gmail.com",
+    name: "pediatrician",
+    description: "Child health and development expert.",
+    tags: "children,childcare,pediatrics,immunization,growth",
+    image: null,
+    status: "APPROVED"
+  },
+  {
+    uuid: "6d5e4f3g-2h1i-0j9k-8l7m-6n5o4p3q2r1s",
+    created_by: "admin@gmail.com",
+    name: "psychiatrist",
+    description: "Mental health and behavioral specialist.",
+    tags: "mental health,psychiatry,therapy,depression,anxiety",
+    image: null,
+    status: "REJECTED"
   }
 ];
 
@@ -147,7 +194,8 @@ const sampleClinicServices: ClinicService[] = [
     is_physical_visit: true,
     image: null,
     description: "Premium cardiology services with experienced specialists",
-    reason_for_rejection: null
+    reason_for_rejection: null,
+    display_date: new Date().toISOString(),
   },
   {
     uuid: "269f4738-76fc-51c3-c646-48dcc7646cb9",
@@ -169,14 +217,110 @@ const sampleClinicServices: ClinicService[] = [
     is_physical_visit: true,
     image: null,
     description: null,
-    reason_for_rejection: null
+    reason_for_rejection: null,
+    display_date: new Date().toISOString(),
+  },
+  {
+    uuid: "379e3627-65eb-40b2-b535-37cbb6535ab9",
+    service: "9a8b7c6d-5e4f-3g2h-1i0j-k9l8m7n6o5p4",
+    clinic: "d4e5f6g7-h8i9-j0k1-l2m3-n4o5p6q7r8s9",
+    service_name: "dermatologist",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: "Skin Wellness Center",
+    rank: 3,
+    consultation_charge_video_call: "300.00",
+    consultation_charge_physical_visit: "250.00",
+    consultation_charge_home_visit: "350.00",
+    treatment_charge_video_call: "500.00",
+    treatment_charge_physical_visit: "450.00",
+    treatment_charge_home_visit: "600.00",
+    status: "APPROVED",
+    is_video_call: true,
+    is_home_visit: false,
+    is_physical_visit: true,
+    image: null,
+    description: "Comprehensive skin care and treatment.",
+    reason_for_rejection: null,
+    display_date: new Date().toISOString()
+  },
+  {
+    uuid: "489f4738-76fc-51c3-c646-48dcc7646cb8",
+    service: "8b7c6d5e-4f3g-2h1i-0j9k-8l7m6n5o4p3q",
+    clinic: "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t0",
+    service_name: "orthopedic",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: "Bone & Joint Clinic",
+    rank: 4,
+    consultation_charge_video_call: "400.00",
+    consultation_charge_physical_visit: "350.00",
+    consultation_charge_home_visit: "400.00",
+    treatment_charge_video_call: "700.00",
+    treatment_charge_physical_visit: "600.00",
+    treatment_charge_home_visit: "800.00",
+    status: "PENDING",
+    is_video_call: true,
+    is_home_visit: true,
+    is_physical_visit: true,
+    image: null,
+    description: "Bone, joint, and muscle care.",
+    reason_for_rejection: null,
+    display_date: new Date().toISOString()
+  },
+  {
+    uuid: "591e3627-65eb-40b2-b535-37cbb6535ab1",
+    service: "7c6d5e4f-3g2h-1i0j-9k8l-7m6n5o4p3q2r",
+    clinic: "5a1f8f39-ca38-464c-93c5-ea8edbd6c03f",
+    service_name: "pediatrician",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: "Child Health Center",
+    rank: 5,
+    consultation_charge_video_call: "350.00",
+    consultation_charge_physical_visit: "300.00",
+    consultation_charge_home_visit: "400.00",
+    treatment_charge_video_call: "600.00",
+    treatment_charge_physical_visit: "550.00",
+    treatment_charge_home_visit: "700.00",
+    status: "APPROVED",
+    is_video_call: true,
+    is_home_visit: false,
+    is_physical_visit: true,
+    image: null,
+    description: "Pediatric care and immunizations.",
+    reason_for_rejection: null,
+    display_date: new Date().toISOString()
+  },
+  {
+    uuid: "6a9e3627-65eb-40b2-b535-37cbb6535ab2",
+    service: "6d5e4f3g-2h1i-0j9k-8l7m-6n5o4p3q2r1s",
+    clinic: "b2c8f4d1-4a5b-4c7d-8e9f-1a2b3c4d5e6f",
+    service_name: "psychiatrist",
+    created_by: "admin@gmail.com",
+    clinic_provided_name: "Mind Wellness Center",
+    rank: 6,
+    consultation_charge_video_call: "500.00",
+    consultation_charge_physical_visit: "400.00",
+    consultation_charge_home_visit: "500.00",
+    treatment_charge_video_call: "800.00",
+    treatment_charge_physical_visit: "700.00",
+    treatment_charge_home_visit: "900.00",
+    status: "REJECTED",
+    is_video_call: true,
+    is_home_visit: true,
+    is_physical_visit: true,
+    image: null,
+    description: "Mental health and therapy services.",
+    reason_for_rejection: "Incomplete documentation.",
+    display_date: new Date().toISOString()
   }
 ];
 
 const ServiceManagement: React.FC = () => {
   // State management
   const [services, setServices] = useState<Service[]>(sampleServices);
-  const [clinicServices, setClinicServices] = useState<ClinicService[]>(sampleClinicServices);
+  const [clinicServices, setClinicServices] = useState<ClinicService[]>(sampleClinicServices.map(cs => ({
+    ...cs,
+    display_date: cs.display_date || new Date().toISOString(),
+  })));
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'clinic-services'>('clinic-services');
   const itemsPerPage = 6;
@@ -422,7 +566,8 @@ const ServiceManagement: React.FC = () => {
       is_physical_visit: newClinicService.is_clinic_visit,
       image: newClinicService.image || null,
       description: newClinicService.description || null,
-      reason_for_rejection: null
+      reason_for_rejection: null,
+      display_date: new Date().toISOString(),
     };
     
     setClinicServices([clinicService, ...clinicServices]);
@@ -554,8 +699,382 @@ const ServiceManagement: React.FC = () => {
     service.tags.toLowerCase().includes(serviceSearchTerm.toLowerCase())
   );
 
+  // Drag-and-drop handlers
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    if (destination == null) return;
+    const reordered = Array.from(filteredClinicServices);
+    const [removed] = reordered.splice(source.index, 1);
+    reordered.splice(destination.index, 0, removed);
+    // Update rank and display_date
+    const now = new Date().toISOString();
+    const updated = reordered.map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+      display_date: idx === destination.index ? now : item.display_date,
+    }));
+    // Update the main clinicServices state
+    setClinicServices(
+      clinicServices.map(cs => {
+        const found = updated.find(u => u.uuid === cs.uuid);
+        return found ? { ...cs, rank: found.rank, display_date: found.display_date } : cs;
+      })
+    );
+    showToast('Order updated! Rank and date changed.', 'success');
+  };
+
+  // Manual date edit handler
+  const handleDateChange = (uuid: string, date: Date) => {
+    setClinicServices(clinicServices.map(cs =>
+      cs.uuid === uuid ? { ...cs, display_date: date.toISOString() } : cs
+    ));
+    showToast('Display date updated!', 'success');
+  };
+
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Add state for Apple-style date picker modal
+  const [datePickerModal, setDatePickerModal] = useState<{ open: boolean; uuid: string | null; date: Date }>({ open: false, uuid: null, date: new Date() });
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (datePickerModal.open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [datePickerModal.open]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        {/* Header */}
+        <div className="backdrop-blur-xl bg-white/80 border-b border-slate-200/60 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between h-auto sm:h-16 gap-2 sm:gap-0 py-3 sm:py-0"> {/* Responsive layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-1 sm:space-y-0"> {/* Responsive spacing */}
+                <div>
+                  <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent leading-tight"> {/* Responsive text size */}
+                    Service Management
+                  </h1>
+                  <p className="text-xs sm:text-xs text-slate-500 mt-0.5">
+                    Manage your clinic services
+                  </p>
+                </div>
+                {/* Stats Cards: stack on mobile, row on desktop */}
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-6 mt-2 sm:mt-0">
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                    <div className="p-1.5 bg-blue-500 rounded-lg">
+                      <Settings className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-blue-600 font-medium">Total Services</p>
+                      <p className="text-base font-bold text-blue-700">{totalClinicServices}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
+                    <div className="p-1.5 bg-emerald-500 rounded-lg">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-emerald-600 font-medium">Approved</p>
+                      <p className="text-base font-bold text-emerald-700">{approvedClinicServices}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
+                    <div className="p-1.5 bg-amber-500 rounded-lg">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-amber-600 font-medium">Pending</p>
+                      <p className="text-base font-bold text-amber-700">{pendingClinicServices}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl border border-red-100">
+                    <div className="p-1.5 bg-red-500 rounded-lg">
+                      <XCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-red-600 font-medium">Rejected</p>
+                      <p className="text-base font-bold text-red-700">{rejectedClinicServices}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Action Buttons: stack on mobile, row on desktop */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto">
+                <button
+                  onClick={() => setShowRequestServiceModal(true)}
+                  className="group relative inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm w-full sm:w-auto"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                  <Plus className="w-4 h-4 mr-2 relative" />
+                  <span className="relative">Request Service</span>
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="group relative inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm w-full sm:w-auto"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                  <Plus className="w-5 h-5 mr-2 relative" />
+                  <span className="relative">Add Service</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Section */}
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
+              {/* Search Bar */}
+              <div className="xl:col-span-2">
+                <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">Search</label>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by service name, description, or clinic..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400"
+                  />
+                </div>
+              </div>
+
+              {/* View Toggle */}
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 ml-1 block">View Mode</label>
+                <div className="flex bg-slate-100 rounded-full p-1 shadow-inner border border-slate-200">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`flex items-center gap-1 px-4 py-2 rounded-full font-semibold transition-all duration-150 text-sm ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow' : 'text-blue-700 hover:bg-blue-200/60'}`}
+                  >
+                    <LayoutGrid className="w-4 h-4" /> Grid
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center gap-1 px-4 py-2 rounded-full font-semibold transition-all duration-150 text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white shadow' : 'text-blue-700 hover:bg-blue-200/60'}`}
+                  >
+                    <ListIcon className="w-4 h-4" /> List
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Services Grid/List */}
+          {filteredClinicServices.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+                <Settings className="relative w-16 h-16 text-slate-400 mx-auto mb-6" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">No services found</h3>
+              <p className="text-slate-500 text-lg mb-8 max-w-md mx-auto">
+                Try adjusting your search terms or add your first service
+              </p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Your First Service
+              </button>
+            </div>
+          ) : (
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="clinic-services-droppable" direction={viewMode === 'grid' ? 'horizontal' : 'vertical'}>
+                {(provided: DroppableProvided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={viewMode === 'grid' ? 'grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-4'}
+                  >
+                    {paginatedData.map((clinicService, idx) => {
+                      const statusConfig = getStatusConfig(clinicService.status);
+                      const StatusIcon = statusConfig.icon;
+                      const ServiceIcon = getServiceIcon(clinicService.service_name);
+                      return (
+                        <Draggable key={clinicService.uuid} draggableId={clinicService.uuid} index={idx}>
+                          {(provided: DraggableProvided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={viewMode === 'grid' ? 'group relative' : 'group relative flex items-center bg-white/90 rounded-xl border border-slate-200/60 shadow-lg hover:shadow-2xl p-4'}
+                            >
+                              <div className={viewMode === 'grid' ? 'relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden' : 'flex-1'}>
+                                <div className={viewMode === 'grid' ? 'p-6' : ''}>
+                                  {/* Header */}
+                                  <div className="flex items-start justify-between mb-6">
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-3 mb-2">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center overflow-hidden">
+                                          {clinicService.image ? (
+                                            <img
+                                              src={clinicService.image}
+                                              alt={clinicService.service_name}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <ServiceIcon className="w-6 h-6 text-white" />
+                                          )}
+                                        </div>
+                                        <div>
+                                          <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                            {clinicService.clinic_provided_name || clinicService.service_name}
+                                          </h3>
+                                          <p className="text-sm text-slate-600">
+                                            {getClinicName(clinicService.clinic)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-2">
+                                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border ${statusConfig.color}`}>
+                                        <StatusIcon className="w-3 h-3 mr-1" />
+                                        {clinicService.status}
+                                      </span>
+                                      <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Description */}
+                                  {clinicService.description && (
+                                    <div className="mb-6">
+                                      <p className="text-slate-700 text-sm line-clamp-3">
+                                        {clinicService.description}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {/* Charges */}
+                                  <div className="mb-6">
+                                    <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                                      {clinicService.is_video_call && (
+                                        <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
+                                          <Video className="w-4 h-4 mr-1 text-blue-500" />
+                                          Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                                        </span>
+                                      )}
+                                      {clinicService.is_physical_visit && (
+                                        <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                                          <Home className="w-4 h-4 mr-1 text-green-500" />
+                                          Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
+                                        </span>
+                                      )}
+                                      {clinicService.is_home_visit && (
+                                        <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
+                                          <Building className="w-4 h-4 mr-1 text-amber-500" />
+                                          Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Rank Display */}
+                                  <div className="mb-6">
+                                    <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
+                                      <p className="text-2xl font-bold text-emerald-700">{clinicService.rank}</p>
+                                      <p className="text-xs text-emerald-600 font-medium">Service Rank</p>
+                                    </div>
+                                  </div>
+
+                                  {/* Display Date */}
+                                  <div className="mb-6">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-slate-600">Display Date:</span>
+                                      <button
+                                        className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-blue-100 text-xs font-semibold border border-slate-200 transition-all"
+                                        onClick={() => setDatePickerModal({ open: true, uuid: clinicService.uuid, date: clinicService.display_date ? new Date(clinicService.display_date) : new Date() })}
+                                      >
+                                        {clinicService.display_date ? new Date(clinicService.display_date).toLocaleDateString() : 'Set Date'}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                                    <div />
+                                    <div className="flex items-center space-x-1">
+                                      <button 
+                                        onClick={() => handleView(clinicService)}
+                                        className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleEdit(clinicService)}
+                                        className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                                      >
+                                        <Edit3 className="w-4 h-4" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteConfirm(clinicService)}
+                                        className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleEditRank(clinicService)}
+                                        className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
+                                      >
+                                        <Star className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-wrap justify-center items-center gap-2 mt-8">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-lg border border-slate-200 bg-white/80 text-slate-700 font-semibold disabled:opacity-50"
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-2 rounded-lg border border-slate-200 font-semibold ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white/80 text-slate-700'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-lg border border-slate-200 bg-white/80 text-slate-700 font-semibold disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3
@@ -565,245 +1084,6 @@ const ServiceManagement: React.FC = () => {
           <span className="font-medium">{toast.message}</span>
         </div>
       )}
-      {/* Header */}
-      <div className="backdrop-blur-xl bg-white/80 border-b border-slate-200/60 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 lg:py-0 lg:h-20">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-8">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-600 bg-clip-text text-transparent">
-                  Service Management
-                </h1>
-                <p className="text-sm text-slate-500 mt-1">Manage services and clinic service offerings</p>
-              </div>
-              
-              {/* Stats Cards */}
-              <div className="hidden lg:flex items-center space-x-6">
-                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <Settings className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-medium">Clinic Services</p>
-                    <p className="text-lg font-bold text-blue-700">{totalClinicServices}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-100">
-                  <div className="p-2 bg-emerald-500 rounded-lg">
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-emerald-600 font-medium">Approved</p>
-                    <p className="text-lg font-bold text-emerald-700">{approvedClinicServices}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-100">
-                  <div className="p-2 bg-amber-500 rounded-lg">
-                    <Clock className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-amber-600 font-medium">Pending</p>
-                    <p className="text-lg font-bold text-amber-700">{pendingClinicServices}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Show Add button only for the active tab */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowRequestServiceModal(true)}
-                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                <Plus className="w-5 h-5 mr-2 relative" />
-                <span className="relative">Request Service</span>
-              </button>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                <Plus className="w-5 h-5 mr-2 relative" />
-                <span className="relative">Add Clinic Service</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Search Bar */}
-        <div className="bg-white/80 border border-slate-200 rounded-2xl shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search clinic services by name, description, or clinic..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 text-slate-700 placeholder-slate-400 text-sm sm:text-base"
-            />
-          </div>
-        </div>
-
-        {/* Content Grid */}
-        {currentData.length === 0 ? (
-          <div className="text-center py-12 sm:py-20">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-              <Settings className="relative w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4 sm:mb-6" />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2 sm:mb-3">
-              No clinic services found
-            </h3>
-            <p className="text-slate-500 text-base sm:text-lg mb-6 sm:mb-8 max-w-md mx-auto px-4">
-              Try adjusting your search terms or add your first clinic service
-            </p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg font-semibold text-sm sm:text-base"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-              Add Your First Clinic Service
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-            {paginatedData.map((clinicService) => {
-              const statusConfig = getStatusConfig(clinicService.status);
-              const StatusIcon = statusConfig.icon;
-              const ServiceIcon = getServiceIcon(clinicService.service_name);
-              return (
-                <div key={clinicService.uuid} className="group relative">
-                  <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-slate-200/50 overflow-hidden">
-                    <div className="p-4 sm:p-6">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4 sm:mb-6">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2 sm:mb-3">
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
-                              {clinicService.image ? (
-                                <img
-                                  src={clinicService.image}
-                                  alt={clinicService.service_name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
-                                  <span className="text-slate-400 text-xs font-medium">No Image</span>
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
-                                {clinicService.clinic_provided_name || clinicService.service_name}
-                              </h3>
-                              <p className="text-sm text-slate-600">
-                                {getClinicName(clinicService.clinic)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
-                            <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
-                            <StatusIcon className="w-4 h-4" />
-                            <span>{clinicService.status}</span>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Description */}
-                      {clinicService.description && (
-                        <div className="mb-4">
-                          <p className="text-slate-700 text-sm line-clamp-3">
-                            {clinicService.description}
-                          </p>
-                        </div>
-                      )}
-                      {/* Charges */}
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-                          {clinicService.is_video_call && (
-                            <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
-                              <Video className="w-4 h-4 mr-1 text-blue-500" />
-                              Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
-                            </span>
-                          )}
-                          {clinicService.is_physical_visit && (
-                            <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
-                              <Home className="w-4 h-4 mr-1 text-green-500" />
-                              Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
-                            </span>
-                          )}
-                          {clinicService.is_home_visit && (
-                            <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
-                              <Building className="w-4 h-4 mr-1 text-amber-500" />
-                              Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {/* Actions */}
-                      <div className="flex items-center justify-between">
-                        <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                          <Eye className="w-4 h-4 mr-1" /> View
-                        </button>
-                        <div className="flex space-x-2">
-                          <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
-                            <Edit3 className="w-4 h-4 mr-1" /> Edit
-                          </button>
-                          <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
-                            <Trash2 className="w-4 h-4 mr-1" /> Delete
-                          </button>
-                          <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
-                            <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-slate-200">
-            <div className="text-sm sm:text-base text-slate-600">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, currentData.length)} of {currentData.length} results
-            </div>
-            <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 sm:px-3 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                &lt;
-              </button>
-              {[...Array(totalPages)].map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentPage(idx + 1)}
-                  className={`relative inline-flex items-center px-3 sm:px-4 py-2 border border-slate-300 bg-white text-sm font-medium ${
-                    currentPage === idx + 1 
-                      ? 'text-blue-600 font-bold bg-blue-50' 
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 sm:px-3 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                &gt;
-              </button>
-            </nav>
-          </div>
-        )}
-      </div>
 
       {/* Modal for Add Clinic Service */}
       {showCreateModal && (
@@ -1611,72 +1891,107 @@ const ServiceManagement: React.FC = () => {
                   </div>
                   
                   {/* Services Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    {filteredAllServices.map((service) => {
-                      const ServiceIcon = getServiceIcon(service.name);
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                    {paginatedData.map((clinicService, idx) => {
+                      const statusConfig = getStatusConfig(clinicService.status);
+                      const StatusIcon = statusConfig.icon;
+                      const ServiceIcon = getServiceIcon(clinicService.service_name);
                       return (
-                        <div
-                          key={service.uuid}
-                          onClick={() => handleSelectService(service)}
-                          className="group cursor-pointer bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 hover:border-blue-300 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                        >
-                          {/* Service Image */}
-                          <div className="relative mb-4">
-                            {service.image ? (
-                              <img
-                                src={service.image}
-                                alt={service.name}
-                                className="w-full h-32 sm:h-40 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
-                              />
-                            ) : (
-                              <div className="w-full h-32 sm:h-40 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                                <ServiceIcon className="w-12 h-12 text-blue-500" />
+                        <div key={clinicService.uuid} className="group relative">
+                          <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200/60 hover:border-slate-300/60 transition-all duration-300 shadow-sm hover:shadow-2xl overflow-hidden">
+                            <div className="p-6">
+                              {/* Header */}
+                              <div className="flex items-start justify-between mb-4 sm:mb-6">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-3 mb-2 sm:mb-3">
+                                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
+                                      {clinicService.image ? (
+                                        <img
+                                          src={clinicService.image}
+                                          alt={clinicService.service_name}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
+                                          <span className="text-slate-400 text-xs font-medium">No Image</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors capitalize">
+                                        {clinicService.clinic_provided_name || clinicService.service_name}
+                                      </h3>
+                                      <p className="text-sm text-slate-600">
+                                        {getClinicName(clinicService.clinic)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className={`inline-flex items-center px-2 py-1 rounded-lg border text-xs font-semibold ${statusConfig.color} space-x-2`}>
+                                    <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`}></span>
+                                    <StatusIcon className="w-4 h-4" />
+                                    <span>{clinicService.status}</span>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                            <div className="absolute top-3 right-3">
-                              <div className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
-                                {service.status}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Service Info */}
-                          <div className="space-y-3">
-                            <div>
-                              <h3 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
-                                {service.name}
-                              </h3>
-                              <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
-                                {service.description}
-                              </p>
-                            </div>
-                            
-                            {/* Tags */}
-                            <div className="flex flex-wrap gap-1">
-                              {service.tags.split(',').slice(0, 3).map((tag, idx) => (
-                                <span key={idx} className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-medium">
-                                  #{tag.trim()}
-                                </span>
-                              ))}
-                              {service.tags.split(',').length > 3 && (
-                                <span className="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs">
-                                  +{service.tags.split(',').length - 3} more
-                                </span>
+                              {/* Description */}
+                              {clinicService.description && (
+                                <div className="mb-4">
+                                  <p className="text-slate-700 text-sm line-clamp-3">
+                                    {clinicService.description}
+                                  </p>
+                                </div>
                               )}
+                              {/* Charges */}
+                              <div className="mb-4">
+                                <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                                  {clinicService.is_video_call && (
+                                    <span className="inline-flex items-center px-2 py-1 bg-blue-50 rounded-lg">
+                                      <Video className="w-4 h-4 mr-1 text-blue-500" />
+                                      Video: ₹{clinicService.consultation_charge_video_call} / ₹{clinicService.treatment_charge_video_call}
+                                    </span>
+                                  )}
+                                  {clinicService.is_physical_visit && (
+                                    <span className="inline-flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                                      <Home className="w-4 h-4 mr-1 text-green-500" />
+                                      Physical: ₹{clinicService.consultation_charge_physical_visit} / ₹{clinicService.treatment_charge_physical_visit}
+                                    </span>
+                                  )}
+                                  {clinicService.is_home_visit && (
+                                    <span className="inline-flex items-center px-2 py-1 bg-amber-50 rounded-lg">
+                                      <Building className="w-4 h-4 mr-1 text-amber-500" />
+                                      Home: ₹{clinicService.consultation_charge_home_visit} / ₹{clinicService.treatment_charge_home_visit}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Actions */}
+                              <div className="flex items-center justify-between">
+                                <button onClick={() => handleView(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                                  <Eye className="w-4 h-4 mr-1" /> View
+                                </button>
+                                <div className="flex space-x-2">
+                                  <button onClick={() => handleEdit(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-xs font-semibold">
+                                    <Edit3 className="w-4 h-4 mr-1" /> Edit
+                                  </button>
+                                  <button onClick={() => handleDeleteConfirm(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-all text-xs font-semibold">
+                                    <Trash2 className="w-4 h-4 mr-1" /> Delete
+                                  </button>
+                                  <button onClick={() => handleEditRank(clinicService)} className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all text-xs font-semibold">
+                                    <Edit3 className="w-4 h-4 mr-1" /> Edit Rank
+                                  </button>
+                                </div>
+                              </div>
+                              {/* Display Date (manual edit) */}
+                              <div className="mt-2 mb-2 flex items-center gap-2">
+                                <span className="text-xs text-slate-500">Display Date:</span>
+                                <button
+                                  className="px-2 py-1 rounded bg-slate-100 hover:bg-blue-100 text-xs font-semibold border border-slate-200 transition-all"
+                                  onClick={() => setDatePickerModal({ open: true, uuid: clinicService.uuid, date: clinicService.display_date ? new Date(clinicService.display_date) : new Date() })}
+                                >
+                                  {clinicService.display_date ? new Date(clinicService.display_date).toLocaleDateString() : 'Set Date'}
+                                </button>
+                              </div>
                             </div>
-                          </div>
-
-                          {/* Select Button */}
-                          <div className="mt-4 pt-4 border-t border-slate-100">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectService(service);
-                              }}
-                              className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm font-semibold shadow-lg transform hover:scale-105"
-                            >
-                              Select This Service
-                            </button>
                           </div>
                         </div>
                       );
@@ -1934,8 +2249,134 @@ const ServiceManagement: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Apple-style Date Picker Modal */}
+      {datePickerModal.open && (
+        <DatePickerModal
+          date={datePickerModal.date}
+          onClose={() => setDatePickerModal({ open: false, uuid: null, date: new Date() })}
+          onSave={date => {
+            if (datePickerModal.uuid) handleDateChange(datePickerModal.uuid, date);
+            setDatePickerModal({ open: false, uuid: null, date: new Date() });
+          }}
+          originalDate={(() => {
+            const svc = clinicServices.find(cs => cs.uuid === datePickerModal.uuid);
+            return svc?.display_date ? new Date(svc.display_date) : null;
+          })()}
+        />
+      )}
+    </>
   );
 };
+
+// Apple-style Date Picker Modal component
+function DatePickerModal({ date, onClose, onSave, originalDate }: { date: Date, onClose: () => void, onSave: (date: Date) => void, originalDate: Date | null }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(date);
+  const [error, setError] = useState<string | null>(null);
+  // Trap focus
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+  // Focus modal on open
+  useEffect(() => { modalRef.current?.focus(); }, []);
+
+  // Validation: only allow today or future, and must be different from original
+  const today = startOfDay(new Date());
+  const isPast = isBefore(startOfDay(selectedDate), today);
+  const isSame = originalDate && startOfDay(selectedDate).getTime() === startOfDay(originalDate).getTime();
+  useEffect(() => {
+    if (isPast) setError('Date cannot be in the past.');
+    else setError(null);
+  }, [selectedDate, isPast]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center">
+      {/* Blurred, darkened backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-[6px] transition-all" onClick={onClose}></div>
+      {/* Modal */}
+      <div
+        ref={modalRef}
+        tabIndex={-1}
+        className="relative w-full max-w-md mx-auto p-0 flex flex-col items-center animate-appleBounce focus:outline-none sm:mt-0 mt-auto mb-0 sm:mb-0"
+        style={{ minHeight: '380px' }}
+      >
+        <div className="relative w-full bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-100 p-6 flex flex-col items-center">
+          <button
+            className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 rounded-full p-2 focus:outline-none"
+            onClick={onClose}
+            aria-label="Close"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 shadow-sm">
+              <CalendarIcon className="w-5 h-5 text-blue-600" />
+            </span>
+            <h3 className="text-lg font-bold text-slate-900">Select Display Date</h3>
+          </div>
+          <div className="w-full flex flex-col items-center">
+            <DatePicker
+              selected={selectedDate}
+              onChange={d => d && setSelectedDate(d as Date)}
+              inline
+              calendarClassName="!w-full !text-lg !p-2 !rounded-2xl !border !border-slate-200 !bg-white/80 !backdrop-blur"
+              dayClassName={d =>
+                d && selectedDate && d.toDateString() === selectedDate.toDateString()
+                  ? '!bg-blue-600 !text-white !rounded-full !font-bold !shadow-lg'
+                  : '!rounded-full hover:!bg-blue-100 focus:!bg-blue-200 transition-colors duration-150'
+              }
+            />
+            <button
+              className="mt-2 mb-4 px-6 py-2 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold text-base shadow transition-all duration-150 active:scale-95"
+              onClick={() => setSelectedDate(today)}
+              type="button"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              Today
+            </button>
+          </div>
+          {error && <div className="text-red-500 text-sm mt-1 mb-2">{error}</div>}
+          <div className="w-full border-t border-slate-200 my-4"></div>
+          <button
+            className={`w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-base shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 active:scale-95 ${isSame || isPast ? 'opacity-60 cursor-not-allowed' : ''}`}
+            onClick={() => { if (!isSame && !isPast) onSave(selectedDate); }}
+            disabled={isSame || isPast}
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            Save
+          </button>
+        </div>
+        <style>{`
+          @keyframes appleBounce {
+            0% { opacity: 0; transform: scale(0.92) translateY(60px); }
+            60% { opacity: 1; transform: scale(1.04) translateY(-8px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          .animate-appleBounce { animation: appleBounce 0.32s cubic-bezier(.4,1.4,.6,1) both; }
+        `}</style>
+      </div>
+    </div>
+  );
+}
 
 export default ServiceManagement;

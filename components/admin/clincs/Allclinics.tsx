@@ -32,6 +32,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import sampleBookings from '../dues/dueslist';
 
 interface Clinic {
   id: number;
@@ -691,6 +692,11 @@ export default function ClinicManagement() {
     setNotification({ type: 'success', message: `Clinic "${clinic.name}" deleted.` });
   }
 
+  // Calculate bookings per clinic (by name)
+  const getBookingCount = (clinicName: string) => {
+    return sampleBookings.filter((b: any) => b.clinic_name === clinicName).length;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -913,7 +919,12 @@ export default function ClinicManagement() {
                 <div className="flex-1 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{clinic.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        {clinic.name}
+                        <span className="ml-2 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-100">
+                          {getBookingCount(clinic.name)} Bookings
+                        </span>
+                      </h3>
                       <p className="text-sm text-gray-600 flex items-center gap-1">
                         <MapPin size={14} />
                         {clinic.address}, {clinic.city} - {clinic.pincode}
@@ -970,7 +981,7 @@ export default function ClinicManagement() {
                       <span className="hidden sm:inline">Approve</span>
                     </button>
                   )}
-                  {clinic.status !== 'Rejected' && (
+                  {clinic.status !== 'Rejected' && clinic.status !== 'Approved' && (
                     <button
                       onClick={() => handleReject(clinic)}
                       className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors font-medium"

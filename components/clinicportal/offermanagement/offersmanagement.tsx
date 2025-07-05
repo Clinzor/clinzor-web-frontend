@@ -311,6 +311,7 @@ const ClinicOffersManager = () => {
   const totalActiveOffers = offers.filter(offer => offer.status === 'ACTIVE').length;
   const totalUsage = offers.reduce((sum, offer) => sum + (offer.usage_count || 0), 0);
   const totalSavings = offers.reduce((sum, offer) => sum + (offer.total_savings || 0), 0);
+  const totalUniqueUsers = offers.reduce((sum, offer) => sum + (offer.usage_count || 0), 0);
 
   const handleCreateOffer = () => {
     const offer = {
@@ -435,6 +436,16 @@ const ClinicOffersManager = () => {
                   <div>
                     <p className="text-xs text-purple-600 font-medium">Savings</p>
                     <p className="text-lg font-bold text-purple-700">${totalSavings.toLocaleString()}</p>
+                  </div>
+                </div>
+                {/* Unique Users Card */}
+                <div className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-100">
+                  <div className="p-2 bg-orange-500 rounded-lg">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-orange-600 font-medium">Users Applied</p>
+                    <p className="text-lg font-bold text-orange-700">{totalUniqueUsers}</p>
                   </div>
                 </div>
               </div>
@@ -600,7 +611,14 @@ const ClinicOffersManager = () => {
                     {isLive && (
                       <div className="h-1 bg-gradient-to-r from-emerald-500 to-green-500"></div>
                     )}
-                    
+                    {/* Usage count badge */}
+                    <div
+                      className="absolute top-3 right-3 z-10 flex items-center space-x-1 px-2 py-0.5 rounded-full bg-white/80 border border-blue-200 text-blue-700 text-xs font-medium shadow-sm hover:bg-blue-50 transition-colors cursor-default group"
+                      title="Times used"
+                    >
+                      <Users className="w-3 h-3 mr-1 text-blue-400" />
+                      <span>{offer.usage_count}</span>
+                    </div>
                     <div className="p-7">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-6">
