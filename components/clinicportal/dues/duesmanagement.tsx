@@ -154,7 +154,7 @@ const sampleTransactions: Transaction[] = [
   }
 ];
 
-const sampleBookings: Booking[] = [
+export const sampleBookings: Booking[] = [
   {
     id: 'bk_001',
     clinic_id: '5a1f8f39-ca38-464c-93c5-ea8edbd6c03f',

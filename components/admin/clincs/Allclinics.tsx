@@ -32,7 +32,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import sampleBookings from '../dues/dueslist';
+import { sampleBookings } from '../dues/dueslist';
 
 interface Clinic {
   id: number;

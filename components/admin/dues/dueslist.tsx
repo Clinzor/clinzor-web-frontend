@@ -1037,3 +1037,4 @@ const DueManagement = () => {
 };
 
 export default DueManagement;
+export { sampleBookings };
