@@ -20,6 +20,8 @@ const ClinicScheduler = () => {
     selectedDays: []
   });
 
+  const [serviceTime, setServiceTime] = useState<{ [dateKey: string]: string }>({});
+
   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const timeSlots = [
     '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
@@ -194,7 +196,7 @@ const ClinicScheduler = () => {
 
   const updateServiceTime = (day: string, time: string) => {
     const dateKey = getDateKey(day);
-    setServiceTime((prev: any) => ({
+    setServiceTime((prev) => ({
       ...prev,
       [dateKey]: time
     }));
@@ -313,7 +315,7 @@ const ClinicScheduler = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white min-h-screen">
+    <div className="max-w-6xl mx-auto p-6 bg-white min-h-screen rounded-3xl shadow-xl">
       {/* Header with Navigation */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -521,9 +523,8 @@ const ClinicScheduler = () => {
       </div>
 
       {/* Day Settings */}
-      <div className="bg-gray-50 rounded-xl p-6 mb-8">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Day Settings</h3>
-        
+      <div className="bg-gray-50 rounded-2xl p-6 mb-8 shadow-md">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Day Settings</h3>
         {/* Day Off Checkbox */}
         <div className="flex items-center mb-4">
           <input
@@ -536,6 +537,20 @@ const ClinicScheduler = () => {
           <label htmlFor={`dayoff-${activeDay}`} className="ml-3 text-sm font-medium text-gray-700">
             Set as off day
           </label>
+        </div>
+        {/* Average Service Time Input */}
+        <div className="flex items-center mb-4">
+          <label htmlFor={`servicetime-${activeDay}`} className="text-sm font-medium text-gray-700 mr-3 min-w-[140px]">
+            Average Service Time
+          </label>
+          <input
+            id={`servicetime-${activeDay}`}
+            type="text"
+            value={serviceTime[getDateKey(activeDay)] || ''}
+            onChange={e => updateServiceTime(activeDay, e.target.value)}
+            placeholder="e.g. 45 min"
+            className="flex-1 px-4 py-2 rounded-full border border-slate-200 bg-white/80 shadow focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-base text-slate-700 placeholder-slate-400 transition-all duration-200"
+          />
         </div>
       </div>
 
@@ -673,7 +688,3 @@ const SlotStepper: React.FC<SlotStepperProps> = ({ value, onChange, onClose }) =
 };
 
 export default ClinicScheduler;
-
-function setServiceTime(arg0: (prev: any) => any) {
-    throw new Error('Function not implemented.');
-}
